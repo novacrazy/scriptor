@@ -1,0 +1,23 @@
+{
+    "name":            "scriptor",
+    "version":         "0.0.0",
+    "description":     "A small library for dynamically loading and running scripts in an isolated context.",
+    "main":            "index.js",
+    "scripts":         {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords":        [
+        "script",
+        "vm"
+    ],
+    "author":          "Aaron Trent <novacrazy@gmail.com>",
+    "license":         "MIT",
+    "devDependencies": {
+        "grunt":               "^0.4.5",
+        "grunt-contrib-clean": "^0.6.0",
+        "grunt-ts":            "^1.11.6",
+        "mocha":               "^1.21.4",
+        "tsd":                 "^0.5.7",
+        "typescript":          "^1.0.1"
+    }
+}

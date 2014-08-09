@@ -1,0 +1,18 @@
+{
+    "version":   "v4",
+    "repo":      "borisyankov/DefinitelyTyped",
+    "ref":       "master",
+    "path":      "typings",
+    "bundle":    "typings/tsd.d.ts",
+    "installed": {
+        "bluebird/bluebird.d.ts": {
+            "commit": "1be28117501cd8fca80a2aa90bf26748ac191bd3"
+        },
+        "node/node.d.ts":         {
+            "commit": "1be28117501cd8fca80a2aa90bf26748ac191bd3"
+        },
+        "mocha/mocha.d.ts":       {
+            "commit": "1be28117501cd8fca80a2aa90bf26748ac191bd3"
+        }
+    }
+}
