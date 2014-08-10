@@ -29,10 +29,10 @@ module.exports = function(grunt) {
                 src: ['./lib/**/*.js', './test']
             },
             post:    {
-                src: ['./**/.baseDir.js', './reference.js']
+                src: ['./**/.baseDir.*', './reference.js']
             },
             release: {
-                src: ['./.tscache', './**/.baseDir.ts', './src/.baseDir.ts']
+                src: ['./.tscache']
             }
         }
     } );
