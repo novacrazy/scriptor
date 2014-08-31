@@ -39,6 +39,11 @@ module Module {
 
     }
 
+
+    export interface IModuleStatic extends IModuleStaticInternal {
+        new( id? : string, parent? : IModule ) : IModule;
+    }
+
     export interface IModuleInternal {
         load: ( filename : string ) => void;
         require: ( path : string ) => Utility.HashTable<any>;
@@ -55,12 +60,45 @@ module Module {
         children : IModule[];
     }
 
-    export interface IModuleStatic extends IModuleStaticInternal {
-        new( id? : string, parent? : IModule ) : IModule;
-    }
-
     //Also happens to match the backwards compatibility in the 'module' module
     export var Module : IModuleStatic = <any>require( 'module' );
+
+    export interface IScriptModule extends IModule {
+        imports: Utility.HashTable<any>;
+        module: IScriptModule;
+        require: typeof require;
+    }
+
+    export var amdefine : Function = require( 'amdefine' );
+
+    export class ScriptModule extends Module implements IScriptModule {
+
+        //DO ASSIGN
+        public imports : Utility.HashTable<any>;
+        public module : IScriptModule = <ScriptModule>(this);
+        public require : typeof require = require;
+        public define : ( id? : string, deps? : string[], factory : Function ) => void;
+
+        constructor( id? : string, parent? : IModule ) {
+            super( id, parent );
+
+            this.define = amdefine( this, parent );
+        }
+
+        //DO NOT ASSIGN, CREATED BY SUPER
+        public id : string;
+        public exports : Utility.HashTable<any>;
+        public parent : IModule;
+        public filename : string;
+        public loaded : boolean;
+        public children : IModule[];
+
+        //DO NOT ASSIGN, INHERITED FROM SUPER
+        public load : ( filename : string ) => void;
+        public require : ( path : string ) => Utility.HashTable<any>;
+        public paths : string[];
+        public _compile : ( content : string, filename : string ) => any;
+    }
 }
 
 export = Module;

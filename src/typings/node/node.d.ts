@@ -29,7 +29,8 @@ declare function clearImmediate( immediateId : any ) : void;
 
 declare var require : {
     ( id : string ): any;
-    resolve( id : string ): string;
+    resolve( id : string ): str
+    ing;
     cache: any;
     extensions: any;
     main: any;

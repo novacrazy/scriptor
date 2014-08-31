@@ -4,17 +4,27 @@
 
 /// <reference path="../reference.ts" />
 
-import Scriptor = require('./../lib/scriptor');
+import assert = require('assert');
 
-var manager : Scriptor.ScriptManager;
+import Scriptor = require('./../lib/scriptor');
+import Utility = require('./../lib/utility');
+
+import http = require('http');
+
+interface IScriptParameters {
+    request: http.ServerRequest;
+    response: http.ServerResponse;
+}
+
+var manager : Scriptor.ScriptManager<IScriptParameters>;
 
 describe( 'creating a new ScriptManager', () => {
 
-    it( 'should succeed', () => {
+    it( 'should provide default options', () => {
 
-        manager = new Scriptor.ScriptManager();
+        manager = new Scriptor.ScriptManager<IScriptParameters>();
 
-        manager.useGlobal = true;
+        assert.deepEqual( manager.options, Scriptor.DefaultScriptManagerOptions );
 
     } );
 
