@@ -5,16 +5,16 @@
 
 interface Mocha {
     // Setup mocha with the given setting options.
-    setup( options : MochaSetupOptions ): Mocha;
+    setup(options: MochaSetupOptions): Mocha;
 
     //Run tests and invoke `fn()` when complete.
-    run( callback? : () => void ): void;
+    run(callback?: () => void): void;
 
     // Set reporter as function
-    reporter( reporter : () => void ): Mocha;
+    reporter(reporter: () => void): Mocha;
 
     // Set reporter, defaults to "dot"
-    reporter( reporter : string ): Mocha;
+    reporter(reporter: string): Mocha;
 
     // Enable growl support.
     growl(): Mocha
@@ -47,64 +47,64 @@ interface MochaSetupOptions {
 }
 
 interface MochaDone {
-    ( error? : Error ): void;
+    (error?: Error): void;
 }
 
-declare var mocha : Mocha;
+declare var mocha: Mocha;
 
 declare var describe : {
-    ( description : string, spec : () => void ): void;
-    only( description : string, spec : () => void ): void;
-    skip( description : string, spec : () => void ): void;
-    timeout( ms : number ): void;
+    (description: string, spec: () => void): void;
+    only(description: string, spec: () => void): void;
+    skip(description: string, spec: () => void): void;
+    timeout(ms: number): void;
 }
 
 // alias for `describe`
 declare var context : {
-    ( contextTitle : string, spec : () => void ): void;
-    only( contextTitle : string, spec : () => void ): void;
-    skip( contextTitle : string, spec : () => void ): void;
-    timeout( ms : number ): void;
+    (contextTitle: string, spec: () => void): void;
+    only(contextTitle: string, spec: () => void): void;
+    skip(contextTitle: string, spec: () => void): void;
+    timeout(ms: number): void;
 }
 
-declare var it : {
-    ( expectation : string, assertion? : () => void ): void;
-    ( expectation : string, assertion? : ( done : MochaDone ) => void ): void;
-    only( expectation : string, assertion? : () => void ): void;
-    only( expectation : string, assertion? : ( done : MochaDone ) => void ): void;
-    skip( expectation : string, assertion? : () => void ): void;
-    skip( expectation : string, assertion? : ( done : MochaDone ) => void ): void;
-    timeout( ms : number ): void;
+declare var it: {
+    (expectation: string, assertion?: () => void): void;
+    (expectation: string, assertion?: (done: MochaDone) => void): void;
+    only(expectation: string, assertion?: () => void): void;
+    only(expectation: string, assertion?: (done: MochaDone) => void): void;
+    skip(expectation: string, assertion?: () => void): void;
+    skip(expectation: string, assertion?: (done: MochaDone) => void): void;
+    timeout(ms: number): void;
 };
 
-declare function before( action : () => void ) : void;
+declare function before(action: () => void): void;
 
-declare function before( action : ( done : MochaDone ) => void ) : void;
+declare function before(action: (done: MochaDone) => void): void;
 
-declare function setup( action : () => void ) : void;
+declare function setup(action: () => void): void;
 
-declare function setup( action : ( done : MochaDone ) => void ) : void;
+declare function setup(action: (done: MochaDone) => void): void;
 
-declare function after( action : () => void ) : void;
+declare function after(action: () => void): void;
 
-declare function after( action : ( done : MochaDone ) => void ) : void;
+declare function after(action: (done: MochaDone) => void): void;
 
-declare function teardown( action : () => void ) : void;
+declare function teardown(action: () => void): void;
 
-declare function teardown( action : ( done : MochaDone ) => void ) : void;
+declare function teardown(action: (done: MochaDone) => void): void;
 
-declare function beforeEach( action : () => void ) : void;
+declare function beforeEach(action: () => void): void;
 
-declare function beforeEach( action : ( done : MochaDone ) => void ) : void;
+declare function beforeEach(action: (done: MochaDone) => void): void;
 
-declare function suiteSetup( action : () => void ) : void;
+declare function suiteSetup(action: () => void): void;
 
-declare function suiteSetup( action : ( done : MochaDone ) => void ) : void;
+declare function suiteSetup(action: (done: MochaDone) => void): void;
 
-declare function afterEach( action : () => void ) : void;
+declare function afterEach(action: () => void): void;
 
-declare function afterEach( action : ( done : MochaDone ) => void ) : void;
+declare function afterEach(action: (done: MochaDone) => void): void;
 
-declare function suiteTeardown( action : () => void ) : void;
+declare function suiteTeardown(action: () => void): void;
 
-declare function suiteTeardown( action : ( done : MochaDone ) => void ) : void;
+declare function suiteTeardown(action: (done: MochaDone) => void): void;

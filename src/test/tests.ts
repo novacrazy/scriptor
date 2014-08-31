@@ -7,7 +7,6 @@
 import assert = require('assert');
 
 import Scriptor = require('./../lib/scriptor');
-import Utility = require('./../lib/utility');
 
 import http = require('http');
 
@@ -23,8 +22,6 @@ describe( 'creating a new ScriptManager', () => {
     it( 'should provide default options', () => {
 
         manager = new Scriptor.ScriptManager<IScriptParameters>();
-
-        assert.deepEqual( manager.options, Scriptor.DefaultScriptManagerOptions );
 
     } );
 

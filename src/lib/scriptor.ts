@@ -10,33 +10,61 @@ import fs = require('fs');
 import path = require('path');
 
 import Injector = require('./injector');
-import Utility = require('./utility');
-import Module = require('./module');
-
-/*
- * Overview of how this is supposed to work:
- *
- * Type T is extended from IBaseScriptContext
- *   T is what the function is exposed to when compiled and run
- *
- *
- * */
+import Module = require('./Module');
+import AMD = require('./define');
 
 module Scriptor {
 
+    export interface HashTable<T> {
+        [key: string] : T;
+    }
+
     export class ScriptManager<T> extends events.EventEmitter {
 
-        private scripts : Utility.HashTable<Function>;
-        private watchers : Utility.HashTable<fs.FSWatcher>;
+        private scripts : HashTable<Module.IModule>;
+        private watchers : HashTable<fs.FSWatcher>;
 
-        public imports : Utility.HashTable<any>;
+        public imports : HashTable<any>;
 
-        private _addInjector( exportedScript : Function ) : Injector.IInjectorFunction<T> {
-            return Injector.Create<T>( exportedScript );
-        }
+        private addScript( filename : string ) : any {
 
-        private _doLoadScript( filename : string, cb : ( script : string ) => void ) {
+            var script : Module.IModule = new Module.Module( path.basename( filename ) );
 
+            script['imports'] = this.imports;
+            script['define'] = AMD.amdefine( script );
+
+            script.load( filename );
+
+            this.scripts[filename] = script;
+
+            var watcher = fs.watch( filename, {
+                persistent: false
+            } );
+
+            this.watchers[filename] = watcher;
+
+            //This is agnostic to the filename changes
+            watcher.addListener( 'change', ( event : string, filename : string ) => {
+                script.loaded = false;
+                script.load( filename );
+            } );
+
+            var old_filename = filename;
+
+            watcher.addListener( 'rename', ( event : string, new_filename : string ) => {
+                script.loaded = false;
+                script.load( new_filename );
+
+                this.scripts[new_filename] = this.scripts[old_filename];
+                delete this.scripts[old_filename];
+
+                this.watchers[new_filename] = this.watchers[old_filename];
+                delete this.watchers[old_filename];
+
+                old_filename = new_filename;
+            } );
+
+            return script;
         }
 
         public runScript( filename : string, parameters : T ) {
@@ -44,22 +72,40 @@ module Scriptor {
 
             var script = this.scripts[filename];
 
-            if ( script != null ) {
+            if ( script == null ) {
+                script = this.addScript( filename );
+            }
 
-                if ( typeof script === 'function' ) {
-                    return script.call( null, parameters );
-
-                } else {
-                    return script;
-                }
+            if ( typeof script.exports === 'function' ) {
+                return script.exports.call( null, parameters );
 
             } else {
-
+                throw new Error( 'No main function found in script ' + filename );
             }
         }
 
-    }
+        public reloadScript( filename : string ) {
+            var watcher = this.watchers[filename];
 
+            if ( watcher != null ) {
+                watcher.emit( 'change', 'change', filename );
+
+            } else {
+                this.addScript( filename );
+            }
+        }
+
+        public clear() {
+            for ( var it in this.watchers ) {
+                if ( this.watchers.hasOwnProperty( it ) ) {
+                    this.watchers[it].close();
+                }
+            }
+
+            this.watchers = {};
+            this.scripts = {};
+        }
+    }
 }
 
 export = Scriptor;
