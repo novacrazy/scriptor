@@ -19,24 +19,38 @@ module Scriptor {
         [key: string] : T;
     }
 
+    export interface IScriptModule extends Module.IModule {
+        imports : any;
+        define : AMD.IDefine;
+    }
+    
     export class ScriptManager<T> extends events.EventEmitter {
 
-        private scripts : HashTable<Module.IModule>;
-        private watchers : HashTable<fs.FSWatcher>;
+        private scripts : HashTable<IScriptModule> = {};
+        private watchers : HashTable<fs.FSWatcher> = {};
+
+        public parent : Module.IModule;
 
         public imports : HashTable<any>;
 
-        private addScript( filename : string ) : any {
+        constructor( superParent? : Module.IModule ) {
+            super();
 
-            var script : Module.IModule = new Module.Module( path.basename( filename ) );
+            this.parent = new Module.Module( 'ScriptManager', superParent );
+        }
 
-            script['imports'] = this.imports;
-            script['define'] = AMD.amdefine( script );
+        private addScript( filename : string ) : IScriptModule {
 
-            script.load( filename );
+            //Some type erasure here to force cast Module.IModule into IScriptModule
+            var script : IScriptModule = <any>(new Module.Module( path.basename( filename ), this.parent ));
+
+            this.loadScript( script, filename );
 
             this.scripts[filename] = script;
 
+            /*
+             * The process should not be kept open just because it's watching a file
+             * */
             var watcher = fs.watch( filename, {
                 persistent: false
             } );
@@ -45,16 +59,14 @@ module Scriptor {
 
             //This is agnostic to the filename changes
             watcher.addListener( 'change', ( event : string, filename : string ) => {
-                script.loaded = false;
-                script.load( filename );
+                this.loadScript( script, filename );
             } );
 
             var old_filename = filename;
 
             watcher.addListener( 'rename', ( event : string, new_filename : string ) => {
-                script.loaded = false;
-                script.load( new_filename );
-
+                this.loadScript( script, new_filename );
+                
                 this.scripts[new_filename] = this.scripts[old_filename];
                 delete this.scripts[old_filename];
 
@@ -67,10 +79,21 @@ module Scriptor {
             return script;
         }
 
+        private loadScript( script : IScriptModule, filename? : string ) : IScriptModule {
+            script.loaded = false;
+
+            script.imports = this.imports;
+            script.define = AMD.amdefine( script );
+
+            script.load( filename != null ? filename : script.filename );
+
+            return script;
+        }
+
         public runScript( filename : string, parameters : T ) {
             filename = path.resolve( filename );
 
-            var script = this.scripts[filename];
+            var script : IScriptModule = this.scripts[filename];
 
             if ( script == null ) {
                 script = this.addScript( filename );
@@ -81,6 +104,16 @@ module Scriptor {
 
             } else {
                 throw new Error( 'No main function found in script ' + filename );
+            }
+        }
+
+        public preloadScript( filename : string ) {
+            filename = path.resolve( filename );
+
+            var script : IScriptModule = this.scripts[filename];
+
+            if ( script == null ) {
+                this.addScript( filename );
             }
         }
 
