@@ -16,7 +16,8 @@
     },
     "keywords":        [
         "script",
-        "vm"
+        "vm",
+        "module"
     ],
     "author":          "Aaron Trent <novacrazy@gmail.com>",
     "license":         "MIT",
@@ -29,6 +30,6 @@
         "typescript":          "^1.0.1"
     },
     "dependencies":    {
-        "bluebird": "^2.2.2"
+        "amdefine": "^0.1.0"
     }
 }

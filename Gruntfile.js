@@ -26,7 +26,7 @@ module.exports = function(grunt) {
         },
         clean: {
             build:   {
-                src: ['./lib/**/*.js', './test']
+                src: ['./lib/**/*.js', '!./test/scripts/*', './test/*.js']
             },
             post:    {
                 src: ['./**/.baseDir.*', './reference.js']

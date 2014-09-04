@@ -14,7 +14,7 @@ module Injector {
     }
 
     export function Create<T>( func : Function, hint? : string[], defaultValue? : T ) : IInjectorFunction<T> {
-        "use strict";
+        'use strict';
 
         var undefined;
 
@@ -71,7 +71,7 @@ module Injector {
                         return func.apply( this, toApply );
 
                     } else {
-                        throw new TypeError( "order must be an array of strings" );
+                        throw new TypeError( 'order must be an array of strings' );
                     }
                 };
 
