@@ -9,7 +9,6 @@ import vm = require('vm');
 import fs = require('fs');
 import path = require('path');
 
-import Injector = require('./injector');
 import Module = require('./Module');
 import AMD = require('./define');
 
@@ -23,8 +22,8 @@ module Scriptor {
         imports : any;
         define : AMD.IDefine;
     }
-    
-    export class ScriptManager<T> extends events.EventEmitter {
+
+    export class ScriptManager extends events.EventEmitter {
 
         private scripts : HashTable<IScriptModule> = {};
         private watchers : HashTable<fs.FSWatcher> = {};
@@ -90,7 +89,7 @@ module Scriptor {
             return script;
         }
 
-        public runScript( filename : string, parameters : T ) {
+        public runScript( filename : string, ...parameters : any[] ) {
             filename = path.resolve( filename );
 
             var script : IScriptModule = this.scripts[filename];
@@ -100,7 +99,7 @@ module Scriptor {
             }
 
             if ( typeof script.exports === 'function' ) {
-                return script.exports.call( null, parameters );
+                return script.exports.apply( null, parameters );
 
             } else {
                 throw new Error( 'No main function found in script ' + filename );
