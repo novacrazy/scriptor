@@ -1,35 +1,29 @@
 {
-    "name":            "scriptor",
-    "version":         "0.0.0",
-    "description":     "A small library for dynamically loading and running scripts in an isolated context.",
-    "main":            "index.js",
-    "repository":      {
-        "type": "git",
-        "url":  "https://github.com/novacrazy/scriptor.git"
-    },
-    "bugs":            {
-        "url":   "https://github.com/novacrazy/scriptor/issues",
-        "email": "novacrazy@gmail.com"
-    },
-    "scripts":         {
-        "test": "mocha"
-    },
-    "keywords":        [
-        "script",
-        "vm",
-        "module"
-    ],
-    "author":          "Aaron Trent <novacrazy@gmail.com>",
-    "license":         "MIT",
-    "devDependencies": {
-        "grunt":               "^0.4.5",
-        "grunt-contrib-clean": "^0.6.0",
-        "grunt-ts":            "^1.11.6",
-        "mocha":               "^1.21.4",
-        "tsd":                 "^0.5.7",
-        "typescript":          "^1.0.1"
-    },
-    "dependencies":    {
-        "amdefine": "^0.1.0"
-    }
+  "name": "scriptor",
+  "version": "0.0.1-alpha.0",
+  "description": "A small utility used to control the dynamic loading and execution of scripts. It is meant to be used in larger servers as an alternative to running dynamically loaded code on the main server.",
+  "main": "index.js",
+  "keywords": [
+    "script",
+    "vm",
+    "server"
+  ],
+  "author": "Aaron Trent <novacrazy@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "debug": "^2.1.0",
+    "grunt": "^0.4.5",
+    "grunt-banner": "^0.2.3",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-ts": "^2.0.0",
+    "grunt-typescript": "^0.3.7",
+    "mocha": "^1.20.1",
+    "typescript": "^1.3.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "amdefine": "^0.1.0"
+  }
 }

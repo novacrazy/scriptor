@@ -1,16 +1,15 @@
 /**
- * Created by novacrazy on 8/9/14.
+ * Created by novacrazy on 7/8/14.
  */
-
 
 module.exports = function(grunt) {
 
     grunt.loadNpmTasks( 'grunt-ts' );
     grunt.loadNpmTasks( 'grunt-contrib-clean' );
-
+    grunt.loadNpmTasks( 'grunt-banner' );
 
     grunt.initConfig( {
-        ts:    {
+        ts:        {
             options: {
                 target:         'es5',
                 module:         'commonjs',
@@ -18,28 +17,31 @@ module.exports = function(grunt) {
                 declaration:    false,
                 removeComments: false
             },
-            build:   {
-                src:       ['!./src/reference.ts', './src/**/*.ts'],
-                outDir:    './',
+            'build': {
+                src:       ['./src/**/*.ts'],
+                outDir:    './build/',
                 reference: './src/reference.ts'
             }
         },
-        clean: {
-            build:   {
-                src: ['./lib/**/*.js', '!./test/scripts/*', './test/*.js']
-            },
-            post:    {
-                src: ['./**/.baseDir.*', './reference.js']
-            },
-            release: {
-                src: ['./.tscache']
+        usebanner: {
+            build_strict: {
+                options: {
+                    position:  'top',
+                    banner:    '"use strict";',
+                    linebreak: true
+                },
+                files:   {
+                    src: ['./build/**/*.js']
+                }
+            }
+        },
+        clean:     {
+            build: {
+                src: ['./build']
             }
         }
     } );
 
-    grunt.registerTask( 'build', ['clean:build', 'ts:build', 'clean:post'] );
-
-    grunt.registerTask( 'release', ['build', 'clean:release'] );
-
-    grunt.registerTask( 'default', ['build'] );
+    grunt.registerTask( 'ts-build', ['clean:build', 'ts:build', 'usebanner:build_strict'] );
+    grunt.registerTask( 'default', ['ts-build'] );
 };

@@ -1,5 +1,7 @@
 /**
- * Created by novacrazy on 8/9/14.
+ * Created by novacrazy on 6/17/14.
  */
 
-module.exports = require( './lib/scriptor.js' );
+module.exports = require('./build/index.js');
+
+

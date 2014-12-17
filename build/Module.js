@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Created by novacrazy on 8/31/14.
  */
@@ -32,9 +33,8 @@
  *
  * */
 var Module;
-(function(_Module) {
+(function (_Module) {
     //Also happens to match the backwards compatibility in the 'module' module
-    _Module.Module = require( 'module' );
-})( Module || (Module = {}) );
-
+    _Module.Module = require('module');
+})(Module || (Module = {}));
 module.exports = Module;
