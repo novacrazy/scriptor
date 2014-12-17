@@ -95,7 +95,9 @@ module Scriptor {
             script.define = AMD.amdefine( script );
 
             script.reference = ( ref_filename : string, ...parameters : any[] ) => {
-                return this.run_script_apply( ref_filename, parameters );
+                var real_filename : string = path.resolve( path.dirname( filename ), ref_filename );
+
+                return this.run_script_apply( real_filename, parameters );
             };
 
             script.load( filename );

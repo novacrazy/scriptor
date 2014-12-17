@@ -73,7 +73,8 @@ var Scriptor;
                 for( var _i = 1; _i < arguments.length; _i++ ) {
                     parameters[_i - 1] = arguments[_i];
                 }
-                return _this.run_script_apply( ref_filename, parameters );
+                var real_filename = path.resolve( path.dirname( filename ), ref_filename );
+                return _this.run_script_apply( real_filename, parameters );
             };
             script.load(filename);
             return script;
