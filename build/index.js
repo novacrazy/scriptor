@@ -55,16 +55,26 @@ var Scriptor;
             configurable: true
         });
         ScriptManager.prototype.do_make_script = function (filename) {
+            debug( 'making script' );
             var id = path.basename(filename);
             var script = (new Module.Module(id, this.parent));
             script.filename = filename;
             return script;
         };
         ScriptManager.prototype.do_load_script = function (script, filename) {
+            var _this = this;
+            debug( 'loading script' );
             script.loaded = false;
             //Prevent the script from deleting imports, but it is allowed to interact with them
             script.imports = Object.freeze(this.imports);
             script.define = AMD.amdefine(script);
+            script.reference = function(ref_filename) {
+                var parameters = [];
+                for( var _i = 1; _i < arguments.length; _i++ ) {
+                    parameters[_i - 1] = arguments[_i];
+                }
+                return _this.run_script_apply( ref_filename, parameters );
+            };
             script.load(filename);
             return script;
         };
@@ -95,6 +105,11 @@ var Scriptor;
             filename = path.resolve(filename);
             return this.scripts[filename] != null;
         };
+        ScriptManager.prototype.loaded_script = function(filename) {
+            filename = path.resolve( filename );
+            var script = this.scripts[filename];
+            return script != null && script.loaded;
+        };
         ScriptManager.prototype.add_script = function (filename, watch) {
             if (watch === void 0) { watch = true; }
             filename = path.resolve(filename);
@@ -104,29 +119,43 @@ var Scriptor;
             }
             this.scripts[filename] = script;
         };
+        /*Separated out so exceptions don't prevent optimizations */
+        ScriptManager.prototype.do_run_script = function(script, parameters) {
+            debug( 'running script' );
+            var main = script.exports;
+            try {
+                if( typeof main === 'function' ) {
+                    return main.apply( null, parameters );
+                }
+                else {
+                    return main;
+                }
+            }
+            catch( e ) {
+                //Mark script as unloaded so syntax errors can be fixed in unwatched files before re-running
+                if( e instanceof SyntaxError ) {
+                    script.loaded = false;
+                }
+                throw e;
+            }
+        };
         ScriptManager.prototype.run_script = function (filename) {
             var parameters = [];
             for (var _i = 1; _i < arguments.length; _i++) {
                 parameters[_i - 1] = arguments[_i];
             }
+            return this.run_script_apply( filename, parameters );
+        };
+        ScriptManager.prototype.run_script_apply = function(filename, parameters) {
             filename = path.resolve(filename);
             var script = this.scripts[filename];
             if (script == null) {
-                debug('making script');
                 script = this.do_make_script(filename);
             }
             if (!script.loaded) {
-                debug('loading script');
                 this.do_load_script(script, filename);
             }
-            var main = script.exports;
-            debug('running script');
-            if (typeof main === 'function') {
-                return main.apply(null, parameters);
-            }
-            else {
-                return main;
-            }
+            return this.do_run_script( script, parameters );
         };
         ScriptManager.prototype.reload_script = function (filename, watch) {
             if (watch === void 0) { watch = false; }

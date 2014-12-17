@@ -52,6 +52,7 @@ module Scriptor {
 
     export interface IScriptModule extends IScriptModuleBase, Module.IModule {
         define : AMD.IDefine;
+        reference : ( filename : string ) => any;
         exports : {[key: string] : any};
     }
 
@@ -73,6 +74,8 @@ module Scriptor {
         }
 
         private do_make_script( filename : string ) : IScriptModule {
+            debug( 'making script' );
+
             var id : string = path.basename( filename );
 
             var script : IScriptModule = <any>(new Module.Module( id, this.parent ));
@@ -83,11 +86,17 @@ module Scriptor {
         }
 
         private do_load_script( script : IScriptModule, filename : string ) : IScriptModule {
+            debug( 'loading script' );
+
             script.loaded = false;
 
             //Prevent the script from deleting imports, but it is allowed to interact with them
             script.imports = Object.freeze( this.imports );
             script.define = AMD.amdefine( script );
+
+            script.reference = ( ref_filename : string, ...parameters : any[] ) => {
+                return this.run_script_apply( ref_filename, parameters );
+            };
 
             script.load( filename );
 
@@ -133,8 +142,8 @@ module Scriptor {
             return this.scripts[filename] != null;
         }
 
-        public loaded_script(filename : string) : boolean {
-            filename = path.resolve(filename);
+        public loaded_script( filename : string ) : boolean {
+            filename = path.resolve( filename );
 
             var script : IScriptModule = this.scripts[filename];
 
@@ -153,31 +162,48 @@ module Scriptor {
             this.scripts[filename] = script;
         }
 
+        /*Separated out so exceptions don't prevent optimizations */
+        private do_run_script( script : IScriptModule, parameters : any[] ) : any {
+            debug( 'running script' );
+
+            var main : any = script.exports;
+
+            try {
+                if( typeof main === 'function' ) {
+                    return main.apply( null, parameters );
+
+                } else {
+                    return main;
+                }
+
+            } catch( e ) {
+                //Mark script as unloaded so syntax errors can be fixed in unwatched files before re-running
+                if( e instanceof SyntaxError ) {
+                    script.loaded = false;
+                }
+
+                throw e;
+            }
+        }
+
         public run_script( filename : string, ...parameters : any[] ) : any {
+            return this.run_script_apply( filename, parameters );
+        }
+
+        public run_script_apply( filename : string, parameters : any[] ) : any {
             filename = path.resolve( filename );
 
             var script : IScriptModule = this.scripts[filename];
 
             if( script == null ) {
-                debug( 'making script' );
                 script = this.do_make_script( filename );
             }
 
             if( !script.loaded ) {
-                debug( 'loading script' );
                 this.do_load_script( script, filename );
             }
 
-            var main : any = script.exports;
-
-            debug( 'running script' );
-
-            if( typeof main === 'function' ) {
-                return main.apply( null, parameters );
-
-            } else {
-                return main;
-            }
+            return this.do_run_script( script, parameters );
         }
 
         public reload_script( filename : string, watch : boolean = false ) {
