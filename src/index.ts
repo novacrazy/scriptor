@@ -3,10 +3,8 @@
  */
 
 import fs = require('fs');
-import vm = require('vm');
 import assert = require('assert');
 import path = require('path');
-import crypto = require('crypto');
 
 import Module = require('./Module');
 import AMD = require('./define');
@@ -80,27 +78,31 @@ module Scriptor {
 
             var script : IScriptModule = <any>(new Module.Module( id, this.parent ));
 
+            //set this before loading (even though it'll be overwritten)
             script.filename = filename;
 
             return script;
         }
 
-        private do_load_script( script : IScriptModule, filename : string ) : IScriptModule {
+        private do_load_script( script : IScriptModule ) : IScriptModule {
             debug( 'loading script' );
 
             script.loaded = false;
 
             //Prevent the script from deleting imports, but it is allowed to interact with them
             script.imports = Object.freeze( this.imports );
-            script.define = AMD.amdefine( script );
 
+            //Incorporate AMD for the created module, allow reuse of existing define if reloading
+            script.define = script.define || AMD.amdefine( script );
+
+            //Allows a script to call another script
             script.reference = ( ref_filename : string, ...parameters : any[] ) => {
-                var real_filename : string = path.resolve( path.dirname( filename ), ref_filename );
+                var real_filename : string = path.resolve( path.dirname( script.filename ), ref_filename );
 
                 return this.run_script_apply( real_filename, parameters );
             };
 
-            script.load( filename );
+            script.load( script.filename );
 
             return script;
         }
@@ -109,6 +111,7 @@ module Scriptor {
 
             assert( script.filename != null );
 
+            //Watchers should only live as long as the rest of the program
             var watcher : fs.FSWatcher = fs.watch( script.filename, {
                 persistent: false
             } );
@@ -197,33 +200,32 @@ module Scriptor {
 
             var script : IScriptModule = this.scripts[filename];
 
+            //Make scropt from scratch if it doesn't exist
             if( script == null ) {
                 script = this.do_make_script( filename );
             }
 
+            //lazily load/compile script if not done already
             if( !script.loaded ) {
-                this.do_load_script( script, filename );
+                this.do_load_script( script );
             }
 
             return this.do_run_script( script, parameters );
         }
 
-        public reload_script( filename : string, watch : boolean = false ) {
+        //Basically add_script that forces reloading and watching
+        public reload_script( filename : string ) {
             filename = path.resolve( filename );
 
             var script : IScriptModule = this.scripts[filename];
 
             if( script == null ) {
-                this.add_script( filename, watch );
+                this.add_script( filename, false );
 
                 script = this.scripts[filename];
             }
 
-            if( watch ) {
-                this.watch_script( filename );
-            }
-
-            this.do_load_script( script, filename );
+            this.do_load_script( script );
         }
 
         public watch_script( filename : string ) {

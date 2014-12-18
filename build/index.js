@@ -58,30 +58,34 @@ var Scriptor;
             debug( 'making script' );
             var id = path.basename(filename);
             var script = (new Module.Module(id, this.parent));
+            //set this before loading (even though it'll be overwritten)
             script.filename = filename;
             return script;
         };
-        ScriptManager.prototype.do_load_script = function (script, filename) {
+        ScriptManager.prototype.do_load_script = function(script) {
             var _this = this;
             debug( 'loading script' );
             script.loaded = false;
             //Prevent the script from deleting imports, but it is allowed to interact with them
             script.imports = Object.freeze(this.imports);
-            script.define = AMD.amdefine(script);
+            //Incorporate AMD for the created module, allow reuse of existing define if reloading
+            script.define = script.define || AMD.amdefine( script );
+            //Allows a script to call another script
             script.reference = function(ref_filename) {
                 var parameters = [];
                 for( var _i = 1; _i < arguments.length; _i++ ) {
                     parameters[_i - 1] = arguments[_i];
                 }
-                var real_filename = path.resolve( path.dirname( filename ), ref_filename );
+                var real_filename = path.resolve( path.dirname( script.filename ), ref_filename );
                 return _this.run_script_apply( real_filename, parameters );
             };
-            script.load(filename);
+            script.load( script.filename );
             return script;
         };
         ScriptManager.prototype.attach_watchers = function (script) {
             var _this = this;
             assert(script.filename != null);
+            //Watchers should only live as long as the rest of the program
             var watcher = fs.watch(script.filename, {
                 persistent: false
             });
@@ -150,26 +154,25 @@ var Scriptor;
         ScriptManager.prototype.run_script_apply = function(filename, parameters) {
             filename = path.resolve(filename);
             var script = this.scripts[filename];
+            //Make scropt from scratch if it doesn't exist
             if (script == null) {
                 script = this.do_make_script(filename);
             }
+            //lazily load/compile script if not done already
             if (!script.loaded) {
-                this.do_load_script(script, filename);
+                this.do_load_script( script );
             }
             return this.do_run_script( script, parameters );
         };
-        ScriptManager.prototype.reload_script = function (filename, watch) {
-            if (watch === void 0) { watch = false; }
+        //Basically add_script that forces reloading and watching
+        ScriptManager.prototype.reload_script = function(filename) {
             filename = path.resolve(filename);
             var script = this.scripts[filename];
             if (script == null) {
-                this.add_script(filename, watch);
+                this.add_script( filename, false );
                 script = this.scripts[filename];
             }
-            if (watch) {
-                this.watch_script(filename);
-            }
-            this.do_load_script(script, filename);
+            this.do_load_script( script );
         };
         ScriptManager.prototype.watch_script = function (filename) {
             filename = path.resolve(filename);
