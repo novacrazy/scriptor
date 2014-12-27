@@ -35,10 +35,6 @@
 
 module Module {
 
-    export interface HashTable<T> {
-        [key : string] : T;
-    }
-
     export interface IModuleStaticInternal {
 
         /*
@@ -58,21 +54,21 @@ module Module {
          * the Node 'require' will not suffice.
          *
          * */
-        _cache: HashTable<any>;
+        _cache: {[key: string] : any};
 
         /*
          * Stores paths to already loaded or found modules,
          * reducing search time for future calls
          *
          * */
-        _pathCache: HashTable<string>;
+        _pathCache: {[key: string] : string};
 
         /*
          * Can sometimes be used to load in different file types and convert them to JavaScript
          * before executing them.
          *
          * */
-        _extensions: HashTable<any>;
+        _extensions: {[key: string] : any};
 
         /*
          * Array of search paths for node modules,
@@ -102,7 +98,7 @@ module Module {
          * as in accounting for symlinks and anything else.
          *
          * */
-        _realpathCache: HashTable<string>;
+        _realpathCache: {[key: string] : string};
 
         /*
          * Sort of recursively searches for a module,
@@ -197,7 +193,7 @@ module Module {
         loaded : boolean;
     }
 
-    export interface IModule extends IModuleInternal {
+    export interface IModulePublic {
         /*
          * Filename of module, if any.
          *
@@ -234,6 +230,10 @@ module Module {
          *
          * */
         children : IModule[];
+    }
+
+    export interface IModule extends IModuleInternal, IModulePublic {
+
     }
 
     //Also happens to match the backwards compatibility in the 'module' module
