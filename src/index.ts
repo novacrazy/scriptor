@@ -11,8 +11,6 @@ import AMD = require('./define');
 
 module Scriptor {
 
-    export var debug = require( 'debug' )( 'scriptor' );
-
     export var this_module : Module.IModule = <any>module;
 
     export interface IScriptBase extends Module.IModulePublic {

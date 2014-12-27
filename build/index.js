@@ -21,7 +21,6 @@ var Module = require('./Module');
 var AMD = require('./define');
 var Scriptor;
 (function (Scriptor) {
-    Scriptor.debug = require( 'debug' )( 'scriptor' );
     Scriptor.this_module = module;
     var Script = (function() {
         function Script(filename, parent) {
@@ -44,39 +43,39 @@ var Scriptor;
             configurable: true
         });
         Object.defineProperty( Script.prototype, "id", {
-            get:        function() {
+            get: function() {
                 return this._script.id;
             },
             //Allow id to be set because it isn't very important
-            set:        function(value) {
+            set: function(value) {
                 this._script.id = value;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "children", {
-            get:        function() {
+            get: function() {
                 return this._script.children;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "parent", {
-            get:        function() {
+            get: function() {
                 return this._script.parent;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "loaded", {
-            get:        function() {
+            get: function() {
                 return this._script.loaded;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "watched", {
-            get:        function() {
+            get: function() {
                 return this._watcher != null;
             },
             enumerable: true,
@@ -84,7 +83,7 @@ var Scriptor;
         } );
         Object.defineProperty( Script.prototype, "filename", {
             //Only allow getting the filename, setting should be done through .load
-            get:        function() {
+            get: function() {
                 return this._script.filename;
             },
             enumerable: true,
@@ -242,17 +241,17 @@ var Scriptor;
         }
 
         Object.defineProperty( Manager.prototype, "parent", {
-            get:        function() {
+            get: function() {
                 return this._parent;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
-            get:          function() {
+            get:        function() {
                 return Object.freeze( this._scripts );
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         Manager.prototype.run = function(filename) {
