@@ -1,5 +1,5 @@
 /**
- * Created by novacrazy on 12/15/2014.
+ * Created by novacrazy on 12/25/2014.
  */
 
 import fs = require('fs');
@@ -9,280 +9,304 @@ import path = require('path');
 import Module = require('./Module');
 import AMD = require('./define');
 
-/*
- *   Rules for scripts:
- *
- *   Lazy evaluation on all scripts, watched or not.
- *
- *   If being watched, a change or rename will not recompile the
- *   script if it was not already loaded, preserving laziness.
- *
- *   watch_script and unwatch_script will not not evaluate a script or overwrite an old script.
- *
- *   watch_script will call add_script, but does not evaluate.
- *
- *   run_script is the only function that will evaluate a script and its main function.
- *
- *   If the script is changed, it the script is marked as unloaded, and will be re-evaluated
- *   the next time run_script is called on that script.
- *
- *   If the script is renamed, nothing is changed except internal state for lookups.
- *
- *   reload_script forces re-evaluation of the script, but does not call the main function.
- *
- *   If not already added, reload_script will add the script.
- *
- *   reload_script can set up watchers for a script
- *
- *   remove_script closes watchers and deletes the script from memory
- *
- *   clear removes everything, and closes all watchers
- *
- * */
-
 module Scriptor {
 
-    var debug = require( 'debug' )( 'scriptor' );
+    export var debug = require( 'debug' )( 'scriptor' );
 
-    export interface IScriptModuleBase {
-        imports : {[key: string] : any};
+    export var this_module : Module.IModule = <any>module;
+
+    export interface IScriptBase extends Module.IModulePublic {
+        imports : {[key : string] : any};
+        reference( filename : string, ...args : any[] ) : any;
     }
 
-    export interface IScriptModule extends IScriptModuleBase, Module.IModule {
+    export interface IScriptModule extends IScriptBase, Module.IModule {
         define : AMD.IDefine;
-        reference : ( filename : string ) => any;
-        exports : {[key: string] : any};
     }
 
-    export class ScriptManager implements IScriptModuleBase {
+    export class Script implements IScriptBase {
 
-        private scripts : {[key: string] : IScriptModule} = {};
-        private watchers : {[key: string] : fs.FSWatcher} = {};
+        private _script : IScriptModule;
+        private _watcher : fs.FSWatcher = null;
 
-        public parent : Module.IModule;
+        public imports : {[key : string] : any} = {};
 
-        private _imports : {[key: string] : any} = {};
-
-        get imports() : {[key: string] : any} {
-            return this._imports;
+        get exports() : {[key : string] : any} {
+            return this._script.exports;
         }
 
-        constructor( grandParent? : Module.IModule ) {
-            this.parent = new Module.Module( 'ScriptManager', grandParent );
+        get id() : string {
+            return this._script.id;
         }
 
-        private do_make_script( filename : string ) : IScriptModule {
-            debug( 'making script' );
-
-            var id : string = path.basename( filename );
-
-            var script : IScriptModule = <any>(new Module.Module( id, this.parent ));
-
-            //set this before loading (even though it'll be overwritten)
-            script.filename = filename;
-
-            return script;
+        //Allow id to be set because it isn't very important
+        set id( value : string ) {
+            this._script.id = value;
         }
 
-        private do_load_script( script : IScriptModule ) : IScriptModule {
-            debug( 'loading script' );
-
-            script.loaded = false;
-
-            //Prevent the script from deleting imports, but it is allowed to interact with them
-            script.imports = Object.freeze( this.imports );
-
-            //Incorporate AMD for the created module, allow reuse of existing define if reloading
-            script.define = script.define || AMD.amdefine( script );
-
-            //Allows a script to call another script
-            script.reference = ( ref_filename : string, ...parameters : any[] ) => {
-                var real_filename : string = path.resolve( path.dirname( script.filename ), ref_filename );
-
-                return this.run_script_apply( real_filename, parameters );
-            };
-
-            script.load( script.filename );
-
-            return script;
+        get children() : Module.IModule[] {
+            return this._script.children;
         }
 
-        private attach_watchers( script : IScriptModule ) : void {
-
-            assert( script.filename != null );
-
-            //Watchers should only live as long as the rest of the program
-            var watcher : fs.FSWatcher = fs.watch( script.filename, {
-                persistent: false
-            } );
-
-            this.watchers[script.filename] = watcher;
-
-            watcher.on( 'change', ( event : string, filename : string ) => {
-                filename = path.resolve( path.dirname( script.filename ) + path.sep + filename );
-
-                if( event === 'change' && script.loaded ) {
-                    script.loaded = false;
-
-                    debug( 'script changed' )
-
-                } else if( event === 'rename' && filename != script.filename ) {
-
-                    var old_filename : string = script.filename;
-
-                    this.scripts[filename] = this.scripts[old_filename];
-                    this.watchers[filename] = this.watchers[old_filename];
-
-                    delete this.scripts[old_filename];
-                    delete this.watchers[old_filename];
-
-                    debug( 'script renamed from %s to %s', script.filename, filename );
-                }
-            } );
+        get parent() : Module.IModule {
+            return this._script.parent;
         }
 
-        public has_script( filename : string ) : boolean {
-            filename = path.resolve( filename );
-
-            return this.scripts[filename] != null;
+        get loaded() : boolean {
+            return this._script.loaded;
         }
 
-        public loaded_script( filename : string ) : boolean {
-            filename = path.resolve( filename );
-
-            var script : IScriptModule = this.scripts[filename];
-
-            return script != null && script.loaded;
+        get watched() : boolean {
+            return this._watcher != null;
         }
 
-        public add_script( filename : string, watch : boolean = true ) : void {
-            filename = path.resolve( filename );
+        //Only allow getting the filename, setting should be done through .load
+        get filename() : string {
+            return this._script.filename;
+        }
 
-            var script : IScriptModule = this.do_make_script( filename );
+        //Basically an alias for the real script's require
+        public require( path : string ) : any {
+            return this._script.require( path );
+        }
 
-            if( watch ) {
-                this.attach_watchers( script );
+        constructor( filename? : string, parent : Module.IModule = this_module ) {
+            if( filename != null ) {
+                this.load( filename );
             }
 
-            this.scripts[filename] = script;
+            this._script = <any>(new Module.Module( null, parent ));
         }
 
-        /*Separated out so exceptions don't prevent optimizations */
-        private do_run_script( script : IScriptModule, parameters : any[] ) : any {
-            debug( 'running script' );
+        private do_load() {
+            this._script.loaded = false;
 
-            var main : any = script.exports;
+            //Shallow freeze so the script can't add/remove imports, but it can modify them
+            this._script.imports = Object.freeze( this.imports );
+
+            //Incorporate AMD for the created module, allow reuse of existing define if reloading
+            this._script.define = this._script.define || AMD.amdefine( this._script );
+
+            this._script.reference = this.reference.bind( this );
+
+            this._script.load( this._script.filename );
+        }
+
+        //simply abuses TypeScript's variable arguments feature
+        public call( ...args : any[] ) : any {
+            return this.apply( args );
+        }
+
+        public apply( args : any[] ) : any {
+            if( !this.loaded ) {
+                this.do_load();
+            }
+
+            var main : any = this.exports;
 
             try {
                 if( typeof main === 'function' ) {
-                    return main.apply( null, parameters );
+                    return main.apply( null, args );
 
                 } else {
                     return main;
                 }
 
             } catch( e ) {
-                //Mark script as unloaded so syntax errors can be fixed in unwatched files before re-running
                 if( e instanceof SyntaxError ) {
-                    script.loaded = false;
+                    this.unload();
                 }
 
                 throw e;
             }
         }
 
-        public run_script( filename : string, ...parameters : any[] ) : any {
-            return this.run_script_apply( filename, parameters );
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public reference( filename : string, ...args : any[] ) {
+            return null;
         }
 
-        public run_script_apply( filename : string, parameters : any[] ) : any {
+        public load( filename : string, watch : boolean = false ) : Script {
             filename = path.resolve( filename );
 
-            var script : IScriptModule = this.scripts[filename];
+            this.id = path.basename( filename );
 
-            //Make scropt from scratch if it doesn't exist
-            if( script == null ) {
-                script = this.do_make_script( filename );
+            this._script.filename = filename;
+
+            if( watch ) {
+                this.watch();
             }
 
-            //lazily load/compile script if not done already
-            if( !script.loaded ) {
-                this.do_load_script( script );
-            }
+            //Although this seems counter-intuitive,
+            //the lazy loading dictates it must be in an unloaded state before a new script is compiled/run
+            this.unload();
 
-            return this.do_run_script( script, parameters );
+            return this;
         }
 
-        //Basically add_script that forces reloading and watching
-        public reload_script( filename : string ) {
-            filename = path.resolve( filename );
+        public unload() : boolean {
+            var was_loaded : boolean = this.loaded;
 
-            var script : IScriptModule = this.scripts[filename];
+            this._script.loaded = false;
 
-            if( script == null ) {
-                this.add_script( filename, false );
-
-                script = this.scripts[filename];
-            }
-
-            this.do_load_script( script );
+            return was_loaded;
         }
 
-        public watch_script( filename : string ) {
-            filename = path.resolve( filename );
+        public reload() : boolean {
+            var was_loaded : boolean = this.loaded;
 
-            if( this.watchers[filename] == null ) {
-                var script : IScriptModule = this.scripts[filename];
+            //Force it to reload and recompile the script.
+            this.do_load();
 
-                if( script != null ) {
-                    this.attach_watchers( script );
-
-                } else {
-                    this.add_script( filename, true );
-                }
-            }
+            return was_loaded;
         }
 
-        public unwatch_script( filename : string ) {
-            filename = path.resolve( filename );
+        public watch() : boolean {
+            if( !this.watched ) {
+                var watcher : fs.FSWatcher = this._watcher = fs.watch( this.filename, {
+                    persistent: false
+                } );
 
-            var watcher : fs.FSWatcher = this.watchers[filename];
+                watcher.on( 'change', ( event : string, filename : string ) => {
+                    filename = path.resolve( path.dirname( this.filename ) + path.sep + filename );
 
-            if( watcher != null ) {
-                watcher.close();
+                    if( event === 'change' && this.loaded ) {
+                        this.unload();
 
-                delete this.watchers[filename];
-            }
-        }
+                    } else if( event === 'rename' && filename != this.filename ) {
+                        this._script.filename = filename;
+                    }
+                } );
 
-        public remove_script( filename : string ) : boolean {
-            filename = path.resolve( filename );
-
-            var script : IScriptModule = this.scripts[filename];
-
-            if( script != null ) {
-                var watcher : fs.FSWatcher = this.watchers[filename];
-
-                if( watcher != null ) {
-                    watcher.close();
-                    delete this.scripts[filename];
-                }
-
-                return delete this.watchers[filename];
+                return true;
             }
 
             return false;
         }
 
+        public close( permanent : boolean = true ) {
+            this.unload();
+            this.unwatch();
+
+            if( permanent ) {
+
+                //Remove _script from parent
+                if( this.parent != null ) {
+                    var children : Module.IModule[] = this.parent.children;
+
+                    for( var _i in children ) {
+                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
+                            delete children[_i];
+                            children.splice( _i, 1 );
+                        }
+                    }
+                }
+
+                //Remove _script from current object
+                delete this['_script'];
+                this._script = null;
+            }
+        }
+
+        public unwatch() : boolean {
+            if( this.watched ) {
+                this._watcher.close();
+                this._watcher = null;
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    export class ScriptAdapter extends Script {
+        constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
+            super( filename, parent );
+        }
+
+        public reference( filename : string, ...args : any[] ) : any {
+            var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
+
+            return this.manager.apply( real_filename, args );
+        }
+    }
+
+    export class Manager {
+
+        private _scripts : {[key : string] : ScriptAdapter} = {};
+
+        private _parent : Module.IModule;
+
+        get parent() : Module.IModule {
+            return this._parent;
+        }
+
+        constructor( grandParent? : Module.IModule ) {
+            this._parent = new Module.Module( 'ScriptManager', grandParent );
+        }
+
+        public run( filename : string, ...args : any[] ) : any {
+            return this.apply( filename, args );
+        }
+
+        public apply( filename : string, args : any[] ) : any {
+            filename = path.resolve( filename );
+
+            var script : ScriptAdapter = this._scripts[filename];
+
+            if( script == null ) {
+                return this.add( filename ).apply( args );
+            }
+        }
+
+        public add( filename : string, watch : boolean = false ) : ScriptAdapter {
+            filename = path.resolve( filename );
+
+            var script : ScriptAdapter = this._scripts[filename];
+
+            if( script != null ) {
+                script = new ScriptAdapter( this, filename, this._parent );
+
+                this._scripts[filename] = script;
+            }
+
+            if( watch ) {
+                script.watch();
+            }
+
+            return script;
+        }
+
+        public remove( filename : string ) : boolean {
+            filename = path.resolve( filename );
+
+            var script : ScriptAdapter = this._scripts[filename];
+
+            if( script != null ) {
+                script.close();
+
+                return delete this._scripts[filename];
+            }
+
+            return false;
+        }
+
+        public get( filename : string ) : ScriptAdapter {
+            filename = path.resolve( filename );
+
+            return this._scripts[filename];
+        }
+
         public clear() {
-            for( var it in this.watchers ) {
-                if( this.watchers.hasOwnProperty( it ) ) {
-                    this.watchers[it].close();
+            for( var _i in this._scripts ) {
+                if( this._scripts.hasOwnProperty( _i ) ) {
+                    this._scripts[_i].close();
+                    delete this._scripts[_i];
                 }
             }
 
-            this.watchers = {};
-            this.scripts = {};
+            this._scripts = {};
         }
     }
 }
