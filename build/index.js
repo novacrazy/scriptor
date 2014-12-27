@@ -30,10 +30,10 @@ var Scriptor;
             }
             this._watcher = null;
             this.imports = {};
+            this._script = (new Module.Module( null, parent ));
             if( filename != null ) {
                 this.load( filename );
             }
-            this._script = (new Module.Module( null, parent ));
         }
 
         Object.defineProperty( Script.prototype, "exports", {
@@ -44,50 +44,50 @@ var Scriptor;
             configurable: true
         });
         Object.defineProperty( Script.prototype, "id", {
-            get:          function() {
+            get:        function() {
                 return this._script.id;
             },
             //Allow id to be set because it isn't very important
-            set:          function(value) {
+            set:        function(value) {
                 this._script.id = value;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "children", {
-            get:          function() {
+            get:        function() {
                 return this._script.children;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "parent", {
-            get:          function() {
+            get:        function() {
                 return this._script.parent;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "loaded", {
-            get:          function() {
+            get:        function() {
                 return this._script.loaded;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "watched", {
-            get:          function() {
+            get:        function() {
                 return this._watcher != null;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "filename", {
             //Only allow getting the filename, setting should be done through .load
-            get:          function() {
+            get:        function() {
                 return this._script.filename;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         //Basically an alias for the real script's require
@@ -242,8 +242,15 @@ var Scriptor;
         }
 
         Object.defineProperty( Manager.prototype, "parent", {
-            get:          function() {
+            get:        function() {
                 return this._parent;
+            },
+            enumerable: true,
+            configurable: true
+        } );
+        Object.defineProperty( Manager.prototype, "scripts", {
+            get:          function() {
+                return Object.freeze( this._scripts );
             },
             enumerable:   true,
             configurable: true
@@ -261,6 +268,9 @@ var Scriptor;
             if( script == null ) {
                 return this.add( filename ).apply( args );
             }
+            else {
+                return script.apply( args );
+            }
         };
         Manager.prototype.add = function(filename, watch) {
             if( watch === void 0 ) {
@@ -268,7 +278,7 @@ var Scriptor;
             }
             filename = path.resolve(filename);
             var script = this._scripts[filename];
-            if( script != null ) {
+            if( script == null ) {
                 script = new ScriptAdapter( this, filename, this._parent );
                 this._scripts[filename] = script;
             }

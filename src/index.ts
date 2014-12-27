@@ -71,11 +71,11 @@ module Scriptor {
         }
 
         constructor( filename? : string, parent : Module.IModule = this_module ) {
+            this._script = <any>(new Module.Module( null, parent ));
+
             if( filename != null ) {
                 this.load( filename );
             }
-
-            this._script = <any>(new Module.Module( null, parent ));
         }
 
         private do_load() {
@@ -242,6 +242,10 @@ module Scriptor {
             return this._parent;
         }
 
+        get scripts() : ScriptAdapter[] {
+            return Object.freeze( this._scripts );
+        }
+
         constructor( grandParent? : Module.IModule ) {
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
@@ -257,6 +261,9 @@ module Scriptor {
 
             if( script == null ) {
                 return this.add( filename ).apply( args );
+
+            } else {
+                return script.apply( args );
             }
         }
 
@@ -265,7 +272,7 @@ module Scriptor {
 
             var script : ScriptAdapter = this._scripts[filename];
 
-            if( script != null ) {
+            if( script == null ) {
                 script = new ScriptAdapter( this, filename, this._parent );
 
                 this._scripts[filename] = script;
