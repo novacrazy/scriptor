@@ -82,8 +82,7 @@ module Scriptor {
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
 
-            //Incorporate AMD for the created module, allow reuse of existing define if reloading
-            this._script.define = this._script.define || AMD.amdefine( this._script );
+            this._script.define = AMD.amdefine( this._script );
 
             this._script.reference = this.reference.bind( this );
 
