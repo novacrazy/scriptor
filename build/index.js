@@ -137,6 +137,10 @@ var Scriptor;
             }
             return null;
         };
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        Script.prototype.include = function(filename) {
+            return null;
+        };
         Script.prototype.load = function(filename, watch) {
             if( watch === void 0 ) {
                 watch = false;
@@ -227,17 +231,15 @@ var Scriptor;
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
+            return this.include( filename ).apply( args );
+        };
+        ScriptAdapter.prototype.include = function(filename) {
             var real_filename = path.resolve( path.dirname( this.filename ), filename );
             var script = this.manager.add( real_filename, true );
-            if( args.length > 0 ) {
-                return script.apply( args );
+            if( !script.loaded ) {
+                script.reload();
             }
-            else {
-                if( !script.loaded ) {
-                    script.reload();
-                }
-                return script;
-            }
+            return script;
         };
         return ScriptAdapter;
     })( Script );

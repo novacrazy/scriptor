@@ -15,8 +15,8 @@ module Scriptor {
 
     export interface IScriptBase extends Module.IModulePublic {
         imports : {[key : string] : any};
-        reference( filename : string ) : Script;
         reference( filename : string, ...args : any[] ) : any;
+        include( filename : string ) : Script;
     }
 
     export interface IScriptModule extends IScriptBase, Module.IModule {
@@ -124,6 +124,11 @@ module Scriptor {
             return null;
         }
 
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public include( filename : string ) : Script {
+            return null;
+        }
+
         public load( filename : string, watch : boolean = false ) : Script {
             filename = path.resolve( filename );
 
@@ -223,23 +228,20 @@ module Scriptor {
             super( filename, parent );
         }
 
-
-        public reference( filename : string ) : ScriptAdapter;
         public reference( filename : string, ...args : any[] ) : any {
+            return this.include( filename ).apply( args );
+        }
+
+        public include( filename : string ) : ScriptAdapter {
             var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
 
             var script : ScriptAdapter = this.manager.add( real_filename, true );
 
-            if( args.length > 0 ) {
-                return script.apply( args );
-
-            } else {
-                if( !script.loaded ) {
-                    script.reload();
-                }
-
-                return script;
+            if( !script.loaded ) {
+                script.reload();
             }
+
+            return script;
         }
     }
 
