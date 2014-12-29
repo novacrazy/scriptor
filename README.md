@@ -10,7 +10,7 @@ var Scriptor = require('scriptor');
 
 var app = express();
 
-var manager = new Scriptor.ScriptManager(module);
+var manager = new Scriptor.Manager(module);
 
 app.get('/scripts/*', function (req, res) {
 
