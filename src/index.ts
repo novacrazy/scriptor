@@ -234,6 +234,10 @@ module Scriptor {
                 return script.apply( args );
 
             } else {
+                if( !script.loaded ) {
+                    script.reload();
+                }
+
                 return script;
             }
         }
