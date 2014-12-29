@@ -228,7 +228,13 @@ var Scriptor;
                 args[_i - 1] = arguments[_i];
             }
             var real_filename = path.resolve( path.dirname( this.filename ), filename );
-            return this.manager.add( real_filename, true ).apply( args );
+            var script = this.manager.add( real_filename, true );
+            if( args.length > 0 ) {
+                return script.apply( args );
+            }
+            else {
+                return script;
+            }
         };
         return ScriptAdapter;
     })( Script );
