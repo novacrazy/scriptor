@@ -1,6 +1,6 @@
 {
   "name": "scriptor",
-  "version": "0.0.1-alpha.0",
+  "version": "0.2.1",
   "description": "A small utility used to control the dynamic loading and execution of scripts. It is meant to be used in larger servers as an alternative to running dynamically loaded code on the main server.",
   "main": "index.js",
   "keywords": [
@@ -10,8 +10,14 @@
   ],
   "author": "Aaron Trent <novacrazy@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/novacrazy/scriptor"
+  },
+  "bugs": {
+    "url": "https://github.com/novacrazy/scriptor/issues"
+  },
   "devDependencies": {
-    "debug": "^2.1.0",
     "grunt": "^0.4.5",
     "grunt-banner": "^0.2.3",
     "grunt-contrib-clean": "^0.6.0",
@@ -21,7 +27,7 @@
     "typescript": "^1.3.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha test"
   },
   "dependencies": {
     "amdefine": "^0.1.0"

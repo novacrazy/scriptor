@@ -229,7 +229,7 @@ var Scriptor;
                 args[_i - 1] = arguments[_i];
             }
             var real_filename = path.resolve( path.dirname( this.filename ), filename );
-            return this.manager.apply( real_filename, args );
+            return this.manager.add( real_filename, true ).apply( args );
         };
         return ScriptAdapter;
     })( Script );
@@ -248,7 +248,7 @@ var Scriptor;
             configurable: true
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
-            get:        function() {
+            get: function() {
                 return Object.freeze( this._scripts );
             },
             enumerable: true,

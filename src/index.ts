@@ -226,7 +226,7 @@ module Scriptor {
         public reference( filename : string, ...args : any[] ) : any {
             var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
 
-            return this.manager.apply( real_filename, args );
+            return this.manager.add( real_filename, true ).apply( args );
         }
     }
 
