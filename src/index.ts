@@ -260,7 +260,7 @@ module Scriptor {
         }
 
         public reference_once( filename : string, ...args : any[] ) : Referee {
-            return new Referee( this, args );
+            return new Referee( this.include( filename ), args );
         }
     }
 

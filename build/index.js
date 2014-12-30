@@ -253,7 +253,7 @@ var Scriptor;
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            return new Referee( this, args );
+            return new Referee( this.include( filename ), args );
         };
         return ScriptAdapter;
     })( Script );
@@ -270,13 +270,13 @@ var Scriptor;
         }
 
         Object.defineProperty( Referee.prototype, "value", {
-            get:          function() {
+            get:        function() {
                 if( !this.script.loaded ) {
                     this._value = this.script.apply( this._args );
                 }
                 return this._value;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         return Referee;

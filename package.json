@@ -1,6 +1,6 @@
 {
   "name": "scriptor",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "description": "A small utility used to control the dynamic loading and execution of scripts. It is meant to be used in larger servers as an alternative to running dynamically loaded code on the main server.",
   "main": "index.js",
   "keywords": [
