@@ -5,6 +5,7 @@
 import fs = require('fs');
 import assert = require('assert');
 import path = require('path');
+import events = require('events');
 
 import Module = require('./Module');
 import AMD = require('./define');
@@ -23,7 +24,7 @@ module Scriptor {
         define : AMD.IDefine;
     }
 
-    export class Script implements IScriptBase {
+    export class Script extends events.EventEmitter implements IScriptBase {
 
         private _script : IScriptModule;
         private _watcher : fs.FSWatcher = null;
@@ -70,6 +71,8 @@ module Scriptor {
         }
 
         constructor( filename? : string, parent : Module.IModule = this_module ) {
+            super();
+
             this._script = <any>(new Module.Module( null, parent ));
 
             if( filename != null ) {
@@ -87,7 +90,9 @@ module Scriptor {
 
             this._script.reference = this.reference.bind( this );
 
-            this._script.load( this._script.filename );
+            var loaded = this._script.load( this._script.filename );
+
+            this.emit( 'loaded', loaded );
         }
 
         //simply abuses TypeScript's variable arguments feature
@@ -179,6 +184,8 @@ module Scriptor {
                     } else if( event === 'rename' && filename != this.filename ) {
                         this._script.filename = filename;
                     }
+
+                    this.emit( 'change', event, filename );
                 } );
 
                 return true;

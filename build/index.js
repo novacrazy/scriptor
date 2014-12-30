@@ -17,16 +17,19 @@ var __extends = this.__extends || function(d, b) {
     };
 var fs = require('fs');
 var path = require('path');
+var events = require( 'events' );
 var Module = require('./Module');
 var AMD = require('./define');
 var Scriptor;
 (function (Scriptor) {
     Scriptor.this_module = module;
-    var Script = (function() {
+    var Script = (function(_super) {
+        __extends( Script, _super );
         function Script(filename, parent) {
             if( parent === void 0 ) {
                 parent = Scriptor.this_module;
             }
+            _super.call( this );
             this._watcher = null;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
@@ -99,7 +102,8 @@ var Scriptor;
             this._script.imports = Object.freeze( this.imports );
             this._script.define = AMD.amdefine( this._script );
             this._script.reference = this.reference.bind( this );
-            this._script.load( this._script.filename );
+            var loaded = this._script.load( this._script.filename );
+            this.emit( 'loaded', loaded );
         };
         //simply abuses TypeScript's variable arguments feature
         Script.prototype.call = function() {
@@ -181,6 +185,7 @@ var Scriptor;
                     else if( event === 'rename' && filename != _this.filename ) {
                         _this._script.filename = filename;
                     }
+                    _this.emit( 'change', event, filename );
                 } );
                 return true;
             }
@@ -217,7 +222,7 @@ var Scriptor;
             return false;
         };
         return Script;
-    })();
+    })( events.EventEmitter );
     Scriptor.Script = Script;
     var ScriptAdapter = (function(_super) {
         __extends( ScriptAdapter, _super );
