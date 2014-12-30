@@ -239,6 +239,8 @@ module Scriptor {
     }
 
     export class ScriptAdapter extends Script {
+        public referee : Referee = null;
+
         constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
         }
@@ -260,7 +262,16 @@ module Scriptor {
         }
 
         public reference_once( filename : string, ...args : any[] ) : Referee {
-            return new Referee( this.include( filename ), args );
+            var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
+
+            var script : ScriptAdapter = this.manager.add( real_filename, true );
+
+            if( script.referee != null ) {
+                return script.referee;
+
+            } else {
+                return new Referee( script, args );
+            }
         }
     }
 
@@ -271,6 +282,8 @@ module Scriptor {
             script.on( 'change', ( event : string, filename : string ) => {
                 this._value = this.script.apply( this._args );
             } );
+
+            script.referee = this;
         }
 
         get value() : any {

@@ -15,13 +15,13 @@ var __extends = this.__extends || function(d, b) {
         __.prototype = b.prototype;
         d.prototype = new __();
     };
-var fs = require('fs');
-var path = require('path');
+var fs = require( 'fs' );
+var path = require( 'path' );
 var events = require( 'events' );
-var Module = require('./Module');
-var AMD = require('./define');
+var Module = require( './Module' );
+var AMD = require( './define' );
 var Scriptor;
-(function (Scriptor) {
+(function(Scriptor) {
     Scriptor.this_module = module;
     var Script = (function(_super) {
         __extends( Script, _super );
@@ -39,46 +39,46 @@ var Scriptor;
         }
 
         Object.defineProperty( Script.prototype, "exports", {
-            get: function () {
+            get:        function() {
                 return this._script.exports;
             },
             enumerable: true,
             configurable: true
-        });
+        } );
         Object.defineProperty( Script.prototype, "id", {
-            get: function() {
+            get:        function() {
                 return this._script.id;
             },
             //Allow id to be set because it isn't very important
-            set: function(value) {
+            set:        function(value) {
                 this._script.id = value;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "children", {
-            get: function() {
+            get:        function() {
                 return this._script.children;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "parent", {
-            get: function() {
+            get:        function() {
                 return this._script.parent;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "loaded", {
-            get: function() {
+            get:        function() {
                 return this._script.loaded;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "watched", {
-            get: function() {
+            get:        function() {
                 return this._watcher != null;
             },
             enumerable: true,
@@ -86,7 +86,7 @@ var Scriptor;
         } );
         Object.defineProperty( Script.prototype, "filename", {
             //Only allow getting the filename, setting should be done through .load
-            get: function() {
+            get:        function() {
                 return this._script.filename;
             },
             enumerable: true,
@@ -231,6 +231,7 @@ var Scriptor;
         function ScriptAdapter(manager, filename, parent) {
             _super.call( this, filename, parent );
             this.manager = manager;
+            this.referee = null;
         }
 
         ScriptAdapter.prototype.reference = function(filename) {
@@ -253,7 +254,14 @@ var Scriptor;
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            return new Referee( this.include( filename ), args );
+            var real_filename = path.resolve( path.dirname( this.filename ), filename );
+            var script = this.manager.add( real_filename, true );
+            if( script.referee != null ) {
+                return script.referee;
+            }
+            else {
+                return new Referee( script, args );
+            }
         };
         return ScriptAdapter;
     })( Script );
@@ -267,6 +275,7 @@ var Scriptor;
             script.on( 'change', function(event, filename) {
                 _this._value = _this.script.apply( _this._args );
             } );
+            script.referee = this;
         }
 
         Object.defineProperty( Referee.prototype, "value", {
@@ -289,14 +298,14 @@ var Scriptor;
         }
 
         Object.defineProperty( Manager.prototype, "parent", {
-            get: function() {
+            get:        function() {
                 return this._parent;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
-            get: function() {
+            get:        function() {
                 return Object.freeze( this._scripts );
             },
             enumerable: true,
@@ -310,7 +319,7 @@ var Scriptor;
             return this.apply( filename, args );
         };
         Manager.prototype.apply = function(filename, args) {
-            filename = path.resolve(filename);
+            filename = path.resolve( filename );
             var script = this._scripts[filename];
             if( script == null ) {
                 return this.add( filename ).apply( args );
@@ -323,7 +332,7 @@ var Scriptor;
             if( watch === void 0 ) {
                 watch = false;
             }
-            filename = path.resolve(filename);
+            filename = path.resolve( filename );
             var script = this._scripts[filename];
             if( script == null ) {
                 script = new ScriptAdapter( this, filename, this._parent );
@@ -335,9 +344,9 @@ var Scriptor;
             return script;
         };
         Manager.prototype.remove = function(filename) {
-            filename = path.resolve(filename);
+            filename = path.resolve( filename );
             var script = this._scripts[filename];
-            if (script != null) {
+            if( script != null ) {
                 script.close();
                 return delete this._scripts[filename];
             }
@@ -359,5 +368,5 @@ var Scriptor;
         return Manager;
     })();
     Scriptor.Manager = Manager;
-})(Scriptor || (Scriptor = {}));
+})( Scriptor || (Scriptor = {}) );
 module.exports = Scriptor;
