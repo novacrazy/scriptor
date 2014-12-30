@@ -89,6 +89,7 @@ module Scriptor {
             this._script.define = AMD.amdefine( this._script );
 
             this._script.reference = this.reference.bind( this );
+            this._script.include = this.include.bind( this );
 
             var loaded = this._script.load( this._script.filename );
 
