@@ -102,6 +102,7 @@ var Scriptor;
             this._script.imports = Object.freeze( this.imports );
             this._script.define = AMD.amdefine( this._script );
             this._script.reference = this.reference.bind( this );
+            this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
             var loaded = this._script.load( this._script.filename );
             this.emit( 'loaded', loaded );
@@ -136,14 +137,14 @@ var Scriptor;
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         Script.prototype.reference = function(filename) {
-            var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
-            }
             return null;
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         Script.prototype.include = function(filename) {
+            return null;
+        };
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        Script.prototype.reference_once = function(filename) {
             return null;
         };
         Script.prototype.load = function(filename, watch) {
@@ -247,9 +248,40 @@ var Scriptor;
             }
             return script;
         };
+        ScriptAdapter.prototype.reference_once = function(filename) {
+            var args = [];
+            for( var _i = 1; _i < arguments.length; _i++ ) {
+                args[_i - 1] = arguments[_i];
+            }
+            return new Referee( this, args );
+        };
         return ScriptAdapter;
     })( Script );
     Scriptor.ScriptAdapter = ScriptAdapter;
+    var Referee = (function() {
+        function Referee(script, _args) {
+            var _this = this;
+            this.script = script;
+            this._args = _args;
+            this._value = null;
+            script.on( 'change', function(event, filename) {
+                _this._value = _this.script.apply( _this._args );
+            } );
+        }
+
+        Object.defineProperty( Referee.prototype, "value", {
+            get:          function() {
+                if( !this.script.loaded ) {
+                    this._value = this.script.apply( this._args );
+                }
+                return this._value;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        return Referee;
+    })();
+    Scriptor.Referee = Referee;
     var Manager = (function() {
         function Manager(grandParent) {
             this._scripts = {};

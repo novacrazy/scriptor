@@ -17,6 +17,7 @@ module Scriptor {
     export interface IScriptBase extends Module.IModulePublic {
         imports : {[key : string] : any};
         reference( filename : string, ...args : any[] ) : any;
+        reference_once( filename : string, ...args : any[] ) : Referee;
         include( filename : string ) : Script;
     }
 
@@ -89,6 +90,7 @@ module Scriptor {
             this._script.define = AMD.amdefine( this._script );
 
             this._script.reference = this.reference.bind( this );
+            this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
 
             var loaded = this._script.load( this._script.filename );
@@ -126,12 +128,17 @@ module Scriptor {
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference( filename : string, ...args : any[] ) : any {
+        public reference( filename : string ) : any {
             return null;
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         public include( filename : string ) : Script {
+            return null;
+        }
+
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public reference_once( filename : string ) : Referee {
             return null;
         }
 
@@ -250,6 +257,28 @@ module Scriptor {
             }
 
             return script;
+        }
+
+        public reference_once( filename : string, ...args : any[] ) : Referee {
+            return new Referee( this, args );
+        }
+    }
+
+    export class Referee {
+        private _value : any = null;
+
+        constructor( public script : ScriptAdapter, private _args : any[] ) {
+            script.on( 'change', ( event : string, filename : string ) => {
+                this._value = this.script.apply( this._args );
+            } );
+        }
+
+        get value() : any {
+            if( !this.script.loaded ) {
+                this._value = this.script.apply( this._args );
+            }
+
+            return this._value;
         }
     }
 
