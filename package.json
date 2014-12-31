@@ -1,6 +1,6 @@
 {
   "name": "scriptor",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A small utility used to control the dynamic loading and execution of scripts, with an emphasis on lazy evaluation.",
   "main": "index.js",
   "keywords": [

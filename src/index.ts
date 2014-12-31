@@ -191,7 +191,7 @@ module Scriptor {
                 } );
 
                 watcher.on( 'change', ( event : string, filename : string ) => {
-                    filename = path.resolve( path.dirname( this.filename ) + path.sep + filename );
+                    filename = path.resolve( path.dirname( this.filename ), filename );
 
                     if( event === 'change' && this.loaded ) {
                         this.unload();
@@ -230,6 +230,7 @@ module Scriptor {
                     var children : Module.IModule[] = this.parent.children;
 
                     for( var _i in children ) {
+                        //Find which child is this._script, delete it and remove the (now undefined) reference
                         if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
                             delete children[_i];
                             children.splice( _i, 1 );
@@ -266,6 +267,8 @@ module Scriptor {
 
         //This is kind of funny it's so simple
         public reference( filename : string, ...args : any[] ) : any {
+            //include is used instead of this.manager.apply because include takes into account
+            //relative includes/references
             return this.include( filename ).apply( args );
         }
 
@@ -275,7 +278,7 @@ module Scriptor {
 
             //Since add doesn't do anything to already existing scripts, but does return a script,
             //it can take care of the lookup or adding at the same time. Two birds with one lookup.
-            var script : ScriptAdapter = this.manager.add( real_filename, true );
+            var script : ScriptAdapter = this.manager.add( real_filename );
 
             //Since include can be used independently of reference, make sure it's loaded before returning
             //Otherwise, the returned script is in an incomplete state
@@ -292,8 +295,9 @@ module Scriptor {
 
             //I didn't want to use this.include because it forces evaluation.
             //With the Referee class, evaluation is only when .value is accessed
-            var script : ScriptAdapter = this.manager.add( real_filename, true );
+            var script : ScriptAdapter = this.manager.add( real_filename );
 
+            //Use the existing one in the script or create a new one (which will attach itself)
             if( script.referee != null ) {
                 return script.referee;
 
@@ -308,6 +312,9 @@ module Scriptor {
         private _ran : boolean = false;
 
         constructor( private _script : ScriptAdapter, private _args : any[] ) {
+            //Just mark this referee as not ran when a change occurs
+            //other things are free to reference this script and evaluate it,
+            //but this referee would still not be run
             _script.on( 'change', ( event : string, filename : string ) => {
                 this._ran = false;
             } );
@@ -364,6 +371,7 @@ module Scriptor {
 
             var script : ScriptAdapter = this._scripts[filename];
 
+            //By default add the script to the manager to make lookup faster in the future
             if( script == null ) {
                 return this.add( filename ).apply( args );
 
@@ -372,7 +380,11 @@ module Scriptor {
             }
         }
 
-        public add( filename : string, watch : boolean = false ) : ScriptAdapter {
+        //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
+        //but this functions as a way to add and/or get a script in one fell swoop.
+        //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
+        //from watching a file.
+        public add( filename : string, watch : boolean = true ) : ScriptAdapter {
             filename = path.resolve( filename );
 
             var script : ScriptAdapter = this._scripts[filename];
@@ -383,6 +395,8 @@ module Scriptor {
                 this._scripts[filename] = script;
             }
 
+            //Even if the script is added, this allows it to be watched, though not unwatched.
+            //Unwatching still has to be done manually
             if( watch ) {
                 script.watch();
             }
@@ -390,13 +404,19 @@ module Scriptor {
             return script;
         }
 
-        public remove( filename : string ) : boolean {
+        //Removes a script from the manager. But closing it permenantly is optional,
+        //as it may sometimes make sense to move it out of a manager and use it independently.
+        //However, that is quite rare so close defaults to true
+        public remove( filename : string, close : boolean = true ) : boolean {
             filename = path.resolve( filename );
 
             var script : ScriptAdapter = this._scripts[filename];
 
             if( script != null ) {
-                script.close();
+
+                if( close ) {
+                    script.close();
+                }
 
                 return delete this._scripts[filename];
             }
@@ -410,14 +430,19 @@ module Scriptor {
             return this._scripts[filename];
         }
 
-        public clear() {
+        //Make closing optional for the same reason as .remove
+        public clear( close : boolean = true ) {
             for( var _i in this._scripts ) {
                 if( this._scripts.hasOwnProperty( _i ) ) {
-                    this._scripts[_i].close();
+                    if( close ) {
+                        this._scripts[_i].close();
+                    }
+
                     delete this._scripts[_i];
                 }
             }
 
+            //Set _scripts to a clean object
             this._scripts = {};
         }
     }
