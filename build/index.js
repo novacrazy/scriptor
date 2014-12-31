@@ -32,6 +32,7 @@ var Scriptor;
             _super.call( this );
             this._watcher = null;
             this.imports = {};
+            //Create a new Module without an id. It will be set later
             this._script = (new Module.Module( null, parent ));
             if( filename != null ) {
                 this.load( filename );
@@ -39,46 +40,46 @@ var Scriptor;
         }
 
         Object.defineProperty( Script.prototype, "exports", {
-            get:        function() {
+            get: function() {
                 return this._script.exports;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "id", {
-            get:        function() {
+            get: function() {
                 return this._script.id;
             },
             //Allow id to be set because it isn't very important
-            set:        function(value) {
+            set: function(value) {
                 this._script.id = value;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "children", {
-            get:        function() {
+            get: function() {
                 return this._script.children;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "parent", {
-            get:        function() {
+            get: function() {
                 return this._script.parent;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "loaded", {
-            get:        function() {
+            get: function() {
                 return this._script.loaded;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "watched", {
-            get:        function() {
+            get: function() {
                 return this._watcher != null;
             },
             enumerable: true,
@@ -86,7 +87,7 @@ var Scriptor;
         } );
         Object.defineProperty( Script.prototype, "filename", {
             //Only allow getting the filename, setting should be done through .load
-            get:        function() {
+            get: function() {
                 return this._script.filename;
             },
             enumerable: true,
@@ -100,14 +101,18 @@ var Scriptor;
             this._script.loaded = false;
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
+            //This creates a new define function every time the script is loaded
+            //attempting to reuse an old one complained about duplicate internal state and so forth
             this._script.define = AMD.amdefine( this._script );
+            //bind all these to this because calling them inside the script might do something weird.
+            //probably not, but still
             this._script.reference = this.reference.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
-            var loaded = this._script.load( this._script.filename );
-            this.emit( 'loaded', loaded );
+            this._script.load( this._script.filename );
+            this.emit( 'loaded', this.loaded );
         };
-        //simply abuses TypeScript's variable arguments feature
+        //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
         Script.prototype.call = function() {
             var args = [];
             for( var _i = 0; _i < arguments.length; _i++ ) {
@@ -115,6 +120,7 @@ var Scriptor;
             }
             return this.apply( args );
         };
+        //This is kept small because the try-catch block prevents any optimization
         Script.prototype.apply = function(args) {
             if( !this.loaded ) {
                 this.do_load();
@@ -159,6 +165,7 @@ var Scriptor;
             }
             //Although this seems counter-intuitive,
             //the lazy loading dictates it must be in an unloaded state before a new script is compiled/run
+            //This is a just-in-case thing in-case the module was already loaded when .load was called
             this.unload();
             return this;
         };
@@ -185,7 +192,17 @@ var Scriptor;
                         _this.unload();
                     }
                     else if( event === 'rename' && filename != _this.filename ) {
-                        _this._script.filename = filename;
+                        //filename will be null if the file was deleted
+                        if( filename != null ) {
+                            //A simple rename doesn't change file content, so just change the filename
+                            //and leave the script loaded
+                            _this._script.filename = filename;
+                        }
+                        else {
+                            //if the file was deleted, there is nothing we can do so just mark it unloaded.
+                            //The next call to do_load will give an error akin to require's errors
+                            _this.unload();
+                        }
                     }
                     _this.emit( 'change', event, filename );
                 } );
@@ -217,6 +234,7 @@ var Scriptor;
         };
         Script.prototype.unwatch = function() {
             if( this.watched ) {
+                //close the watched and null it to allow the GC to collect it
                 this._watcher.close();
                 this._watcher = null;
                 return true;
@@ -231,9 +249,11 @@ var Scriptor;
         function ScriptAdapter(manager, filename, parent) {
             _super.call( this, filename, parent );
             this.manager = manager;
+            //If the script is referred to by reference_once, this is set, allowing it to keep track of this script
             this.referee = null;
         }
 
+        //This is kind of funny it's so simple
         ScriptAdapter.prototype.reference = function(filename) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
@@ -242,19 +262,27 @@ var Scriptor;
             return this.include( filename ).apply( args );
         };
         ScriptAdapter.prototype.include = function(filename) {
+            //make sure filename can be relative to the current script
             var real_filename = path.resolve( path.dirname( this.filename ), filename );
+            //Since add doesn't do anything to already existing scripts, but does return a script,
+            //it can take care of the lookup or adding at the same time. Two birds with one lookup.
             var script = this.manager.add( real_filename, true );
+            //Since include can be used independently of reference, make sure it's loaded before returning
+            //Otherwise, the returned script is in an incomplete state
             if( !script.loaded ) {
                 script.reload();
             }
             return script;
         };
+        //Basically, whatever arguments you give this the first time it's called is all you get
         ScriptAdapter.prototype.reference_once = function(filename) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
             var real_filename = path.resolve( path.dirname( this.filename ), filename );
+            //I didn't want to use this.include because it forces evaluation.
+            //With the Referee class, evaluation is only when .value is accessed
             var script = this.manager.add( real_filename, true );
             if( script.referee != null ) {
                 return script.referee;
@@ -267,25 +295,45 @@ var Scriptor;
     })( Script );
     Scriptor.ScriptAdapter = ScriptAdapter;
     var Referee = (function() {
-        function Referee(script, _args) {
+        function Referee(_script, _args) {
             var _this = this;
-            this.script = script;
+            this._script = _script;
             this._args = _args;
             this._value = null;
-            script.on( 'change', function(event, filename) {
-                _this._value = _this.script.apply( _this._args );
+            this._ran = false;
+            _script.on( 'change', function(event, filename) {
+                _this._ran = false;
             } );
-            script.referee = this;
+            _script.referee = this;
         }
 
         Object.defineProperty( Referee.prototype, "value", {
-            get:        function() {
-                if( !this.script.loaded ) {
-                    this._value = this.script.apply( this._args );
+            get: function() {
+                //Evaluation should only be performed here.
+                //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
+                //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
+                //of where else it has been evaluated
+                if( !this._ran || !this._script.loaded ) {
+                    this._value = this._script.apply( this._args );
                 }
                 return this._value;
             },
             enumerable: true,
+            configurable: true
+        } );
+        Object.defineProperty( Referee.prototype, "ran", {
+            get:          function() {
+                return this._ran;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( Referee.prototype, "script", {
+            //Just to make it so Referee.script = include('something else') is impossible
+            get:          function() {
+                return this._script;
+            },
+            enumerable:   true,
             configurable: true
         } );
         return Referee;
@@ -298,14 +346,14 @@ var Scriptor;
         }
 
         Object.defineProperty( Manager.prototype, "parent", {
-            get:        function() {
+            get: function() {
                 return this._parent;
             },
             enumerable: true,
             configurable: true
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
-            get:        function() {
+            get: function() {
                 return Object.freeze( this._scripts );
             },
             enumerable: true,
