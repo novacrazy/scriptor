@@ -17,6 +17,7 @@ module Scriptor {
     export interface IScriptBase extends Module.IModulePublic {
         imports : {[key : string] : any};
         reference( filename : string, ...args : any[] ) : any;
+        reference_apply( filename : string, args : any[] ) : any;
         reference_once( filename : string, ...args : any[] ) : Referee;
         include( filename : string ) : Script;
     }
@@ -95,6 +96,7 @@ module Scriptor {
             //bind all these to this because calling them inside the script might do something weird.
             //probably not, but still
             this._script.reference = this.reference.bind( this );
+            this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
 
@@ -139,12 +141,17 @@ module Scriptor {
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public include( filename : string ) : Script {
+        public reference_apply( filename : string, args : any[] ) : any {
             return null;
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         public reference_once( filename : string ) : Referee {
+            return null;
+        }
+
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public include( filename : string ) : Script {
             return null;
         }
 
@@ -207,11 +214,26 @@ module Scriptor {
                             //if the file was deleted, there is nothing we can do so just mark it unloaded.
                             //The next call to do_load will give an error akin to require's errors
                             this.unload();
+                            this.unwatch();
+
+                            this._script.filename = null;
                         }
                     }
 
                     this.emit( 'change', event, filename );
                 } );
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public unwatch() : boolean {
+            if( this.watched ) {
+                //close the watched and null it to allow the GC to collect it
+                this._watcher.close();
+                this._watcher = null;
 
                 return true;
             }
@@ -243,18 +265,6 @@ module Scriptor {
                 this._script = null;
             }
         }
-
-        public unwatch() : boolean {
-            if( this.watched ) {
-                //close the watched and null it to allow the GC to collect it
-                this._watcher.close();
-                this._watcher = null;
-
-                return true;
-            }
-
-            return false;
-        }
     }
 
     export class ScriptAdapter extends Script {
@@ -265,28 +275,16 @@ module Scriptor {
             super( filename, parent );
         }
 
+        //Again just taking advantage of TypeScript's variable arguments
+        public reference( filename : string, ...args : any[] ) {
+            return this.reference_apply( filename, args );
+        }
+
         //This is kind of funny it's so simple
-        public reference( filename : string, ...args : any[] ) : any {
+        public reference_apply( filename : string, args : any[] ) : any {
             //include is used instead of this.manager.apply because include takes into account
             //relative includes/references
             return this.include( filename ).apply( args );
-        }
-
-        public include( filename : string ) : ScriptAdapter {
-            //make sure filename can be relative to the current script
-            var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
-
-            //Since add doesn't do anything to already existing scripts, but does return a script,
-            //it can take care of the lookup or adding at the same time. Two birds with one lookup.
-            var script : ScriptAdapter = this.manager.add( real_filename );
-
-            //Since include can be used independently of reference, make sure it's loaded before returning
-            //Otherwise, the returned script is in an incomplete state
-            if( !script.loaded ) {
-                script.reload();
-            }
-
-            return script;
         }
 
         //Basically, whatever arguments you give this the first time it's called is all you get
@@ -305,6 +303,23 @@ module Scriptor {
                 return new Referee( script, args );
             }
         }
+
+        public include( filename : string ) : ScriptAdapter {
+            //make sure filename can be relative to the current script
+            var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
+
+            //Since add doesn't do anything to already existing scripts, but does return a script,
+            //it can take care of the lookup or adding at the same time. Two birds with one lookup.
+            var script : ScriptAdapter = this.manager.add( real_filename );
+
+            //Since include can be used independently of reference, make sure it's loaded before returning
+            //Otherwise, the returned script is in an incomplete state
+            if( !script.loaded ) {
+                script.reload();
+            }
+
+            return script;
+        }
     }
 
     export class Referee {
@@ -322,13 +337,15 @@ module Scriptor {
             _script.referee = this;
         }
 
-        get value() : any {
+        public value() : any {
             //Evaluation should only be performed here.
             //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
             //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
             //of where else it has been evaluated
             if( !this._ran || !this._script.loaded ) {
                 this._value = this._script.apply( this._args );
+
+                this._ran = true;
             }
 
             return this._value;
@@ -360,24 +377,6 @@ module Scriptor {
 
         constructor( grandParent? : Module.IModule ) {
             this._parent = new Module.Module( 'ScriptManager', grandParent );
-        }
-
-        public run( filename : string, ...args : any[] ) : any {
-            return this.apply( filename, args );
-        }
-
-        public apply( filename : string, args : any[] ) : any {
-            filename = path.resolve( filename );
-
-            var script : ScriptAdapter = this._scripts[filename];
-
-            //By default add the script to the manager to make lookup faster in the future
-            if( script == null ) {
-                return this.add( filename ).apply( args );
-
-            } else {
-                return script.apply( args );
-            }
         }
 
         //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
@@ -422,6 +421,39 @@ module Scriptor {
             }
 
             return false;
+        }
+
+        public call( filename : string, ...args : any[] ) : any {
+            return this.apply( filename, args );
+        }
+
+        public apply( filename : string, args : any[] ) : any {
+            filename = path.resolve( filename );
+
+            var script : ScriptAdapter = this._scripts[filename];
+
+            //By default add the script to the manager to make lookup faster in the future
+            if( script == null ) {
+                return this.add( filename ).apply( args );
+
+            } else {
+                return script.apply( args );
+            }
+        }
+
+        public once( filename : string, ...args : any[] ) : Referee {
+            return this.once_apply( filename, args );
+        }
+
+        public once_apply( filename : string, args : any[] ) : Referee {
+            var script : ScriptAdapter = this.add( filename );
+
+            if( script.referee != null ) {
+                return script.referee;
+
+            } else {
+                return new Referee( script, args );
+            }
         }
 
         public get( filename : string ) : ScriptAdapter {

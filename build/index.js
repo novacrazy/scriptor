@@ -107,6 +107,7 @@ var Scriptor;
             //bind all these to this because calling them inside the script might do something weird.
             //probably not, but still
             this._script.reference = this.reference.bind( this );
+            this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
             this._script.load( this._script.filename );
@@ -146,11 +147,15 @@ var Scriptor;
             return null;
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
-        Script.prototype.include = function(filename) {
+        Script.prototype.reference_apply = function(filename, args) {
             return null;
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         Script.prototype.reference_once = function(filename) {
+            return null;
+        };
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        Script.prototype.include = function(filename) {
             return null;
         };
         Script.prototype.load = function(filename, watch) {
@@ -202,10 +207,21 @@ var Scriptor;
                             //if the file was deleted, there is nothing we can do so just mark it unloaded.
                             //The next call to do_load will give an error akin to require's errors
                             _this.unload();
+                            _this.unwatch();
+                            _this._script.filename = null;
                         }
                     }
                     _this.emit( 'change', event, filename );
                 } );
+                return true;
+            }
+            return false;
+        };
+        Script.prototype.unwatch = function() {
+            if( this.watched ) {
+                //close the watched and null it to allow the GC to collect it
+                this._watcher.close();
+                this._watcher = null;
                 return true;
             }
             return false;
@@ -233,15 +249,6 @@ var Scriptor;
                 this._script = null;
             }
         };
-        Script.prototype.unwatch = function() {
-            if( this.watched ) {
-                //close the watched and null it to allow the GC to collect it
-                this._watcher.close();
-                this._watcher = null;
-                return true;
-            }
-            return false;
-        };
         return Script;
     })( events.EventEmitter );
     Scriptor.Script = Script;
@@ -253,28 +260,20 @@ var Scriptor;
             //If the script is referred to by reference_once, this is set, allowing it to keep track of this script
             this.referee = null;
         }
-        //This is kind of funny it's so simple
+
+        //Again just taking advantage of TypeScript's variable arguments
         ScriptAdapter.prototype.reference = function(filename) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
+            return this.reference_apply( filename, args );
+        };
+        //This is kind of funny it's so simple
+        ScriptAdapter.prototype.reference_apply = function(filename, args) {
             //include is used instead of this.manager.apply because include takes into account
             //relative includes/references
             return this.include( filename ).apply( args );
-        };
-        ScriptAdapter.prototype.include = function(filename) {
-            //make sure filename can be relative to the current script
-            var real_filename = path.resolve( path.dirname( this.filename ), filename );
-            //Since add doesn't do anything to already existing scripts, but does return a script,
-            //it can take care of the lookup or adding at the same time. Two birds with one lookup.
-            var script = this.manager.add( real_filename );
-            //Since include can be used independently of reference, make sure it's loaded before returning
-            //Otherwise, the returned script is in an incomplete state
-            if( !script.loaded ) {
-                script.reload();
-            }
-            return script;
         };
         //Basically, whatever arguments you give this the first time it's called is all you get
         ScriptAdapter.prototype.reference_once = function(filename) {
@@ -293,6 +292,19 @@ var Scriptor;
             else {
                 return new Referee( script, args );
             }
+        };
+        ScriptAdapter.prototype.include = function(filename) {
+            //make sure filename can be relative to the current script
+            var real_filename = path.resolve( path.dirname( this.filename ), filename );
+            //Since add doesn't do anything to already existing scripts, but does return a script,
+            //it can take care of the lookup or adding at the same time. Two birds with one lookup.
+            var script = this.manager.add( real_filename );
+            //Since include can be used independently of reference, make sure it's loaded before returning
+            //Otherwise, the returned script is in an incomplete state
+            if( !script.loaded ) {
+                script.reload();
+            }
+            return script;
         };
         return ScriptAdapter;
     })( Script );
@@ -313,22 +325,19 @@ var Scriptor;
             _script.referee = this;
         }
 
-        Object.defineProperty( Referee.prototype, "value", {
-            get: function() {
-                //Evaluation should only be performed here.
-                //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
-                //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
-                //of where else it has been evaluated
-                if( !this._ran || !this._script.loaded ) {
-                    this._value = this._script.apply( this._args );
-                }
-                return this._value;
-            },
-            enumerable: true,
-            configurable: true
-        } );
+        Referee.prototype.value = function() {
+            //Evaluation should only be performed here.
+            //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
+            //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
+            //of where else it has been evaluated
+            if( !this._ran || !this._script.loaded ) {
+                this._value = this._script.apply( this._args );
+                this._ran = true;
+            }
+            return this._value;
+        };
         Object.defineProperty( Referee.prototype, "ran", {
-            get:        function() {
+            get: function() {
                 return this._ran;
             },
             enumerable: true,
@@ -336,7 +345,7 @@ var Scriptor;
         } );
         Object.defineProperty( Referee.prototype, "script", {
             //Just to make it so Referee.script = include('something else') is impossible
-            get:        function() {
+            get: function() {
                 return this._script;
             },
             enumerable: true,
@@ -365,24 +374,6 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
-        Manager.prototype.run = function(filename) {
-            var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
-            }
-            return this.apply( filename, args );
-        };
-        Manager.prototype.apply = function(filename, args) {
-            filename = path.resolve( filename );
-            var script = this._scripts[filename];
-            //By default add the script to the manager to make lookup faster in the future
-            if( script == null ) {
-                return this.add( filename ).apply( args );
-            }
-            else {
-                return script.apply( args );
-            }
-        };
         //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
         //but this functions as a way to add and/or get a script in one fell swoop.
         //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
@@ -420,6 +411,40 @@ var Scriptor;
                 return delete this._scripts[filename];
             }
             return false;
+        };
+        Manager.prototype.call = function(filename) {
+            var args = [];
+            for( var _i = 1; _i < arguments.length; _i++ ) {
+                args[_i - 1] = arguments[_i];
+            }
+            return this.apply( filename, args );
+        };
+        Manager.prototype.apply = function(filename, args) {
+            filename = path.resolve( filename );
+            var script = this._scripts[filename];
+            //By default add the script to the manager to make lookup faster in the future
+            if( script == null ) {
+                return this.add( filename ).apply( args );
+            }
+            else {
+                return script.apply( args );
+            }
+        };
+        Manager.prototype.once = function(filename) {
+            var args = [];
+            for( var _i = 1; _i < arguments.length; _i++ ) {
+                args[_i - 1] = arguments[_i];
+            }
+            return this.once_apply( filename, args );
+        };
+        Manager.prototype.once_apply = function(filename, args) {
+            var script = this.add( filename );
+            if( script.referee != null ) {
+                return script.referee;
+            }
+            else {
+                return new Referee( script, args );
+            }
         };
         Manager.prototype.get = function(filename) {
             filename = path.resolve( filename );
