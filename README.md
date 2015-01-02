@@ -1,6 +1,9 @@
 Scriptor
 ========
 
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+
 ## Introduction
 
 Scriptor is a small library for dynamically loading, reloading and running scripts without having to restart the process.
@@ -72,7 +75,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
 
 ##Script
 
-A Script is the central part of this system. It represents a single executable script, and manages modules, file changes and cleanup of the script. It also takes care of injecting the extra values into `module` when compiled.
+A Script is the central part of Scriptor. It represents a single executable script, and manages modules, file changes and cleanup of the script. It also takes care of injecting the extra values into `module` when compiled.
 
 #####`new Script(filename? : string, parent? : Module)` -> `Script`
 
@@ -84,7 +87,7 @@ Example:
 
     var script = new Scriptor.Script('something.js');
 
-    var res = script.call(1, 2, 3);
+    var result = script.call(some, arguments, here);
 ```
 
 If `filename` is given, the constructor calls `.load` for you with that filename.
@@ -95,7 +98,7 @@ If `filename` is given, the constructor calls `.load` for you with that filename
 
 Since Scriptor emphasizes lazy evaluation, all `.load` really does is mark the script instance as not loaded and tells it to load and evaluate `filename` whenever it is needed. So this operation has no performance hit.
 
-It does set `.id` to the basename of this filename given, but that can be overwritten manually anytime after.
+It does set `.id` to the basename of this filename given, but that can be overwritten manually anytime after. See the documentation of [`.id`](#id---string) for more on that.
 
 If `watch` is true, a file watcher is spawned to watch the script for changes. For more information on how Scriptor handles this situation, refer to [`.watch`](#watch).
 
@@ -147,7 +150,7 @@ Used together, `.call` and `.apply` can generally satisfy any common way of eval
 
 #####`.require(path : string)` -> `any`
 
-This simply mirrors the native `require` function used within the script.
+This is an alias to the native `require` function used within the script.
 
 <hr>
 
@@ -165,7 +168,7 @@ To permanently close a script and make it unusable so it can be garbage collecte
 
 #####`.reload()` -> `boolean`
 
-WARNING: Usage of this function is not recommended. Use `.unload` if possible.
+**_WARNING_**: Usage of this function is not recommended. Use `.unload` if possible.
 
 `.reload` forces re-loading and re-evaluation of the script, synchronously. It's the only function that is not lazy, hence why it is not recommended. However, it can have use in some rare conditions. It is still recommended to use `.unload` to achieve the same end lazily.
 
@@ -216,7 +219,7 @@ This attribute is a simple identifier used by the Node.js module system for stuf
 Example:
 ```javascript
 
-var script = new Scriptor.Script('something.js);
+var script = new Scriptor.Script('something.js');
 
 script.id = "My Script";
 
@@ -468,6 +471,10 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.0.1
+* Fixed a few typos in README.md
+* Added npm badges
+
 #####1.0.0
 
 * First full release
@@ -478,3 +485,8 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 #####pre-1.0.0
 * development
+
+[npm-image]: https://img.shields.io/npm/v/scriptor.svg?style=flat
+[npm-url]: https://npmjs.org/package/scriptor
+[downloads-image]: https://img.shields.io/npm/dm/scriptor.svg?style=flat
+[downloads-url]: https://npmjs.org/package/scriptor
