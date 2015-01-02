@@ -6,21 +6,19 @@ Scriptor
 
 ## Introduction
 
-Scriptor is a small library for dynamically loading, reloading and running scripts without having to restart the process.
+Scriptor is a small library for dynamically loading, reloading and running scripts without having to restart the process, with built-in support for file watching to automatically reload when necessary.
 
-A Script is defined as a file which can be 'required' by Node, be it a `.js`, `.json`, or any other installed extension.
+A script is defined as a file which can be 'required' by Node, be it a `.js`, `.json`, or any other installed extension. Even binary '.node' extensions are supported.
 
-It does this by exploiting the `module` module's classes and functions that Node uses internally. The only downside to this is that it compiles the scripts synchronously. So to make the impact of this as little as possible, all compilation and evaluation of scripts is done lazily. That means even if you create a Script instance, it will not load or compile the script until it is actually needed.
+Scriptor does this by exploiting the `module` module's classes and functions that Node uses internally. The only downside to this is that it compiles the scripts synchronously. So to make the impact of this as little as possible, all compilation and evaluation of scripts is done lazily. That means even if you create a Script instance, it will not load or compile the script until it is actually needed.
 
 Additionally, with the use of the Manager class, Scriptor provides a way of referencing and calling other scripts relative to itself, allowing you to chain together complex tasks easily.
-
-Scriptor will also watch files for changes and reload the scripts (albeit lazily), when said file changes, allowing for scripts that run up-to-date code.
 
 ## Purpose
 
 The original purpose for this system was to create a framework for writing simple scripts that generate web pages. That is still in development, but being able to separate out, reuse and update code without having to restart my server process was key.
 
-# Documentation
+## Documentation
 
 All documentation for this project is in TypeScript syntax for typed parameters.
 
@@ -64,7 +62,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.remove(filename : string, close? : boolean)`](#removefilename--string-close--boolean---boolean)
     - [`.call(filename : string, ...args : any[])`](#callfilename--string-args--any---any)
     - [`.apply(filename : string, args : any[])`](#applyfilename--string-args--any---any)
-    - [`.once(filename : string, ...args: any[])`](#oncefilename--string-args-any---referee)
+    - [`.once(filename : string, ...args : any[])`](#oncefilename--string-args--any---referee)
     - [`.once_apply(filename : string, args : any[])`](#once_applyfilename--string-args--any---referee)
     - [`.get(filename : string)`](#getfilename--string---script)
     - [`.clear(close? : boolean)`](#clearclose--boolean)
@@ -135,7 +133,7 @@ var React = require('react');
 
 var hello = new Scriptor.Script('HelloMessage.js');
 
-var html = React.renderToStaticMarkup(React.createComponent(hello.call(), {name: "John"}));
+var html = React.renderToStaticMarkup(React.createElement(hello.call(), {name: "John"}));
 ```
 
 <hr>
@@ -423,7 +421,7 @@ Equivalent to `.add(filename).apply(args)`
 
 <hr>
 
-#####`.once(filename : string, ...args: any[])` -> `Referee`
+#####`.once(filename : string, ...args : any[])` -> `Referee`
 
 Although this has the same effect as `reference_once` from a Script instance, it's adapted for use in the Manager. It behaves exactly the same otherwise.
 
@@ -470,6 +468,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.0.2
+* README fixes
 
 #####1.0.1
 * Fixed a few typos in README.md
