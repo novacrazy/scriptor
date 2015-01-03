@@ -503,9 +503,9 @@ console.log(abc.value());
 
 The above example prints out:
 ```json
-{ Hello: 'World!',
-  'So long': 'And thanks for the fish',
-  Goodbye: 'Hello' }
+{ "Hello": "World!",
+  "So long": "And thanks for the fish",
+  "Goodbye": "Hello" }
 ```
 
 And the structure of referees inside it is this:
@@ -588,9 +588,9 @@ console.log(abc.value());
 
 The above example prints out:
 ```json
-{ Hello: 'World!',
-  'So long': 'And thanks for the fish',
-  Goodbye: 'Hello' }
+{ "Hello": "World!",
+  "So long": "And thanks for the fish",
+  "Goodbye": "Hello" }
 ```
 
 Using the static join method might help understand the implicit tree structure a bit more.
