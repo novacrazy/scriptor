@@ -35,7 +35,7 @@ module Scriptor {
 
         public imports : {[key : string] : any} = {};
 
-        get exports() : {[key : string] : any} {
+        get exports() : any {
             return this._script.exports;
         }
 
@@ -125,7 +125,7 @@ module Scriptor {
             try {
                 //Just in case, always use recursion protection
                 if( this._recurse++ > this._maxRecursion ) {
-                    throw new RangeError( "Script recursion limit reached" );
+                    throw new RangeError( 'Script recursion limit reached' );
                 }
 
                 if( !this.loaded ) {
@@ -401,18 +401,33 @@ module Scriptor {
             return this._script;
         }
 
+        //Static
+        static join( left : IReferee, right : IReferee, transform? : ITransform ) {
+            return new JoinedReferee( left, right, transform );
+        }
+
+        //Instance
         public join( ref : IReferee, transform? : ITransform ) : JoinedReferee {
-            return new JoinedReferee( ref, this, transform );
+            return Referee.join( this, ref, transform );
+        }
+
+        public left() : IReferee {
+            return this;
+        }
+
+        public right() : IReferee {
+            return null;
         }
     }
 
     export class JoinedReferee extends RefereeBase implements IReferee {
-        constructor( private _prev : IReferee, private _ref : IReferee,
+        constructor( private _left : IReferee, private _right : IReferee,
                      private _transform : ITransform = default_transform ) {
             super();
 
             //Just to prevent stupid mistakes
-            assert.notEqual( _prev, _ref, "Cannot join to self" );
+            assert.notEqual( _left, _right, 'Cannot join to self' );
+            assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this
@@ -422,14 +437,14 @@ module Scriptor {
                 this._ran = false;
             };
 
-            _prev.on( 'change', onChange );
-            _ref.on( 'change', onChange );
+            _left.on( 'change', onChange );
+            _right.on( 'change', onChange );
         }
 
         public value() : any {
             //If anything needs to be re-run, re-run it
-            if( !(this._ran && this._prev.ran && this._ref.ran) ) {
-                this._value = this._transform( this._prev, this._ref );
+            if( !(this._ran && this._left.ran && this._right.ran) ) {
+                this._value = this._transform( this._left, this._right );
 
                 this._ran = true;
             }
@@ -441,17 +456,22 @@ module Scriptor {
             return this._ran;
         }
 
+        //Static
+        static join( left : IReferee, right : IReferee, transform? : ITransform ) {
+            return new JoinedReferee( left, right, transform );
+        }
+
+        //Instance
         public join( ref : IReferee, transform? : ITransform ) : JoinedReferee {
-            return new JoinedReferee( ref, this, transform );
+            return JoinedReferee.join( this, ref, transform );
         }
 
-        //This two aren't in the docs, but might be useful at some point.
-        get prev() : IReferee {
-            return this._prev;
+        public left() : IReferee {
+            return this._left;
         }
 
-        get ref() : IReferee {
-            return this._ref;
+        public right() : IReferee {
+            return this._right;
         }
     }
 

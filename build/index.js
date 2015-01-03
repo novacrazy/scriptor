@@ -97,13 +97,13 @@ var Scriptor;
             configurable: true
         } );
         Object.defineProperty( Script.prototype, "maxRecursion", {
-            get:          function() {
+            get:        function() {
                 return this._maxRecursion;
             },
-            set:          function(value) {
+            set:        function(value) {
                 this._maxRecursion = value | 0;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
         //Basically an alias for the real script's require
@@ -139,7 +139,7 @@ var Scriptor;
             try {
                 //Just in case, always use recursion protection
                 if( this._recurse++ > this._maxRecursion ) {
-                    throw new RangeError( "Script recursion limit reached" );
+                    throw new RangeError( 'Script recursion limit reached' );
                 }
                 if( !this.loaded ) {
                     this.do_load();
@@ -339,7 +339,6 @@ var Scriptor;
             this._value = null;
             this._ran = false;
         }
-
         return RefereeBase;
     })( events.EventEmitter );
     Scriptor.RefereeBase = RefereeBase;
@@ -388,68 +387,76 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
+        //Static
+        Referee.join = function(left, right, transform) {
+            return new JoinedReferee( left, right, transform );
+        };
+        //Instance
         Referee.prototype.join = function(ref, transform) {
-            return new JoinedReferee( ref, this, transform );
+            return Referee.join( this, ref, transform );
+        };
+        Referee.prototype.left = function() {
+            return this;
+        };
+        Referee.prototype.right = function() {
+            return null;
         };
         return Referee;
     })( RefereeBase );
     Scriptor.Referee = Referee;
     var JoinedReferee = (function(_super) {
         __extends( JoinedReferee, _super );
-        function JoinedReferee(_prev, _ref, _transform) {
+        function JoinedReferee(_left, _right, _transform) {
             var _this = this;
             if( _transform === void 0 ) {
                 _transform = Scriptor.default_transform;
             }
             _super.call( this );
-            this._prev = _prev;
-            this._ref = _ref;
+            this._left = _left;
+            this._right = _right;
             this._transform = _transform;
             //Just to prevent stupid mistakes
-            assert.notEqual( _prev, _ref, "Cannot join to self" );
+            assert.notEqual( _left, _right, 'Cannot join to self' );
+            assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this
             var onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
             };
-            _prev.on( 'change', onChange );
-            _ref.on( 'change', onChange );
+            _left.on( 'change', onChange );
+            _right.on( 'change', onChange );
         }
 
         JoinedReferee.prototype.value = function() {
             //If anything needs to be re-run, re-run it
-            if( !(this._ran && this._prev.ran && this._ref.ran) ) {
-                this._value = this._transform( this._prev, this._ref );
+            if( !(this._ran && this._left.ran && this._right.ran) ) {
+                this._value = this._transform( this._left, this._right );
                 this._ran = true;
             }
             return this._value;
         };
         Object.defineProperty( JoinedReferee.prototype, "ran", {
-            get:          function() {
+            get:        function() {
                 return this._ran;
             },
-            enumerable:   true,
+            enumerable: true,
             configurable: true
         } );
-        JoinedReferee.prototype.join = function(ref, transform) {
-            return new JoinedReferee( ref, this, transform );
+        //Static
+        JoinedReferee.join = function(left, right, transform) {
+            return new JoinedReferee( left, right, transform );
         };
-        Object.defineProperty( JoinedReferee.prototype, "prev", {
-            //This two aren't in the docs, but might be useful at some point.
-            get:          function() {
-                return this._prev;
-            },
-            enumerable:   true,
-            configurable: true
-        } );
-        Object.defineProperty( JoinedReferee.prototype, "ref", {
-            get:          function() {
-                return this._ref;
-            },
-            enumerable:   true,
-            configurable: true
-        } );
+        //Instance
+        JoinedReferee.prototype.join = function(ref, transform) {
+            return JoinedReferee.join( this, ref, transform );
+        };
+        JoinedReferee.prototype.left = function() {
+            return this._left;
+        };
+        JoinedReferee.prototype.right = function() {
+            return this._right;
+        };
         return JoinedReferee;
     })( RefereeBase );
     Scriptor.JoinedReferee = JoinedReferee;

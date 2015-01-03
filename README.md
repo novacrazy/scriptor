@@ -60,6 +60,9 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.value()`](#value---any)
     - [`.ran`](#ran---boolean)
     - [`.join(ref : Referee, transform? : Function)`](#joinref--referee-transform--function---referee)
+    - [`.left()`](#left---referee)
+    - [`.right()`](#right---referee)
+    - [`Referee.join(left : Referee, right : Referee, transform? : Function)`](#refereejoinleft--referee-right--referee-transform--function---referee)
 
 - [Manager](#manager)
     - [`new Manager(grandParent? : Module)`](#new-managergrandparent--module---manager)
@@ -277,7 +280,7 @@ Returns the filename of the script. If no file has been given or the file has be
 
 #####`.maxRecursion` <-> `number`
 
-To prevent infinite accidental infinite recursion on scripts, the default `maxRecursion` is set to 1, meaning a script cannot reference itself at all without throwing a `RangeError`. To increase this limit, just assign it a higher number.
+To prevent accidental infinite recursion on scripts, the default `maxRecursion` is set to 1, meaning a script cannot reference itself at all without throwing a `RangeError`. To increase this limit, just assign it a higher number.
 
 Example:
 ```javascript
@@ -451,7 +454,7 @@ True if the script has already run (and therefore the value is already cached), 
 
 This function allows you to join together referee instances using a transformation function, returning a new Referee to encompass it.
 
-What this does is effectively create a binary tree of dependencies joined together by the transform function.
+What this does is effectively create a tree of dependencies joined together by the transform function.
 
 The initial use case of this system was for merging many config files, keeping constant performance, and reflecting updates in the individual config files.
 
@@ -480,12 +483,11 @@ c.json
 
 and use them with Scriptor as such:
 ```javascript
-
 var _ = require('lodash');
 
-//x and y are Referees
-function merge(x, y) {
-    return _.merge(x.value(), y.value());
+//left and right are Referees
+function merge(left, right) {
+    return _.merge(left.value(), right.value());
 }
 
 var manager = new Scriptor.Manager();
@@ -501,11 +503,9 @@ console.log(abc.value());
 
 The above example prints out:
 ```json
-{
-    "Hello": "World!",
-    "So long": "And thanks for the fish",
-    "Goodbye": "Hello"
-}
+{ Hello: 'World!',
+  'So long': 'And thanks for the fish',
+  Goodbye: 'Hello' }
 ```
 
 And the structure of referees inside it is this:
@@ -528,8 +528,8 @@ Of course this system can be used in other ways, with any custom transform funct
 By default, the transform function is `Scriptor.default_transform`, which is as follows;
 
 ```typescript
-function(x : Referee, y : Referee) : any {
-    return y.value();
+function(left : Referee, right : Referee) : any {
+    return right.value();
 }
 ```
 
@@ -538,6 +538,62 @@ It's a variation of the identity function that just returns the rightmost value 
 The merge function provided above is quite useful, but as stated, any transform with the above form can be used, and transforms are unique to each join operation, so incredibly complex chains of almost anything is possible.
 
 *NOTE*: Joining a Referee to itself is disabled.
+
+<hr>
+
+#####`.left()` -> `Referee`
+
+Complementing `.right()`, `.left()` returns the left Referee in a joined Referee.
+
+If called on an unjoined Referee, `.left()` returns `this`;
+
+It does this because `a.join(b)` is really `Referee.join(a, b)`.
+
+<hr>
+
+#####`.right()` -> `Referee`
+
+In order to reflect the tree nature of joined Referees, this function accesses the right Referee in a joined Referee.
+
+If called on an unjoined Referee, `.right()` returns null.
+
+<hr>
+
+#####`Referee.join(left : Referee, right : Referee, transform? : Function)` -> `Referee`
+
+For easier use of the joined Referee system, this static method joins a left and a right Referee to create a new joined Referee.
+
+Example using the `.join()` files:
+```javascript
+var _ = require('lodash');
+
+//left and right are Referees
+function merge(left, right) {
+    return _.merge(left.value(), right.value());
+}
+
+var Referee = Scriptor.Referee;
+
+var manager = new Scriptor.Manager();
+
+var a = manager.once('a.json');
+var b = manager.once('b.json');
+var c = manager.once('c.json');
+
+var ab  = Referee.join(a, b, merge);
+var abc = Referee.join(ab, c, merge);
+
+console.log(abc.value());
+```
+
+The above example prints out:
+```json
+{ Hello: 'World!',
+  'So long': 'And thanks for the fish',
+  Goodbye: 'Hello' }
+```
+
+Using the static join method might help understand the implicit tree structure a bit more.
 
 <hr>
 
@@ -636,10 +692,16 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.1.1
+* Modified internal semantics for [`.join`](#joinref--referee-transform--function---referee)
+* Added static [`Referee.join()`](#refereejoinleft--referee-right--referee-transform--function---referee) function
+* Added [`.left()`](#left---referee) and [`.right()`](#right---referee)
+* Fixed a few typos
+
 #####1.1.0
-* `.join` function on Referees
-* `.imports` and `.exports` docs
-* `.maxRecursion` and recursion protection
+* [`.join`](#joinref--referee-transform--function---referee) function on Referees
+* [`.imports`](#imports---any) and [`.exports`](#exports---any) docs
+* [`.maxRecursion`](#maxrecursion---number) and recursion protection
 
 #####1.0.2
 * README fixes
