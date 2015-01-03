@@ -30,6 +30,8 @@ module Scriptor {
 
         private _script : IScriptModule;
         private _watcher : fs.FSWatcher = null;
+        private _recurse : number = 0;
+        private _maxRecursion : number = 1;
 
         public imports : {[key : string] : any} = {};
 
@@ -65,6 +67,14 @@ module Scriptor {
         //Only allow getting the filename, setting should be done through .load
         get filename() : string {
             return this._script.filename;
+        }
+
+        set maxRecursion( value : number ) {
+            this._maxRecursion = value | 0;
+        }
+
+        get maxRecursion() : number {
+            return this._maxRecursion;
         }
 
         //Basically an alias for the real script's require
@@ -112,13 +122,18 @@ module Scriptor {
 
         //This is kept small because the try-catch block prevents any optimization
         public apply( args : any[] ) : any {
-            if( !this.loaded ) {
-                this.do_load();
-            }
-
-            var main : any = this.exports;
-
             try {
+                //Just in case, always use recursion protection
+                if( this._recurse++ > this._maxRecursion ) {
+                    throw new RangeError( "Script recursion limit reached" );
+                }
+
+                if( !this.loaded ) {
+                    this.do_load();
+                }
+
+                var main : any = this.exports;
+
                 if( typeof main === 'function' ) {
                     return main.apply( null, args );
 
@@ -132,6 +147,10 @@ module Scriptor {
                 }
 
                 throw e;
+
+            } finally {
+                //release recurse
+                --this._recurse;
             }
         }
 
@@ -322,19 +341,41 @@ module Scriptor {
         }
     }
 
-    export class Referee {
-        private _value : any = null;
-        private _ran : boolean = false;
+    export interface ITransform {
+        ( prev : IReferee, ref : IReferee ) : any;
+    }
 
+    export var default_transform : ITransform = ( prev : IReferee, ref : IReferee ) => {
+        return ref.value();
+    };
+
+    export interface IReferee extends NodeJS.EventEmitter {
+        value() : any;
+        ran : boolean;
+        join( ref : IReferee, transform? : ITransform ) : JoinedReferee;
+    }
+
+    export class RefereeBase extends events.EventEmitter {
+        protected _value : any = null;
+        protected _ran : boolean = false;
+    }
+
+    export class Referee extends RefereeBase implements IReferee {
         constructor( private _script : ScriptAdapter, private _args : any[] ) {
+            super();
+
             //Just mark this referee as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
             //but this referee would still not be run
-            _script.on( 'change', ( event : string, filename : string ) => {
-                this._ran = false;
+            this._script.on( 'change', ( event : string, filename : string ) => {
+                if( this._ran ) {
+                    this._ran = false;
+
+                    this.emit( 'change', event, filename );
+                }
             } );
 
-            _script.referee = this;
+            this._script.referee = this;
         }
 
         public value() : any {
@@ -358,6 +399,59 @@ module Scriptor {
         //Just to make it so Referee.script = include('something else') is impossible
         get script() : ScriptAdapter {
             return this._script;
+        }
+
+        public join( ref : IReferee, transform? : ITransform ) : JoinedReferee {
+            return new JoinedReferee( ref, this, transform );
+        }
+    }
+
+    export class JoinedReferee extends RefereeBase implements IReferee {
+        constructor( private _prev : IReferee, private _ref : IReferee,
+                     private _transform : ITransform = default_transform ) {
+            super();
+
+            //Just to prevent stupid mistakes
+            assert.notEqual( _prev, _ref, "Cannot join to self" );
+
+            //This has to be a closure because the two emitters down below
+            //tend to call this with themselves as this
+            var onChange = ( event : string, filename : string ) => {
+                this.emit( 'change', event, filename );
+
+                this._ran = false;
+            };
+
+            _prev.on( 'change', onChange );
+            _ref.on( 'change', onChange );
+        }
+
+        public value() : any {
+            //If anything needs to be re-run, re-run it
+            if( !(this._ran && this._prev.ran && this._ref.ran) ) {
+                this._value = this._transform( this._prev, this._ref );
+
+                this._ran = true;
+            }
+
+            return this._value;
+        }
+
+        get ran() : boolean {
+            return this._ran;
+        }
+
+        public join( ref : IReferee, transform? : ITransform ) : JoinedReferee {
+            return new JoinedReferee( ref, this, transform );
+        }
+
+        //This two aren't in the docs, but might be useful at some point.
+        get prev() : IReferee {
+            return this._prev;
+        }
+
+        get ref() : IReferee {
+            return this._ref;
         }
     }
 

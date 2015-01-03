@@ -33,12 +33,15 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.watch()`](#watch---boolean)
     - [`.unwatch()`](#unwatch---boolean)
     - [`.close(permanent? : boolean)`](#closepermanent--boolean)
+    - [`.imports`](#imports---any)
+    - [`.exports`](#exports---any)
     - [`.id`](#id---string)
     - [`.children`](#children---module)
     - [`.parent`](#parent---module)
     - [`.loaded`](#loaded---boolean)
     - [`.watched`](#watched---boolean)
     - [`.filename`](#filename---string)
+    - [`.maxRecursion`](#maxrecursion---number)
     - Special functions when used with a Manager:
         - [`.reference(filename : string, ...args : any[])`](#referencefilename--string-args--any---any)
         - [`.reference_apply(filename : string, args : any[])`](#reference_applyfilename--string-args--any---any)
@@ -51,10 +54,12 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`module.reference_apply(filename : string, args : any[])`](#modulereference_applyfilename--string-args--any---any)
     - [`module.reference_once(filename : string, ...args : any[])`](#modulereference_oncefilename--string-args--any---referee)
     - [`module.include(filename : string)`](#moduleincludefilename--string---script)
+    - ['module.imports'](#moduleimports---any)
 
 - [Referee](#referee)
     - [`.value()`](#value---any)
     - [`.ran`](#ran---boolean)
+    - [`.join(ref : Referee, transform? : Function)`](#joinref--referee-transform--function---referee)
 
 - [Manager](#manager)
     - [`new Manager(grandParent? : Module)`](#new-managergrandparent--module---manager)
@@ -110,7 +115,7 @@ It reflects the behavior of `Function.prototype.call` but without the `this` arg
 
 Though if module.exports is an object or any other type it will simply return that, as it cannot be evaluated any further.
 
-NOTE for React.js users: React.js classes are functions, so a factory function is required to return them.
+*NOTE for React.js users*: React.js classes are functions, so a factory function is required to return them.
 
 Example:
 ```javascript
@@ -210,6 +215,20 @@ If `permanent` is true, the script module is deleted from the parent module, and
 
 <hr>
 
+#####`.imports` <-> `any`
+
+`.imports` is a variable passed into the script module when it is run. It can be set to anything, but defaults to an empty object like `module.exports`
+
+See [`module.imports`](#moduleimports---any) for example usage.
+
+<hr>
+
+#####`.exports` -> `any`
+
+If the script has already been evaluated, this is the same object as `module.exports` within the script. If the script has not been evaluated, `.exports` is null.
+
+<hr>
+
 #####`.id` <-> `string`
 
 This attribute is a simple identifier used by the Node.js module system for stuff. Calls to `.load` set it to the basename of the filename given, but it can be overwritten manually.
@@ -253,6 +272,35 @@ True if the script file is being watched, false otherwise.
 #####`.filename` -> `string`
 
 Returns the filename of the script. If no file has been given or the file has been deleted, this equals null.
+
+<hr>
+
+#####`.maxRecursion` <-> `number`
+
+To prevent infinite accidental infinite recursion on scripts, the default `maxRecursion` is set to 1, meaning a script cannot reference itself at all without throwing a `RangeError`. To increase this limit, just assign it a higher number.
+
+Example:
+```javascript
+/**** fib.js ****/
+module.exports = function fibonacci(n) {
+    if(n < 2) {
+        return n;
+    } else {
+        return module.reference('fib.js', n - 1) + module.reference('fib.js', n - 2);
+    }
+}
+
+/**** main.js ****/
+var fib = new Scriptor.Script('fib.js');
+
+fib.maxRecursion = 45;
+
+console.log(fib.call(20));
+```
+
+Prints 6765.
+
+Also, please don't use a recursive fibonacci function. There are many better ways of calculating fibonacci numbers out there.
 
 <hr>
 
@@ -356,6 +404,31 @@ This is alias for `<script>.include`, with script being the Script instance that
 
 <hr>
 
+#####`module.imports` -> `any`
+
+Variable(s) passed into the script by the user by setting `Script.imports` before the script has been evaluated.
+
+Example:
+```javascript
+/**** compile.js ****/
+var doT = require('dot');
+
+module.exports = function compile(src, opts) {
+    return doT.template(src, opts, module.imports.templateSettings);
+}
+
+/**** main.js ****/
+var compile = new Scriptor.Script('compile.js');
+
+compile.imports.templateSettings = {
+    strip: false
+};
+
+var template = compile.call('Some template', null);
+```
+
+<hr>
+
 ##Referee
 
 The Referee class is a tiny wrapper around the behavior for `reference_once`. It keeps track of the initial arguments, the statically cached value and updating it when the script changes.
@@ -371,6 +444,100 @@ Due to the lazy evaluation nature of Scriptor, `.value()` might load and evaluat
 #####`.ran` -> `boolean`
 
 True if the script has already run (and therefore the value is already cached), false if the script has not run.
+
+<hr>
+
+#####`.join(ref : Referee, transform? : Function)` -> `Referee`
+
+This function allows you to join together referee instances using a transformation function, returning a new Referee to encompass it.
+
+What this does is effectively create a binary tree of dependencies joined together by the transform function.
+
+The initial use case of this system was for merging many config files, keeping constant performance, and reflecting updates in the individual config files.
+
+For example, take these three JSON files:
+
+a.json
+```json
+{
+    "Hello": "World!"
+}
+```
+
+b.json
+```json
+{
+    "So long": "And thanks for the fish"
+}
+```
+
+c.json
+```json
+{
+    "Goodbye": "Hello"
+}
+```
+
+and use them with Scriptor as such:
+```javascript
+
+var _ = require('lodash');
+
+//x and y are Referees
+function merge(x, y) {
+    return _.merge(x.value(), y.value());
+}
+
+var manager = new Scriptor.Manager();
+
+var a = manager.once('a.json');
+var b = manager.once('b.json');
+var c = manager.once('c.json');
+
+var abc = a.join(b, merge).join(c, merge);
+
+console.log(abc.value());
+```
+
+The above example prints out:
+```json
+{
+    "Hello": "World!",
+    "So long": "And thanks for the fish",
+    "Goodbye": "Hello"
+}
+```
+
+And the structure of referees inside it is this:
+```
+        abc
+       /   \
+      ab    c
+     /  \
+    a    b
+```
+
+So if `a` changes, it bubbles up to `ab`, which bubbles up to `abc`, and the next time `abc`'s `.value()` is called, it re-evaluates `abc`, which re-evaluates `ab`, which re-evaluates `a`.
+
+Since `b` and `c` never changed, they are not re-evaluated, but are nonetheless sent through the transform functions.
+
+After all of the required changes are re-evaluated, `abc` once again becomes static and constant, making for instance access.
+
+Of course this system can be used in other ways, with any custom transform function.
+
+By default, the transform function is `Scriptor.default_transform`, which is as follows;
+
+```typescript
+function(x : Referee, y : Referee) : any {
+    return y.value();
+}
+```
+
+It's a variation of the identity function that just returns the rightmost value and ignores the left.
+
+The merge function provided above is quite useful, but as stated, any transform with the above form can be used, and transforms are unique to each join operation, so incredibly complex chains of almost anything is possible.
+
+*NOTE*: Joining a Referee to itself is disabled.
 
 <hr>
 
@@ -468,6 +635,11 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.1.0
+* `.join` function on Referees
+* `.imports` and `.exports` docs
+* `.maxRecursion` and recursion protection
 
 #####1.0.2
 * README fixes

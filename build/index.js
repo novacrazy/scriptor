@@ -16,6 +16,7 @@ var __extends = this.__extends || function(d, b) {
         d.prototype = new __();
     };
 var fs = require( 'fs' );
+var assert = require( 'assert' );
 var path = require( 'path' );
 var events = require( 'events' );
 var Module = require( './Module' );
@@ -31,6 +32,8 @@ var Scriptor;
             }
             _super.call( this );
             this._watcher = null;
+            this._recurse = 0;
+            this._maxRecursion = 1;
             this.imports = {};
             //Create a new Module without an id. It will be set later
             this._script = (new Module.Module( null, parent ));
@@ -93,6 +96,16 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
+        Object.defineProperty( Script.prototype, "maxRecursion", {
+            get:          function() {
+                return this._maxRecursion;
+            },
+            set:          function(value) {
+                this._maxRecursion = value | 0;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         //Basically an alias for the real script's require
         Script.prototype.require = function(path) {
             return this._script.require( path );
@@ -123,11 +136,15 @@ var Scriptor;
         };
         //This is kept small because the try-catch block prevents any optimization
         Script.prototype.apply = function(args) {
-            if( !this.loaded ) {
-                this.do_load();
-            }
-            var main = this.exports;
             try {
+                //Just in case, always use recursion protection
+                if( this._recurse++ > this._maxRecursion ) {
+                    throw new RangeError( "Script recursion limit reached" );
+                }
+                if( !this.loaded ) {
+                    this.do_load();
+                }
+                var main = this.exports;
                 if( typeof main === 'function' ) {
                     return main.apply( null, args );
                 }
@@ -140,6 +157,10 @@ var Scriptor;
                     this.unload();
                 }
                 throw e;
+            }
+            finally {
+                //release recurse
+                --this._recurse;
             }
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
@@ -260,7 +281,6 @@ var Scriptor;
             //If the script is referred to by reference_once, this is set, allowing it to keep track of this script
             this.referee = null;
         }
-
         //Again just taking advantage of TypeScript's variable arguments
         ScriptAdapter.prototype.reference = function(filename) {
             var args = [];
@@ -309,20 +329,37 @@ var Scriptor;
         return ScriptAdapter;
     })( Script );
     Scriptor.ScriptAdapter = ScriptAdapter;
-    var Referee = (function() {
-        function Referee(_script, _args) {
-            var _this = this;
-            this._script = _script;
-            this._args = _args;
+    Scriptor.default_transform = function(prev, ref) {
+        return ref.value();
+    };
+    var RefereeBase = (function(_super) {
+        __extends( RefereeBase, _super );
+        function RefereeBase() {
+            _super.apply( this, arguments );
             this._value = null;
             this._ran = false;
+        }
+
+        return RefereeBase;
+    })( events.EventEmitter );
+    Scriptor.RefereeBase = RefereeBase;
+    var Referee = (function(_super) {
+        __extends( Referee, _super );
+        function Referee(_script, _args) {
+            var _this = this;
+            _super.call( this );
+            this._script = _script;
+            this._args = _args;
             //Just mark this referee as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
             //but this referee would still not be run
-            _script.on( 'change', function(event, filename) {
-                _this._ran = false;
+            this._script.on( 'change', function(event, filename) {
+                if( _this._ran ) {
+                    _this._ran = false;
+                    _this.emit( 'change', event, filename );
+                }
             } );
-            _script.referee = this;
+            this._script.referee = this;
         }
 
         Referee.prototype.value = function() {
@@ -351,9 +388,71 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
+        Referee.prototype.join = function(ref, transform) {
+            return new JoinedReferee( ref, this, transform );
+        };
         return Referee;
-    })();
+    })( RefereeBase );
     Scriptor.Referee = Referee;
+    var JoinedReferee = (function(_super) {
+        __extends( JoinedReferee, _super );
+        function JoinedReferee(_prev, _ref, _transform) {
+            var _this = this;
+            if( _transform === void 0 ) {
+                _transform = Scriptor.default_transform;
+            }
+            _super.call( this );
+            this._prev = _prev;
+            this._ref = _ref;
+            this._transform = _transform;
+            //Just to prevent stupid mistakes
+            assert.notEqual( _prev, _ref, "Cannot join to self" );
+            //This has to be a closure because the two emitters down below
+            //tend to call this with themselves as this
+            var onChange = function(event, filename) {
+                _this.emit( 'change', event, filename );
+                _this._ran = false;
+            };
+            _prev.on( 'change', onChange );
+            _ref.on( 'change', onChange );
+        }
+
+        JoinedReferee.prototype.value = function() {
+            //If anything needs to be re-run, re-run it
+            if( !(this._ran && this._prev.ran && this._ref.ran) ) {
+                this._value = this._transform( this._prev, this._ref );
+                this._ran = true;
+            }
+            return this._value;
+        };
+        Object.defineProperty( JoinedReferee.prototype, "ran", {
+            get:          function() {
+                return this._ran;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        JoinedReferee.prototype.join = function(ref, transform) {
+            return new JoinedReferee( ref, this, transform );
+        };
+        Object.defineProperty( JoinedReferee.prototype, "prev", {
+            //This two aren't in the docs, but might be useful at some point.
+            get:          function() {
+                return this._prev;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( JoinedReferee.prototype, "ref", {
+            get:          function() {
+                return this._ref;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        return JoinedReferee;
+    })( RefereeBase );
+    Scriptor.JoinedReferee = JoinedReferee;
     var Manager = (function() {
         function Manager(grandParent) {
             this._scripts = {};
