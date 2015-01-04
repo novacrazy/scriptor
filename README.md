@@ -63,7 +63,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.join(ref : Referee, transform? : Function)`](#joinref--referee-transform--function---referee)
     - [`.left()`](#left---referee)
     - [`.right()`](#right---referee)
-    - [`.close(recursive? : boolean`](#closerecursive--boolean)
+    - [`.close(recursive? : boolean)`](#closerecursive--boolean)
     - [`.closed`](#closed---boolean)
     - [`Referee.join(left : Referee, right : Referee, transform? : Function)`](#refereejoinleft--referee-right--referee-transform--function---referee)
     - [`Referee.join_all(refs : Referee[], transform? : Function)`](#refereejoin_allrefs--referee-transform--function---referee)
