@@ -749,6 +749,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.2.3
+* Forgot to freeze another part of Referee values
+
 #####1.2.2
 * Freeze Referee values to prevent accidental tampering by destructive functions
 

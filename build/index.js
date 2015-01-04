@@ -448,6 +448,10 @@ var Scriptor;
             //If anything needs to be re-run, re-run it
             if( !(this._ran && this._left.ran && this._right.ran) ) {
                 this._value = this._transform( this._left, this._right );
+                //Prevents overwriting over elements
+                if( typeof this._value === 'object' ) {
+                    this._value = Object.freeze( this._value );
+                }
                 this._ran = true;
             }
             return this._value;
