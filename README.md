@@ -741,6 +741,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.2.1
+* Fixed a few things JSHint complained about.
+
 #####1.2.0
 * Added [`Referee.join_all`](#refereejoin_allrefs--referee-transform--function---referee) function
 * Fixed typo
