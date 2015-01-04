@@ -91,7 +91,8 @@ var Scriptor;
                 return this._maxRecursion;
             },
             set: function (value) {
-                this._maxRecursion = value | 0;
+                //JSHint doesn't like bitwise operators
+                this._maxRecursion = Math.floor( value );
             },
             enumerable: true,
             configurable: true
@@ -126,14 +127,14 @@ var Scriptor;
         };
         //This is kept small because the try-catch block prevents any optimization
         Script.prototype.apply = function (args) {
+            //Just in case, always use recursion protection
+            if( this._recurse++ > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached' );
+            }
+            if( !this.loaded ) {
+                this.do_load();
+            }
             try {
-                //Just in case, always use recursion protection
-                if (this._recurse++ > this._maxRecursion) {
-                    throw new RangeError('Script recursion limit reached');
-                }
-                if (!this.loaded) {
-                    this.do_load();
-                }
                 var main = this.exports;
                 if (typeof main === 'function') {
                     return main.apply(null, args);
@@ -205,7 +206,7 @@ var Scriptor;
                     if (event === 'change' && _this.loaded) {
                         _this.unload();
                     }
-                    else if (event === 'rename' && filename != _this.filename) {
+                    else if( event === 'rename' && filename !== _this.filename ) {
                         //filename will be null if the file was deleted
                         if (filename != null) {
                             //A simple rename doesn't change file content, so just change the filename

@@ -3,6 +3,7 @@ Scriptor
 
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
+[![Codacy Score][codacy-image]][codacy-url]
 
 ## Introduction
 
@@ -777,3 +778,5 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 [npm-url]: https://npmjs.org/package/scriptor
 [downloads-image]: https://img.shields.io/npm/dm/scriptor.svg?style=flat
 [downloads-url]: https://npmjs.org/package/scriptor
+[codacy-image]: https://img.shields.io/codacy/2143c559823843aa9a25ade263aff0e3.svg?style=flat
+[codacy-url]: https://www.codacy.com/public/novacrazy/scriptor
