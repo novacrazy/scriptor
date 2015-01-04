@@ -11,7 +11,6 @@ import Module = require('./Module');
 import AMD = require('./define');
 
 module Scriptor {
-
     export var this_module : Module.IModule = <any>module;
 
     export interface IScriptBase extends Module.IModulePublic {
@@ -352,7 +351,9 @@ module Scriptor {
     export interface IReferee extends NodeJS.EventEmitter {
         value() : any;
         ran : boolean;
-        join( ref : IReferee, transform? : ITransform ) : JoinedReferee;
+        join( ref : IReferee, transform? : ITransform ) : IReferee;
+        left() : IReferee;
+        right() : IReferee;
     }
 
     export class RefereeBase extends events.EventEmitter {
@@ -396,18 +397,34 @@ module Scriptor {
             return this._ran;
         }
 
-        //Just to make it so Referee.script = include('something else') is impossible
-        get script() : ScriptAdapter {
-            return this._script;
-        }
-
-        //Static
-        static join( left : IReferee, right : IReferee, transform? : ITransform ) {
+        static join( left : IReferee, right : IReferee, transform? : ITransform ) : IReferee {
             return new JoinedReferee( left, right, transform );
         }
 
-        //Instance
-        public join( ref : IReferee, transform? : ITransform ) : JoinedReferee {
+        //Creates a binary tree (essentially) of joins from an array of Referees using a single transform
+        static join_all( refs : IReferee[], transform? : ITransform ) : IReferee {
+            assert( Array.isArray( refs ), 'join_all can only join arrays of Referees' );
+
+            if( refs.length === 0 ) {
+                return null;
+
+            } else if( refs.length === 1 ) {
+                return refs[0];
+
+            } else if( refs.length === 2 ) {
+                return Referee.join( refs[0], refs[1], transform );
+
+            } else {
+                var mid = Math.floor( refs.length / 2 );
+
+                var left : IReferee = Referee.join_all( refs.slice( 0, mid ), transform );
+                var right : IReferee = Referee.join_all( refs.slice( mid ), transform );
+
+                return Referee.join( left, right, transform );
+            }
+        }
+
+        public join( ref : IReferee, transform? : ITransform ) : IReferee {
             return Referee.join( this, ref, transform );
         }
 
@@ -456,14 +473,11 @@ module Scriptor {
             return this._ran;
         }
 
-        //Static
-        static join( left : IReferee, right : IReferee, transform? : ITransform ) {
-            return new JoinedReferee( left, right, transform );
-        }
+        static join = Referee.join;
+        static join_all = Referee.join_all;
 
-        //Instance
-        public join( ref : IReferee, transform? : ITransform ) : JoinedReferee {
-            return JoinedReferee.join( this, ref, transform );
+        public join( ref : IReferee, transform? : ITransform ) : IReferee {
+            return Referee.join( this, ref, transform );
         }
 
         public left() : IReferee {

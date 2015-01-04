@@ -54,7 +54,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`module.reference_apply(filename : string, args : any[])`](#modulereference_applyfilename--string-args--any---any)
     - [`module.reference_once(filename : string, ...args : any[])`](#modulereference_oncefilename--string-args--any---referee)
     - [`module.include(filename : string)`](#moduleincludefilename--string---script)
-    - ['module.imports'](#moduleimports---any)
+    - [`module.imports`](#moduleimports---any)
 
 - [Referee](#referee)
     - [`.value()`](#value---any)
@@ -63,6 +63,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.left()`](#left---referee)
     - [`.right()`](#right---referee)
     - [`Referee.join(left : Referee, right : Referee, transform? : Function)`](#refereejoinleft--referee-right--referee-transform--function---referee)
+    - [`Referee.join_all(refs : Referee[], transform? : Function)`](#refereejoin_allrefs--referee-transform--function---referee)
 
 - [Manager](#manager)
     - [`new Manager(grandParent? : Module)`](#new-managergrandparent--module---manager)
@@ -597,6 +598,53 @@ Using the static join method might help understand the implicit tree structure a
 
 <hr>
 
+#####`Referee.join_all(refs : Referee[], transform? : Function)` -> `Referee`
+
+Since the structure of joined Referees is similar to a binary tree, with each having left and right children to watch, it is very easy to create a lopsided tree using just `.join`.
+
+So, `.join_all` takes an array of Referees and creates a balanced join of them all, using a single transform function.
+
+Example using the same three JSON files as before:
+```javascript
+var Referee = Scriptor.Referee;
+
+var _ = require('lodash');
+
+var fs = require('fs');
+var path = require('path');
+
+//left and right are Referees
+function merge(left, right) {
+    return _.merge(left.value(), right.value());
+}
+
+var manager = new Scriptor.Manager();
+
+//Read all .json files in the current directory and map them to Referees
+var refs = _(fs.readdirSync('./')).filter(function(file) {
+    return path.extname(file) === '.json';
+}).map(function(file) {
+    return manager.once(file);
+} ).value(); //part of lodash chain, not Referee.value
+
+var merged_configs = Referee.join_all(refs, merge);
+
+console.log(merged_configs.value());
+```
+
+The above example prints out:
+```json
+{ "Hello": "World!",
+  "So long": "And thanks for the fish",
+  "Goodbye": "Hello" }
+```
+
+Although the output is same, `.join_all` guarantees a balanced dependency tree, even for hundreds or thousands of Referees. So each time a file changes, the number of Referees that have to be re-evaluated and re-transformed is minimal.
+
+*NOTE*: Referees toward the middle of the array end up closer to the top, and the front and back elements end up deeper in the tree. Additionally, the depth of the dependency tree is log(n) the number elements in the array. It really is a binary tree.
+
+<hr>
+
 ##Manager
 
 Scriptor provides a Manager class that can effectively coordinate many inter-referencing scripts together with little effort.
@@ -691,6 +739,10 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.2.0
+* Added [`Referee.join_all`](#refereejoin_allrefs--referee-transform--function---referee) function
+* Fixed typo
 
 #####1.1.1
 * Modified internal semantics for [`.join`](#joinref--referee-transform--function---referee)
