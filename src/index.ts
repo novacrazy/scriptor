@@ -388,6 +388,11 @@ module Scriptor {
             if( !this._ran || !this._script.loaded ) {
                 this._value = this._script.apply( this._args );
 
+                //Prevents overwriting over elements
+                if( typeof this._value === 'object' ) {
+                    this._value = Object.freeze( this._value );
+                }
+
                 this._ran = true;
             }
 

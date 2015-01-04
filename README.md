@@ -444,6 +444,8 @@ Effectively 'dereferences' the reference and returns the value the script return
 
 Due to the lazy evaluation nature of Scriptor, `.value()` might load and evaluate the script if need be. Though usually it doesn't need to and returns the cached value immediately.
 
+If the value is an object, it is frozen automatically to prevent changes.
+
 <hr>
 
 #####`.ran` -> `boolean`
@@ -746,6 +748,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.2.2
+* Freeze Referee values to prevent accidental tampering by destructive functions
 
 #####1.2.1
 * Fixed a few things JSHint complained about.
