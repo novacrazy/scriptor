@@ -31,13 +31,12 @@ var Scriptor;
                 parent = Scriptor.this_module;
             }
             _super.call( this );
-            this._watcher = null;
             this._recurse = 0;
             this._maxRecursion = 1;
             this.imports = {};
             //Create a new Module without an id. It will be set later
             this._script = (new Module.Module( null, parent ));
-            if( filename != null ) {
+            if( filename !== void 0 ) {
                 this.load( filename );
             }
         }
@@ -83,7 +82,7 @@ var Scriptor;
         } );
         Object.defineProperty( Script.prototype, "watched", {
             get:        function() {
-                return this._watcher != null;
+                return this._watcher !== void 0;
             },
             enumerable: true,
             configurable: true
@@ -185,15 +184,12 @@ var Scriptor;
                 watch = false;
             }
             filename = path.resolve( filename );
+            this.close( false );
             this.id = path.basename( filename );
             this._script.filename = filename;
             if( watch ) {
                 this.watch();
             }
-            //Although this seems counter-intuitive,
-            //the lazy loading dictates it must be in an unloaded state before a new script is compiled/run
-            //This is a just-in-case thing in-case the module was already loaded when .load was called
-            this.unload();
             return this;
         };
         Script.prototype.unload = function() {
@@ -214,26 +210,31 @@ var Scriptor;
                     persistent: false
                 } );
                 watcher.on( 'change', function(event, filename) {
-                    filename = path.resolve( path.dirname( _this.filename ), filename );
-                    if( event === 'change' && _this.loaded ) {
+                    //path.resolve doesn't like nulls, so this has to be done first
+                    if( filename === null && event === 'rename' ) {
+                        //if the file was deleted, there is nothing we can do so just mark it unloaded.
+                        //The next call to do_load will give an error akin to require's errors
                         _this.unload();
+                        _this.unwatch();
+                        _this._script.filename = null;
                     }
-                    else if( event === 'rename' && filename !== _this.filename ) {
-                        //filename will be null if the file was deleted
-                        if( filename != null ) {
+                    else {
+                        filename = path.resolve( path.dirname( _this.filename ), filename );
+                        if( event === 'change' && _this.loaded ) {
+                            _this.unload();
+                        }
+                        else if( event === 'rename' && filename !== _this.filename ) {
                             //A simple rename doesn't change file content, so just change the filename
                             //and leave the script loaded
                             _this._script.filename = filename;
                         }
-                        else {
-                            //if the file was deleted, there is nothing we can do so just mark it unloaded.
-                            //The next call to do_load will give an error akin to require's errors
-                            _this.unload();
-                            _this.unwatch();
-                            _this._script.filename = null;
-                        }
                     }
                     _this.emit( 'change', event, filename );
+                } );
+                watcher.on( 'error', function(error) {
+                    _this.unload();
+                    //Would it be better to throw?
+                    _this.emit( 'error', error );
                 } );
                 return true;
             }
@@ -243,8 +244,7 @@ var Scriptor;
             if( this.watched ) {
                 //close the watched and null it to allow the GC to collect it
                 this._watcher.close();
-                this._watcher = null;
-                return true;
+                return delete this._watcher;
             }
             return false;
         };
@@ -256,7 +256,7 @@ var Scriptor;
             this.unwatch();
             if( permanent ) {
                 //Remove _script from parent
-                if( this.parent != null ) {
+                if( this.parent !== void 0 ) {
                     var children = this.parent.children;
                     for( var _i in children ) {
                         //Find which child is this._script, delete it and remove the (now undefined) reference
@@ -267,8 +267,7 @@ var Scriptor;
                     }
                 }
                 //Remove _script from current object
-                delete this['_script'];
-                this._script = null;
+                return delete this._script;
             }
         };
         return Script;
@@ -279,8 +278,6 @@ var Scriptor;
         function ScriptAdapter(manager, filename, parent) {
             _super.call( this, filename, parent );
             this.manager = manager;
-            //If the script is referred to by reference_once, this is set, allowing it to keep track of this script
-            this.referee = null;
         }
 
         //Again just taking advantage of TypeScript's variable arguments
@@ -295,7 +292,7 @@ var Scriptor;
         ScriptAdapter.prototype.reference_apply = function(filename, args) {
             //include is used instead of this.manager.apply because include takes into account
             //relative includes/references
-            return this.include( filename ).apply( args );
+            return this.include( filename, false ).apply( args );
         };
         //Basically, whatever arguments you give this the first time it's called is all you get
         ScriptAdapter.prototype.reference_once = function(filename) {
@@ -308,14 +305,18 @@ var Scriptor;
             //With the Referee class, evaluation is only when .value is accessed
             var script = this.manager.add( real_filename );
             //Use the existing one in the script or create a new one (which will attach itself)
-            if( script.referee != null ) {
-                return script.referee;
+            if( script._referee !== void 0 ) {
+                return script._referee;
             }
             else {
-                return new Referee( script, args );
+                this._referee = new Referee( script, args );
+                return this._referee;
             }
         };
-        ScriptAdapter.prototype.include = function(filename) {
+        ScriptAdapter.prototype.include = function(filename, load) {
+            if( load === void 0 ) {
+                load = false;
+            }
             //make sure filename can be relative to the current script
             var real_filename = path.resolve( path.dirname( this.filename ), filename );
             //Since add doesn't do anything to already existing scripts, but does return a script,
@@ -323,7 +324,7 @@ var Scriptor;
             var script = this.manager.add( real_filename );
             //Since include can be used independently of reference, make sure it's loaded before returning
             //Otherwise, the returned script is in an incomplete state
-            if( !script.loaded ) {
+            if( load && !script.loaded ) {
                 script.reload();
             }
             return script;
@@ -338,7 +339,6 @@ var Scriptor;
         __extends( RefereeBase, _super );
         function RefereeBase() {
             _super.apply( this, arguments );
-            this._value = null;
             this._ran = false;
         }
 
@@ -355,13 +355,13 @@ var Scriptor;
             //Just mark this referee as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
             //but this referee would still not be run
-            this._script.on( 'change', function(event, filename) {
+            this._onChange = function(event, filename) {
                 if( _this._ran ) {
                     _this._ran = false;
                     _this.emit( 'change', event, filename );
                 }
-            } );
-            this._script.referee = this;
+            };
+            this._script.on( 'change', this._onChange );
         }
 
         Referee.prototype.value = function() {
@@ -384,6 +384,13 @@ var Scriptor;
                 return this._ran;
             },
             enumerable: true,
+            configurable: true
+        } );
+        Object.defineProperty( Referee.prototype, "closed", {
+            get:          function() {
+                return this._script === void 0;
+            },
+            enumerable:   true,
             configurable: true
         } );
         Referee.join = function(left, right, transform) {
@@ -417,6 +424,11 @@ var Scriptor;
         Referee.prototype.right = function() {
             return null;
         };
+        Referee.prototype.close = function() {
+            this._script.removeListener( 'change', this._onChange );
+            delete this._value;
+            delete this._script._referee;
+        };
         return Referee;
     })( RefereeBase );
     Scriptor.Referee = Referee;
@@ -436,12 +448,12 @@ var Scriptor;
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this
-            var onChange = function(event, filename) {
+            this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
             };
-            _left.on( 'change', onChange );
-            _right.on( 'change', onChange );
+            _left.on( 'change', this._onChange );
+            _right.on( 'change', this._onChange );
         }
 
         JoinedReferee.prototype.value = function() {
@@ -463,6 +475,13 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
+        Object.defineProperty( JoinedReferee.prototype, "closed", {
+            get:          function() {
+                return this._left === void 0 || this._right === void 0;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         JoinedReferee.prototype.join = function(ref, transform) {
             return Referee.join( this, ref, transform );
         };
@@ -471,6 +490,20 @@ var Scriptor;
         };
         JoinedReferee.prototype.right = function() {
             return this._right;
+        };
+        JoinedReferee.prototype.close = function(recursive) {
+            if( recursive === void 0 ) {
+                recursive = false;
+            }
+            this._left.removeListener( 'change', this._onChange );
+            this._right.removeListener( 'change', this._onChange );
+            delete this._value;
+            if( recursive ) {
+                this._left.close( recursive );
+                this._right.close( recursive );
+            }
+            delete this._left;
+            delete this._right;
         };
         JoinedReferee.join = Referee.join;
         JoinedReferee.join_all = Referee.join_all;
@@ -507,7 +540,7 @@ var Scriptor;
             }
             filename = path.resolve( filename );
             var script = this._scripts[filename];
-            if( script == null ) {
+            if( script === void 0 ) {
                 script = new ScriptAdapter( this, filename, this._parent );
                 this._scripts[filename] = script;
             }
@@ -527,7 +560,7 @@ var Scriptor;
             }
             filename = path.resolve( filename );
             var script = this._scripts[filename];
-            if( script != null ) {
+            if( script !== void 0 ) {
                 if( close ) {
                     script.close();
                 }
@@ -546,7 +579,7 @@ var Scriptor;
             filename = path.resolve( filename );
             var script = this._scripts[filename];
             //By default add the script to the manager to make lookup faster in the future
-            if( script == null ) {
+            if( script === void 0 ) {
                 return this.add( filename ).apply( args );
             }
             else {
@@ -562,11 +595,12 @@ var Scriptor;
         };
         Manager.prototype.once_apply = function(filename, args) {
             var script = this.add( filename );
-            if( script.referee != null ) {
-                return script.referee;
+            if( script._referee !== void 0 ) {
+                return script._referee;
             }
             else {
-                return new Referee( script, args );
+                script._referee = new Referee( script, args );
+                return script._referee;
             }
         };
         Manager.prototype.get = function(filename) {

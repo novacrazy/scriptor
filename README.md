@@ -47,14 +47,14 @@ All documentation for this project is in TypeScript syntax for typed parameters.
         - [`.reference(filename : string, ...args : any[])`](#referencefilename--string-args--any---any)
         - [`.reference_apply(filename : string, args : any[])`](#reference_applyfilename--string-args--any---any)
         - [`.reference_once(filename : string, ...args : any[])`](#reference_oncefilename--string-args--any---referee)
-        - [`.include(filename : string)`](#includefilename--string---script)
+        - [`.include(filename : string, load? : boolean)`](#includefilename--string-load--boolean---script)
 
 - [Script Environment](#script-environment)
     - [`module.define(id? : string, deps? : string[], factory : Function)`](#moduledefineid--string-deps--string-factory--function)
     - [`module.reference(filename : string, ...args : any[])`](#modulereferencefilename--string-args--any---any)
     - [`module.reference_apply(filename : string, args : any[])`](#modulereference_applyfilename--string-args--any---any)
     - [`module.reference_once(filename : string, ...args : any[])`](#modulereference_oncefilename--string-args--any---referee)
-    - [`module.include(filename : string)`](#moduleincludefilename--string---script)
+    - [`module.include(filename : string, load? : boolean)`](#moduleincludefilename--string-load--boolean---script)
     - [`module.imports`](#moduleimports---any)
 
 - [Referee](#referee)
@@ -63,6 +63,8 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.join(ref : Referee, transform? : Function)`](#joinref--referee-transform--function---referee)
     - [`.left()`](#left---referee)
     - [`.right()`](#right---referee)
+    - [`.close(recursive? : boolean`](#closerecursive--boolean)
+    - [`.closed`](#closed---boolean)
     - [`Referee.join(left : Referee, right : Referee, transform? : Function)`](#refereejoinleft--referee-right--referee-transform--function---referee)
     - [`Referee.join_all(refs : Referee[], transform? : Function)`](#refereejoin_allrefs--referee-transform--function---referee)
 
@@ -365,11 +367,14 @@ Furthermore, any more calls to `.reference_once` from anywhere else for the file
 
 <hr>
 
-#####`.include(filename : string)` -> `Script`
+#####`.include(filename : string, load? : boolean)` -> `Script`
 
 This is effectively a call to `<manager>.add(filename)`
 
 It is useful when referring to other scripts within the same manager, and when you need access to the script itself instead of just invoking it.
+
+If `load` is true, it forces evaluation of the script before it is returned. If the script is new and not evaluated, it may be in an incomplete state.
+
 
 <hr>
 
@@ -403,7 +408,7 @@ This is alias for `<script>.reference_once`, with script being the Script instan
 
 <hr>
 
-#####`module.include(filename : string)` -> `Script`
+#####`module.include(filename : string, load? : boolean)` -> `Script`
 
 This is alias for `<script>.include`, with script being the Script instance that runs the code.
 
@@ -562,6 +567,22 @@ It does this because `a.join(b)` is really `Referee.join(a, b)`.
 In order to reflect the tree nature of joined Referees, this function accesses the right Referee in a joined Referee.
 
 If called on an unjoined Referee, `.right()` returns null.
+
+<hr>
+
+#####`.close(recursive? : boolean)`
+
+Because Referee's listen for changes on scripts, it is occasionally desired to close a Referee and remove those listeners.
+
+If the Referee has been joined with another, then `recursive` can be set to true to close all child Referees.
+
+After the Referee has been closed, it's behavior is useless or undefined.
+
+<hr>
+
+#####`.closed` -> `boolean`
+
+Returns true if the Referee has been closed.
 
 <hr>
 
@@ -748,6 +769,15 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.2.4
+* Added [`.close()`](#closerecursive--boolean) methods and [`.closed`](#closed---boolean) properties to Referees
+* Fixed bug in [`.load()`](#loadfilename--string-watch--boolean---script) that prevented watching a new filename
+* Removed all non-strict equalities and inequalities
+* Use `void 0` where possible instead of null
+* Overprotected file watcher system in case of potential file deletion events
+    * Was unable to test it, though.
+* Made forced reloading in [`.include()`](#includefilename--string-load--boolean---script) optional
 
 #####1.2.3
 * Forgot to freeze another part of Referee values

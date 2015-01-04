@@ -18,7 +18,7 @@ module Scriptor {
         reference( filename : string, ...args : any[] ) : any;
         reference_apply( filename : string, args : any[] ) : any;
         reference_once( filename : string, ...args : any[] ) : Referee;
-        include( filename : string ) : Script;
+        include( filename : string, load? : boolean ) : Script;
     }
 
     export interface IScriptModule extends IScriptBase, Module.IModule {
@@ -28,7 +28,7 @@ module Scriptor {
     export class Script extends events.EventEmitter implements IScriptBase {
 
         private _script : IScriptModule;
-        private _watcher : fs.FSWatcher = null;
+        private _watcher : fs.FSWatcher;
         private _recurse : number = 0;
         private _maxRecursion : number = 1;
 
@@ -60,7 +60,7 @@ module Scriptor {
         }
 
         get watched() : boolean {
-            return this._watcher != null;
+            return this._watcher !== void 0;
         }
 
         //Only allow getting the filename, setting should be done through .load
@@ -88,7 +88,7 @@ module Scriptor {
             //Create a new Module without an id. It will be set later
             this._script = <any>(new Module.Module( null, parent ));
 
-            if( filename != null ) {
+            if( filename !== void 0 ) {
                 this.load( filename );
             }
         }
@@ -177,6 +177,8 @@ module Scriptor {
         public load( filename : string, watch : boolean = false ) : Script {
             filename = path.resolve( filename );
 
+            this.close( false );
+
             this.id = path.basename( filename );
 
             this._script.filename = filename;
@@ -184,11 +186,6 @@ module Scriptor {
             if( watch ) {
                 this.watch();
             }
-
-            //Although this seems counter-intuitive,
-            //the lazy loading dictates it must be in an unloaded state before a new script is compiled/run
-            //This is a just-in-case thing in-case the module was already loaded when .load was called
-            this.unload();
 
             return this;
         }
@@ -217,29 +214,37 @@ module Scriptor {
                 } );
 
                 watcher.on( 'change', ( event : string, filename : string ) => {
-                    filename = path.resolve( path.dirname( this.filename ), filename );
-
-                    if( event === 'change' && this.loaded ) {
+                    //path.resolve doesn't like nulls, so this has to be done first
+                    if( filename === null && event === 'rename' ) {
+                        //if the file was deleted, there is nothing we can do so just mark it unloaded.
+                        //The next call to do_load will give an error akin to require's errors
                         this.unload();
+                        this.unwatch();
 
-                    } else if( event === 'rename' && filename !== this.filename ) {
-                        //filename will be null if the file was deleted
-                        if( filename != null ) {
+                        this._script.filename = null;
+
+                    } else {
+
+                        filename = path.resolve( path.dirname( this.filename ), filename );
+
+                        if( event === 'change' && this.loaded ) {
+                            this.unload();
+
+                        } else if( event === 'rename' && filename !== this.filename ) {
                             //A simple rename doesn't change file content, so just change the filename
                             //and leave the script loaded
                             this._script.filename = filename;
-
-                        } else {
-                            //if the file was deleted, there is nothing we can do so just mark it unloaded.
-                            //The next call to do_load will give an error akin to require's errors
-                            this.unload();
-                            this.unwatch();
-
-                            this._script.filename = null;
                         }
                     }
 
                     this.emit( 'change', event, filename );
+                } );
+
+                watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
+                    this.unload();
+
+                    //Would it be better to throw?
+                    this.emit( 'error', error );
                 } );
 
                 return true;
@@ -252,9 +257,7 @@ module Scriptor {
             if( this.watched ) {
                 //close the watched and null it to allow the GC to collect it
                 this._watcher.close();
-                this._watcher = null;
-
-                return true;
+                return delete this._watcher;
             }
 
             return false;
@@ -267,7 +270,7 @@ module Scriptor {
             if( permanent ) {
 
                 //Remove _script from parent
-                if( this.parent != null ) {
+                if( this.parent !== void 0 ) {
                     var children : Module.IModule[] = this.parent.children;
 
                     for( var _i in children ) {
@@ -280,15 +283,14 @@ module Scriptor {
                 }
 
                 //Remove _script from current object
-                delete this['_script'];
-                this._script = null;
+                return delete this._script;
             }
         }
     }
 
     export class ScriptAdapter extends Script {
         //If the script is referred to by reference_once, this is set, allowing it to keep track of this script
-        public referee : Referee = null;
+        public _referee : Referee;
 
         constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
@@ -303,7 +305,7 @@ module Scriptor {
         public reference_apply( filename : string, args : any[] ) : any {
             //include is used instead of this.manager.apply because include takes into account
             //relative includes/references
-            return this.include( filename ).apply( args );
+            return this.include( filename, false ).apply( args );
         }
 
         //Basically, whatever arguments you give this the first time it's called is all you get
@@ -315,15 +317,17 @@ module Scriptor {
             var script : ScriptAdapter = this.manager.add( real_filename );
 
             //Use the existing one in the script or create a new one (which will attach itself)
-            if( script.referee != null ) {
-                return script.referee;
+            if( script._referee !== void 0 ) {
+                return script._referee;
 
             } else {
-                return new Referee( script, args );
+                this._referee = new Referee( script, args );
+
+                return this._referee;
             }
         }
 
-        public include( filename : string ) : ScriptAdapter {
+        public include( filename : string, load : boolean = false ) : ScriptAdapter {
             //make sure filename can be relative to the current script
             var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
 
@@ -333,7 +337,7 @@ module Scriptor {
 
             //Since include can be used independently of reference, make sure it's loaded before returning
             //Otherwise, the returned script is in an incomplete state
-            if( !script.loaded ) {
+            if( load && !script.loaded ) {
                 script.reload();
             }
 
@@ -342,7 +346,7 @@ module Scriptor {
     }
 
     export interface ITransform {
-        ( prev : IReferee, ref : IReferee ) : any;
+        ( left : IReferee, right : IReferee ) : any;
     }
 
     export var default_transform : ITransform = ( prev : IReferee, ref : IReferee ) => {
@@ -352,13 +356,16 @@ module Scriptor {
     export interface IReferee extends NodeJS.EventEmitter {
         value() : any;
         ran : boolean;
+        closed : boolean;
         join( ref : IReferee, transform? : ITransform ) : IReferee;
         left() : IReferee;
         right() : IReferee;
+        close( recursive? );
     }
 
     export class RefereeBase extends events.EventEmitter {
-        protected _value : any = null;
+        protected _onChange : ( event : string, filename : string ) => any;
+        protected _value : any;
         protected _ran : boolean = false;
     }
 
@@ -369,15 +376,15 @@ module Scriptor {
             //Just mark this referee as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
             //but this referee would still not be run
-            this._script.on( 'change', ( event : string, filename : string ) => {
+            this._onChange = ( event : string, filename : string ) => {
                 if( this._ran ) {
                     this._ran = false;
 
                     this.emit( 'change', event, filename );
                 }
-            } );
+            };
 
-            this._script.referee = this;
+            this._script.on( 'change', this._onChange );
         }
 
         public value() : any {
@@ -401,6 +408,10 @@ module Scriptor {
 
         get ran() : boolean {
             return this._ran;
+        }
+
+        get closed() : boolean {
+            return this._script === void 0;
         }
 
         static join( left : IReferee, right : IReferee, transform? : ITransform ) : IReferee {
@@ -441,6 +452,12 @@ module Scriptor {
         public right() : IReferee {
             return null;
         }
+
+        public close() {
+            this._script.removeListener( 'change', this._onChange );
+            delete this._value;
+            delete this._script._referee;
+        }
     }
 
     export class JoinedReferee extends RefereeBase implements IReferee {
@@ -454,14 +471,14 @@ module Scriptor {
 
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this
-            var onChange = ( event : string, filename : string ) => {
+            this._onChange = ( event : string, filename : string ) => {
                 this.emit( 'change', event, filename );
 
                 this._ran = false;
             };
 
-            _left.on( 'change', onChange );
-            _right.on( 'change', onChange );
+            _left.on( 'change', this._onChange );
+            _right.on( 'change', this._onChange );
         }
 
         public value() : any {
@@ -484,6 +501,10 @@ module Scriptor {
             return this._ran;
         }
 
+        get closed() : boolean {
+            return this._left === void 0 || this._right === void 0;
+        }
+
         static join = Referee.join;
         static join_all = Referee.join_all;
 
@@ -497,6 +518,21 @@ module Scriptor {
 
         public right() : IReferee {
             return this._right;
+        }
+
+        public close( recursive : boolean = false ) {
+            this._left.removeListener( 'change', this._onChange );
+            this._right.removeListener( 'change', this._onChange );
+
+            delete this._value;
+
+            if( recursive ) {
+                this._left.close( recursive );
+                this._right.close( recursive );
+            }
+
+            delete this._left;
+            delete this._right;
         }
     }
 
@@ -527,7 +563,7 @@ module Scriptor {
 
             var script : ScriptAdapter = this._scripts[filename];
 
-            if( script == null ) {
+            if( script === void 0 ) {
                 script = new ScriptAdapter( this, filename, this._parent );
 
                 this._scripts[filename] = script;
@@ -550,7 +586,7 @@ module Scriptor {
 
             var script : ScriptAdapter = this._scripts[filename];
 
-            if( script != null ) {
+            if( script !== void 0 ) {
 
                 if( close ) {
                     script.close();
@@ -572,7 +608,7 @@ module Scriptor {
             var script : ScriptAdapter = this._scripts[filename];
 
             //By default add the script to the manager to make lookup faster in the future
-            if( script == null ) {
+            if( script === void 0 ) {
                 return this.add( filename ).apply( args );
 
             } else {
@@ -587,11 +623,13 @@ module Scriptor {
         public once_apply( filename : string, args : any[] ) : Referee {
             var script : ScriptAdapter = this.add( filename );
 
-            if( script.referee != null ) {
-                return script.referee;
+            if( script._referee !== void 0 ) {
+                return script._referee;
 
             } else {
-                return new Referee( script, args );
+                script._referee = new Referee( script, args );
+
+                return script._referee;
             }
         }
 
