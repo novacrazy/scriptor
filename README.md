@@ -489,7 +489,9 @@ var _ = require('lodash');
 
 //left and right are Referees
 function merge(left, right) {
-    return _.merge(left.value(), right.value());
+    return _.merge({}, left.value(), right.value(), function(a, b) {
+        return _.isArray(a) ? a.concat(b) : void 0;
+    } );
 }
 
 var manager = new Scriptor.Manager();
@@ -571,7 +573,9 @@ var _ = require('lodash');
 
 //left and right are Referees
 function merge(left, right) {
-    return _.merge(left.value(), right.value());
+    return _.merge({}, left.value(), right.value(), function(a, b) {
+        return _.isArray(a) ? a.concat(b) : void 0;
+    } );
 }
 
 var Referee = Scriptor.Referee;
@@ -616,7 +620,9 @@ var path = require('path');
 
 //left and right are Referees
 function merge(left, right) {
-    return _.merge(left.value(), right.value());
+    return _.merge({}, left.value(), right.value(), function(a, b) {
+        return _.isArray(a) ? a.concat(b) : void 0;
+    } );
 }
 
 var manager = new Scriptor.Manager();
