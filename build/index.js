@@ -179,7 +179,7 @@ var Scriptor;
                 return this._referee;
             }
             else {
-                this._referee = new Referee( this, args );
+                this._referee = new Reference( this, args );
                 return this._referee;
             }
         };
@@ -220,7 +220,7 @@ var Scriptor;
         };
         Script.prototype.reload = function() {
             var was_loaded = this.loaded;
-            //If a Referee depends on this script, then it should be updated when it reloads
+            //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
             //Force it to reload and recompile the script.
@@ -329,9 +329,9 @@ var Scriptor;
         Object.defineProperty( SourceScript.prototype, "source", {
             get:          function() {
                 var src;
-                if( this._source instanceof RefereeBase ) {
+                if( this._source instanceof ReferenceBase ) {
                     src = this._source.value();
-                    assert.strictEqual( typeof src, 'string', 'Referee source must return string as value' );
+                    assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
                 }
                 else {
                     src = this._source;
@@ -363,7 +363,7 @@ var Scriptor;
                 watch = true;
             }
             this.close( false );
-            assert( typeof src === 'string' || src instanceof RefereeBase, 'Source must be a string or Referee' );
+            assert( typeof src === 'string' || src instanceof ReferenceBase, 'Source must be a string or Reference' );
             this._source = src;
             if( watch ) {
                 this.watch();
@@ -373,7 +373,7 @@ var Scriptor;
         };
         SourceScript.prototype.watch = function() {
             var _this = this;
-            if( !this.watched && this._source instanceof RefereeBase ) {
+            if( !this.watched && this._source instanceof ReferenceBase ) {
                 this._onChange = function(event, filename) {
                     _this.emit( 'change', event, filename );
                     _this.unload();
@@ -384,7 +384,7 @@ var Scriptor;
             return false;
         };
         SourceScript.prototype.unwatch = function() {
-            if( this.watched && this._source instanceof RefereeBase ) {
+            if( this.watched && this._source instanceof ReferenceBase ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -469,19 +469,19 @@ var Scriptor;
     Scriptor.identity = function(left, right) {
         return left.value();
     };
-    var RefereeBase = (function(_super) {
-        __extends( RefereeBase, _super );
-        function RefereeBase() {
+    var ReferenceBase = (function(_super) {
+        __extends( ReferenceBase, _super );
+        function ReferenceBase() {
             _super.apply( this, arguments );
             this._ran = false;
         }
 
-        return RefereeBase;
+        return ReferenceBase;
     })( events.EventEmitter );
-    Scriptor.RefereeBase = RefereeBase;
-    var Referee = (function(_super) {
-        __extends( Referee, _super );
-        function Referee(_script, _args) {
+    Scriptor.ReferenceBase = ReferenceBase;
+    var Reference = (function(_super) {
+        __extends( Reference, _super );
+        function Reference(_script, _args) {
             var _this = this;
             _super.call( this );
             this._script = _script;
@@ -496,7 +496,7 @@ var Scriptor;
             this._script.on( 'change', this._onChange );
         }
 
-        Referee.prototype.value = function() {
+        Reference.prototype.value = function() {
             //Evaluation should only be performed here.
             //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
             //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
@@ -511,26 +511,26 @@ var Scriptor;
             }
             return this._value;
         };
-        Object.defineProperty( Referee.prototype, "ran", {
+        Object.defineProperty( Reference.prototype, "ran", {
             get:        function() {
                 return this._ran;
             },
             enumerable: true,
             configurable: true
         } );
-        Object.defineProperty( Referee.prototype, "closed", {
+        Object.defineProperty( Reference.prototype, "closed", {
             get:          function() {
                 return this._script === void 0;
             },
             enumerable:   true,
             configurable: true
         } );
-        Referee.join = function(left, right, transform) {
-            return new JoinedReferee( left, right, transform );
+        Reference.join = function(left, right, transform) {
+            return new JoinedReference( left, right, transform );
         };
-        //Creates a binary tree (essentially) of joins from an array of Referees using a single transform
-        Referee.join_all = function(refs, transform) {
-            assert( Array.isArray( refs ), 'join_all can only join arrays of Referees' );
+        //Creates a binary tree (essentially) of joins from an array of References using a single transform
+        Reference.join_all = function(refs, transform) {
+            assert( Array.isArray( refs ), 'join_all can only join arrays of References' );
             if( refs.length === 0 ) {
                 return null;
             }
@@ -538,31 +538,31 @@ var Scriptor;
                 return refs[0];
             }
             else if( refs.length === 2 ) {
-                return Referee.join( refs[0], refs[1], transform );
+                return Reference.join( refs[0], refs[1], transform );
             }
             else {
                 var mid = Math.floor( refs.length / 2 );
-                var left = Referee.join_all( refs.slice( 0, mid ), transform );
-                var right = Referee.join_all( refs.slice( mid ), transform );
-                return Referee.join( left, right, transform );
+                var left = Reference.join_all( refs.slice( 0, mid ), transform );
+                var right = Reference.join_all( refs.slice( mid ), transform );
+                return Reference.join( left, right, transform );
             }
         };
-        Referee.transform = function(ref, transform) {
-            return new TransformReferee( ref, transform );
+        Reference.transform = function(ref, transform) {
+            return new TransformReference( ref, transform );
         };
-        Referee.prototype.join = function(ref, transform) {
-            return Referee.join( this, ref, transform );
+        Reference.prototype.join = function(ref, transform) {
+            return Reference.join( this, ref, transform );
         };
-        Referee.prototype.transform = function(transform) {
-            return Referee.transform( this, transform );
+        Reference.prototype.transform = function(transform) {
+            return Reference.transform( this, transform );
         };
-        Referee.prototype.left = function() {
+        Reference.prototype.left = function() {
             return this;
         };
-        Referee.prototype.right = function() {
+        Reference.prototype.right = function() {
             return null;
         };
-        Referee.prototype.close = function() {
+        Reference.prototype.close = function() {
             if( !this.closed ) {
                 this._script.removeListener( 'change', this._onChange );
                 delete this._value;
@@ -570,17 +570,17 @@ var Scriptor;
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         };
-        return Referee;
-    })( RefereeBase );
-    Scriptor.Referee = Referee;
-    var TransformReferee = (function(_super) {
-        __extends( TransformReferee, _super );
-        function TransformReferee(_ref, _transform) {
+        return Reference;
+    })( ReferenceBase );
+    Scriptor.Reference = Reference;
+    var TransformReference = (function(_super) {
+        __extends( TransformReference, _super );
+        function TransformReference(_ref, _transform) {
             var _this = this;
             _super.call( this );
             this._ref = _ref;
             this._transform = _transform;
-            assert( _ref instanceof RefereeBase, 'transform will only work on Referees' );
+            assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
@@ -589,7 +589,7 @@ var Scriptor;
             this._ref.on( 'change', this._onChange );
         }
 
-        TransformReferee.prototype.value = function() {
+        TransformReference.prototype.value = function() {
             if( !this._ran ) {
                 this._value = this._transform( this._ref, null );
                 //Prevents overwriting over elements
@@ -600,33 +600,33 @@ var Scriptor;
             }
             return this._value;
         };
-        Object.defineProperty( TransformReferee.prototype, "ran", {
+        Object.defineProperty( TransformReference.prototype, "ran", {
             get:          function() {
                 return this._ran;
             },
             enumerable:   true,
             configurable: true
         } );
-        Object.defineProperty( TransformReferee.prototype, "closed", {
+        Object.defineProperty( TransformReference.prototype, "closed", {
             get:          function() {
                 return this._ref === void 0;
             },
             enumerable:   true,
             configurable: true
         } );
-        TransformReferee.prototype.join = function(ref, transform) {
-            return Referee.join( this, ref, transform );
+        TransformReference.prototype.join = function(ref, transform) {
+            return Reference.join( this, ref, transform );
         };
-        TransformReferee.prototype.transform = function(transform) {
-            return Referee.transform( this, transform );
+        TransformReference.prototype.transform = function(transform) {
+            return Reference.transform( this, transform );
         };
-        TransformReferee.prototype.left = function() {
+        TransformReference.prototype.left = function() {
             return this;
         };
-        TransformReferee.prototype.right = function() {
+        TransformReference.prototype.right = function() {
             return null;
         };
-        TransformReferee.prototype.close = function(recursive) {
+        TransformReference.prototype.close = function(recursive) {
             if( recursive === void 0 ) {
                 recursive = false;
             }
@@ -639,12 +639,12 @@ var Scriptor;
                 delete this._ref;
             }
         };
-        return TransformReferee;
-    })( RefereeBase );
-    Scriptor.TransformReferee = TransformReferee;
-    var JoinedReferee = (function(_super) {
-        __extends( JoinedReferee, _super );
-        function JoinedReferee(_left, _right, _transform) {
+        return TransformReference;
+    })( ReferenceBase );
+    Scriptor.TransformReference = TransformReference;
+    var JoinedReference = (function(_super) {
+        __extends( JoinedReference, _super );
+        function JoinedReference(_left, _right, _transform) {
             var _this = this;
             if( _transform === void 0 ) {
                 _transform = Scriptor.identity;
@@ -654,7 +654,8 @@ var Scriptor;
             this._right = _right;
             this._transform = _transform;
             //Just to prevent stupid mistakes
-            assert( _left instanceof RefereeBase && _right instanceof RefereeBase, 'join will only work on Referees' );
+            assert( _left instanceof ReferenceBase && _right instanceof ReferenceBase,
+                'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             //This has to be a closure because the two emitters down below
@@ -667,7 +668,7 @@ var Scriptor;
             _right.on( 'change', this._onChange );
         }
 
-        JoinedReferee.prototype.value = function() {
+        JoinedReference.prototype.value = function() {
             //If anything needs to be re-run, re-run it
             if( !this._ran ) {
                 this._value = this._transform( this._left, this._right );
@@ -679,33 +680,33 @@ var Scriptor;
             }
             return this._value;
         };
-        Object.defineProperty( JoinedReferee.prototype, "ran", {
+        Object.defineProperty( JoinedReference.prototype, "ran", {
             get:        function() {
                 return this._ran;
             },
             enumerable: true,
             configurable: true
         } );
-        Object.defineProperty( JoinedReferee.prototype, "closed", {
+        Object.defineProperty( JoinedReference.prototype, "closed", {
             get:          function() {
                 return this._left === void 0 || this._right === void 0;
             },
             enumerable:   true,
             configurable: true
         } );
-        JoinedReferee.prototype.join = function(ref, transform) {
-            return Referee.join( this, ref, transform );
+        JoinedReference.prototype.join = function(ref, transform) {
+            return Reference.join( this, ref, transform );
         };
-        JoinedReferee.prototype.transform = function(transform) {
-            return Referee.transform( this, transform );
+        JoinedReference.prototype.transform = function(transform) {
+            return Reference.transform( this, transform );
         };
-        JoinedReferee.prototype.left = function() {
+        JoinedReference.prototype.left = function() {
             return this._left;
         };
-        JoinedReferee.prototype.right = function() {
+        JoinedReference.prototype.right = function() {
             return this._right;
         };
-        JoinedReferee.prototype.close = function(recursive) {
+        JoinedReference.prototype.close = function(recursive) {
             if( recursive === void 0 ) {
                 recursive = false;
             }
@@ -721,9 +722,9 @@ var Scriptor;
                 delete this._right;
             }
         };
-        return JoinedReferee;
-    })( RefereeBase );
-    Scriptor.JoinedReferee = JoinedReferee;
+        return JoinedReference;
+    })( ReferenceBase );
+    Scriptor.JoinedReference = JoinedReference;
     /**** BEGIN SECTION MANAGER ****/
     var Manager = (function() {
         function Manager(grandParent) {

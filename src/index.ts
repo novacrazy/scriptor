@@ -19,7 +19,7 @@ module Scriptor {
         imports : {[key : string] : any};
         reference( filename : string, ...args : any[] ) : any;
         reference_apply( filename : string, args : any[] ) : any;
-        reference_once( filename : string, ...args : any[] ) : Referee;
+        reference_once( filename : string, ...args : any[] ) : Reference;
         include( filename : string, load? : boolean ) : Script;
     }
 
@@ -34,7 +34,7 @@ module Scriptor {
         protected _recurse : number = 0;
         protected _maxRecursion : number = 1;
 
-        public _referee : Referee;
+        public _referee : Reference;
 
         public imports : {[key : string] : any} = {};
 
@@ -164,16 +164,16 @@ module Scriptor {
             }
         }
 
-        public call_once( ...args : any[] ) : Referee {
+        public call_once( ...args : any[] ) : Reference {
             return this.apply_once( args );
         }
 
-        public apply_once( args : any[] ) : Referee {
+        public apply_once( args : any[] ) : Reference {
             if( this._referee !== void 0 ) {
                 return this._referee;
 
             } else {
-                this._referee = new Referee( this, args );
+                this._referee = new Reference( this, args );
 
                 return this._referee;
             }
@@ -190,7 +190,7 @@ module Scriptor {
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference_once( filename : string ) : Referee {
+        public reference_once( filename : string ) : Reference {
             return null;
         }
 
@@ -228,7 +228,7 @@ module Scriptor {
         public reload() : boolean {
             var was_loaded : boolean = this.loaded;
 
-            //If a Referee depends on this script, then it should be updated when it reloads
+            //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
 
@@ -319,7 +319,7 @@ module Scriptor {
     }
 
     export class SourceScript extends Script {
-        protected _source : any; //string|Referee
+        protected _source : any; //string|Reference
 
         private _onChange : ( event : string, filename : string ) => any;
 
@@ -338,10 +338,10 @@ module Scriptor {
         get source() : string {
             var src : string;
 
-            if( this._source instanceof RefereeBase ) {
+            if( this._source instanceof ReferenceBase ) {
                 src = this._source.value();
 
-                assert.strictEqual( typeof src, 'string', 'Referee source must return string as value' );
+                assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
 
             } else {
                 src = this._source;
@@ -386,7 +386,7 @@ module Scriptor {
         public load( src : any, watch : boolean = true ) : SourceScript {
             this.close( false );
 
-            assert( typeof src === 'string' || src instanceof RefereeBase, 'Source must be a string or Referee' );
+            assert( typeof src === 'string' || src instanceof ReferenceBase, 'Source must be a string or Reference' );
 
             this._source = src;
 
@@ -400,7 +400,7 @@ module Scriptor {
         }
 
         public watch() : boolean {
-            if( !this.watched && this._source instanceof RefereeBase ) {
+            if( !this.watched && this._source instanceof ReferenceBase ) {
 
                 this._onChange = ( event : string, filename : string ) => {
                     this.emit( 'change', event, filename );
@@ -417,7 +417,7 @@ module Scriptor {
         }
 
         public unwatch() : boolean {
-            if( this.watched && this._source instanceof RefereeBase ) {
+            if( this.watched && this._source instanceof ReferenceBase ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -444,7 +444,7 @@ module Scriptor {
         }
 
         //Basically, whatever arguments you give this the first time it's called is all you get
-        public reference_once( filename : string, ...args : any[] ) : Referee {
+        public reference_once( filename : string, ...args : any[] ) : Reference {
             var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
 
             return this.manager.add( real_filename ).apply_once( args );
@@ -493,31 +493,31 @@ module Scriptor {
     /**** BEGIN SECTION REFEREE ****/
 
     export interface ITransformFunction {
-        ( left : IReferee, right : IReferee ) : any;
+        ( left : IReference, right : IReference ) : any;
     }
 
-    export var identity : ITransformFunction = ( left : IReferee, right : IReferee ) => {
+    export var identity : ITransformFunction = ( left : IReference, right : IReference ) => {
         return left.value();
     };
 
-    export interface IReferee extends NodeJS.EventEmitter {
+    export interface IReference extends NodeJS.EventEmitter {
         value() : any;
         ran : boolean;
         closed : boolean;
-        join( ref : IReferee, transform? : ITransformFunction ) : IReferee;
+        join( ref : IReference, transform? : ITransformFunction ) : IReference;
         transform( transform? : ITransformFunction )
-        left() : IReferee;
-        right() : IReferee;
+        left() : IReference;
+        right() : IReference;
         close( recursive? );
     }
 
-    export class RefereeBase extends events.EventEmitter {
+    export class ReferenceBase extends events.EventEmitter {
         protected _onChange : ( event : string, filename : string ) => any;
         protected _value : any;
         protected _ran : boolean = false;
     }
 
-    export class Referee extends RefereeBase implements IReferee {
+    export class Reference extends ReferenceBase implements IReference {
         constructor( private _script : Script, private _args : any[] ) {
             super();
 
@@ -560,13 +560,13 @@ module Scriptor {
             return this._script === void 0;
         }
 
-        static join( left : IReferee, right : IReferee, transform? : ITransformFunction ) : IReferee {
-            return new JoinedReferee( left, right, transform );
+        static join( left : IReference, right : IReference, transform? : ITransformFunction ) : IReference {
+            return new JoinedReference( left, right, transform );
         }
 
-        //Creates a binary tree (essentially) of joins from an array of Referees using a single transform
-        static join_all( refs : IReferee[], transform? : ITransformFunction ) : IReferee {
-            assert( Array.isArray( refs ), 'join_all can only join arrays of Referees' );
+        //Creates a binary tree (essentially) of joins from an array of References using a single transform
+        static join_all( refs : IReference[], transform? : ITransformFunction ) : IReference {
+            assert( Array.isArray( refs ), 'join_all can only join arrays of References' );
 
             if( refs.length === 0 ) {
                 return null;
@@ -575,35 +575,35 @@ module Scriptor {
                 return refs[0];
 
             } else if( refs.length === 2 ) {
-                return Referee.join( refs[0], refs[1], transform );
+                return Reference.join( refs[0], refs[1], transform );
 
             } else {
                 var mid = Math.floor( refs.length / 2 );
 
-                var left : IReferee = Referee.join_all( refs.slice( 0, mid ), transform );
-                var right : IReferee = Referee.join_all( refs.slice( mid ), transform );
+                var left : IReference = Reference.join_all( refs.slice( 0, mid ), transform );
+                var right : IReference = Reference.join_all( refs.slice( mid ), transform );
 
-                return Referee.join( left, right, transform );
+                return Reference.join( left, right, transform );
             }
         }
 
-        static transform( ref : IReferee, transform? : ITransformFunction ) {
-            return new TransformReferee( ref, transform );
+        static transform( ref : IReference, transform? : ITransformFunction ) {
+            return new TransformReference( ref, transform );
         }
 
-        public join( ref : IReferee, transform? : ITransformFunction ) : IReferee {
-            return Referee.join( this, ref, transform );
+        public join( ref : IReference, transform? : ITransformFunction ) : IReference {
+            return Reference.join( this, ref, transform );
         }
 
         public transform( transform? : ITransformFunction ) {
-            return Referee.transform( this, transform );
+            return Reference.transform( this, transform );
         }
 
-        public left() : IReferee {
+        public left() : IReference {
             return this;
         }
 
-        public right() : IReferee {
+        public right() : IReference {
             return null;
         }
 
@@ -618,11 +618,11 @@ module Scriptor {
         }
     }
 
-    export class TransformReferee extends RefereeBase implements IReferee {
-        constructor( private _ref : IReferee, private _transform : ITransformFunction ) {
+    export class TransformReference extends ReferenceBase implements IReference {
+        constructor( private _ref : IReference, private _transform : ITransformFunction ) {
             super();
 
-            assert( _ref instanceof RefereeBase, 'transform will only work on Referees' );
+            assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
             this._onChange = ( event : string, filename : string ) => {
@@ -657,19 +657,19 @@ module Scriptor {
             return this._ref === void 0;
         }
 
-        public join( ref : IReferee, transform? : ITransformFunction ) {
-            return Referee.join( this, ref, transform );
+        public join( ref : IReference, transform? : ITransformFunction ) {
+            return Reference.join( this, ref, transform );
         }
 
         public transform( transform? : ITransformFunction ) {
-            return Referee.transform( this, transform );
+            return Reference.transform( this, transform );
         }
 
-        public left() : IReferee {
+        public left() : IReference {
             return this;
         }
 
-        public right() : IReferee {
+        public right() : IReference {
             return null;
         }
 
@@ -687,13 +687,14 @@ module Scriptor {
         }
     }
 
-    export class JoinedReferee extends RefereeBase implements IReferee {
-        constructor( private _left : IReferee, private _right : IReferee,
+    export class JoinedReference extends ReferenceBase implements IReference {
+        constructor( private _left : IReference, private _right : IReference,
                      private _transform : ITransformFunction = identity ) {
             super();
 
             //Just to prevent stupid mistakes
-            assert( _left instanceof RefereeBase && _right instanceof RefereeBase, 'join will only work on Referees' );
+            assert( _left instanceof ReferenceBase &&
+                    _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
@@ -733,19 +734,19 @@ module Scriptor {
             return this._left === void 0 || this._right === void 0;
         }
 
-        public join( ref : IReferee, transform? : ITransformFunction ) : IReferee {
-            return Referee.join( this, ref, transform );
+        public join( ref : IReference, transform? : ITransformFunction ) : IReference {
+            return Reference.join( this, ref, transform );
         }
 
         public transform( transform? : ITransformFunction ) {
-            return Referee.transform( this, transform );
+            return Reference.transform( this, transform );
         }
 
-        public left() : IReferee {
+        public left() : IReference {
             return this._left;
         }
 
-        public right() : IReferee {
+        public right() : IReference {
             return this._right;
         }
 
@@ -849,15 +850,15 @@ module Scriptor {
             }
         }
 
-        public once( filename : string, ...args : any[] ) : Referee {
+        public once( filename : string, ...args : any[] ) : Reference {
             return this.apply_once( filename, args );
         }
 
-        public call_once( filename : string, ...args : any[] ) : Referee {
+        public call_once( filename : string, ...args : any[] ) : Reference {
             return this.apply_once( filename, args );
         }
 
-        public apply_once( filename : string, args : any[] ) : Referee {
+        public apply_once( filename : string, args : any[] ) : Reference {
             return this.add( filename ).apply_once( args );
         }
 
