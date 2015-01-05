@@ -7,27 +7,39 @@ Scriptor
 
 ## Introduction
 
-Scriptor is a small library for dynamically loading, reloading and running scripts without having to restart the process, with built-in support for file watching to automatically reload when necessary.
+Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process, with built-in support for file watching to automatically reload when necessary.
 
 A script is defined as a file which can be 'required' by Node, be it a `.js`, `.json`, or any other installed extension. Even binary '.node' extensions are supported.
 
-Scriptor does this by exploiting the `module` module's classes and functions that Node uses internally. The only downside to this is that it compiles the scripts synchronously. So to make the impact of this as little as possible, all compilation and evaluation of scripts is done lazily. That means even if you create a Script instance, it will not load or compile the script until it is actually needed.
+Scriptor does this by exploiting the `module` module's classes and functions that Node uses internally. However, code can only be compiled/evaluated synchronously. So to make the impact of this as little as possible, all compilation and evaluation of scripts is done lazily. That means even if you create a Script instance, it will not load or compile the script until it is actually needed.
 
 Additionally, with the use of the Manager class, Scriptor provides a way of referencing and calling other scripts relative to itself, allowing you to chain together complex tasks easily.
+
+As of [Version 1.3.0](#130), Scriptor Referees (special objects that house immutable script results), can be transformed in any way possible, with several utilities for doing it the best way.
 
 ## Purpose
 
 The original purpose for this system was to create a framework for writing simple scripts that generate web pages. That is still in development, but being able to separate out, reuse and update code without having to restart my server process was key.
 
+Now Scriptor can be used for almost anything requiring the loading and evaluation of code or anything `require`-able.
+
+Using extensions like [`dot-require`](https://github.com/novacrazy/dot-require) and others, Scriptor can load and evaluate a script, then using the `once` functions and `Referees` create huge and complex transformation chains and trees to manipulate data in any way you can imagine, and still have it all done lazily.
+
 ## Documentation
 
 All documentation for this project is in TypeScript syntax for typed parameters.
 
-- [Script](#script)
+- [Static](#static)
+    - [`Scriptor.load(filename : string, watch? : boolean)`](#scriptorloadfilename--string-watch--boolean---script)
+    - [`Scriptor.compile(src : string|Referee, watch? : boolean)`](#scriptorcompilesrc--stringreferee-watch--boolean---sourcescript)
+
+- [`Script`](#script)
     - [`new Script(filename? : string, parent? : Module)`](#new-scriptfilename--string-parent--module---script)
     - [`.load(filename : string, watch? : boolean)`](#loadfilename--string-watch--boolean---script)
     - [`.call(...args : any[])`](#callargs--any---any)
     - [`.apply(args : any[])`](#applyargs--any---any)
+    - [`.call_once(...args : any[])`](#call_onceargs--any---referee)
+    - [`.apply_once(args : any[])`](#apply_onceargs--any---referee)
     - [`.require(path : string)`](#requirepath--string---any)
     - [`.unload()`](#unload---boolean)
     - [`.reload()`](#reload---boolean)
@@ -49,6 +61,11 @@ All documentation for this project is in TypeScript syntax for typed parameters.
         - [`.reference_once(filename : string, ...args : any[])`](#reference_oncefilename--string-args--any---referee)
         - [`.include(filename : string, load? : boolean)`](#includefilename--string-load--boolean---script)
 
+- [`SourceScript`](#sourcescript)
+    - [`new Script(src? : string|Referee, parent? : Module)`](#new-scriptsrc--stringreferee-parent--module---sourcescript)
+    - [`.load(src? : string|Referee, watch? : boolean)`](#loadsrc--stringreferee-watch--boolean---sourcescript)
+    - [`.source`](#source---string)
+
 - [Script Environment](#script-environment)
     - [`module.define(id? : string, deps? : string[], factory : Function)`](#moduledefineid--string-deps--string-factory--function)
     - [`module.reference(filename : string, ...args : any[])`](#modulereferencefilename--string-args--any---any)
@@ -57,18 +74,21 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`module.include(filename : string, load? : boolean)`](#moduleincludefilename--string-load--boolean---script)
     - [`module.imports`](#moduleimports---any)
 
-- [Referee](#referee)
+- [`ITransformFunction`](#itransformfunction)
+
+- [`Referee`](#referee)
     - [`.value()`](#value---any)
     - [`.ran`](#ran---boolean)
-    - [`.join(ref : Referee, transform? : Function)`](#joinref--referee-transform--function---referee)
+    - [`.transform(transform : ITransformFunction)`](#transformtransform--itransformfunction---referee)
+    - [`.join(ref : Referee, transform? : ITransformFunction)`](#joinref--referee-transform--itransformfunction---referee)
     - [`.left()`](#left---referee)
     - [`.right()`](#right---referee)
     - [`.close(recursive? : boolean)`](#closerecursive--boolean)
     - [`.closed`](#closed---boolean)
-    - [`Referee.join(left : Referee, right : Referee, transform? : Function)`](#refereejoinleft--referee-right--referee-transform--function---referee)
-    - [`Referee.join_all(refs : Referee[], transform? : Function)`](#refereejoin_allrefs--referee-transform--function---referee)
+    - [`Referee.join(left : Referee, right : Referee, transform? : ITransformFunction)`](#refereejoinleft--referee-right--referee-transform--itransformfunction---referee)
+    - [`Referee.join_all(refs : Referee[], transform? : ITransformFunction)`](#refereejoin_allrefs--referee-transform--itransformfunction---referee)
 
-- [Manager](#manager)
+- [`Manager`](#manager)
     - [`new Manager(grandParent? : Module)`](#new-managergrandparent--module---manager)
     - [`.add(filename : string, watch? : boolean)`](#addfilename--string-watch--boolean---script)
     - [`.remove(filename : string, close? : boolean)`](#removefilename--string-close--boolean---boolean)
@@ -82,6 +102,30 @@ All documentation for this project is in TypeScript syntax for typed parameters.
 - [Rational and Behavior](#rational-and-behavior)
 
 - [Changelog](#changelog)
+
+##Static
+
+#####`Scriptor.load(filename : string, watch? : boolean)` -> `Script`
+
+This creates a new Script instance with filename as the script to be loaded.
+
+If `watch` is true, `Scriptor.load` will set up file watching.
+
+`watch` defaults to true.
+
+<hr>
+
+#####`Scriptor.compile(src : string|Referee, watch? : boolean)` -> `SourceScript`
+
+A variation to `Scriptor.load` which takes a string or a Referee that returns a string when `.value()` is called, and returns a [`SourceScript`](#sourcescript).
+
+If `watch` is true, `Scriptor.load` will set up 'file' watching.
+
+Refer to SourceScript documentation for details about how exactly it can watch a static string.
+
+`watch` defaults to true.
+
+<hr>
 
 ##Script
 
@@ -111,6 +155,8 @@ Since Scriptor emphasizes lazy evaluation, all `.load` really does is mark the s
 It does set `.id` to the basename of this filename given, but that can be overwritten manually anytime after. See the documentation of [`.id`](#id---string) for more on that.
 
 If `watch` is true, a file watcher is spawned to watch the script for changes. For more information on how Scriptor handles this situation, refer to [`.watch`](#watch).
+
+`watch` defaults to true.
 
 <hr>
 
@@ -155,6 +201,22 @@ var html = React.renderToStaticMarkup(React.createElement(hello.call(), {name: "
 To reflect a `Function`, a Script instance has a `.apply` method that takes an array to be applied to the function, similar to `Function.prototype.apply`, but again without the `this` argument.
 
 Used together, `.call` and `.apply` can generally satisfy any common way of evaluating a script.
+
+<hr>
+
+#####`.call_once(...args : any[])` -> `Referee`
+
+Returns a Referee for this script with the arguments provided.
+
+If this script already has been referenced via a `once` function, this returns the previous Referee.
+
+<hr>
+
+#####`.apply_once(args : any[])` -> `Referee`
+
+Returns a Referee for this script with the arguments provided.
+
+If this script already has been referenced via a `once` function, this returns the previous Referee.
 
 <hr>
 
@@ -375,6 +437,43 @@ It is useful when referring to other scripts within the same manager, and when y
 
 If `load` is true, it forces evaluation of the script before it is returned. If the script is new and not evaluated, it may be in an incomplete state.
 
+`load` defaults to false.
+
+<hr>
+
+##SourceScript
+
+A SourceScript is a specialization of Script that can handle direct compilation from source code provided to it in the form of a string or a Referee that returns a string when `.value()` is called.
+
+**NOTE**: All normal functions from [Script](#script) are inherited and work the exact same. The only function changed is `.load`.
+
+If the source code given to a SourceScript is a Referee, the SourceScript can 'watch' that Referee similarly to how a Script watches a file. When the Referee becomes invalidated, so does the SourceScript, and will recompile and reevaluate with the most recent code given to it by the Referee.
+
+This is particularly useful for loading code of some sort that is not JavaScript and needs an additional step of compilation by some other system. Like JSX, CoffeeScript, etc.
+
+Using Referee.transform and Referee.join, it should be possible to manipulate code in any way needed before giving it to the SourceScript, and it will STILL re-evaluate when needed as all changes propegate through the Referees and into the SourceScript.
+
+#####`new Script(src? : string|Referee, parent? : Module)` -> `SourceScript`
+
+Create a new SourceScript and optionally called `.load` with the `src` provided.
+
+<hr>
+
+#####`.load(src? : string|Referee, watch? : boolean)` -> `SourceScript`
+
+Marks the SourceScript to draw the source code from a new source, be it a static string or a Referee.
+
+Due to the lazy evaluation, it will not be compiled/evaluated until it is next needed.
+
+If `watch` is true and `src` is a Referee, the SourceScript will watch for changes of that Referee and recompile/re-evaluate the script as necessary.
+
+`watch` defaults to true. If `src` is a string, `watch` has no effect.
+
+<hr>
+
+#####`.source` -> `string`
+
+Returns the source for the compiled script. If a Referee was given as a source, this dereferences it to get the value. If the value was not a string, this will throw an assertion error.
 
 <hr>
 
@@ -439,6 +538,75 @@ var template = compile.call('Some template', null);
 
 <hr>
 
+##ITransformFunction
+
+A unique part of Scriptor is the ability to chain or join together script results (in the form of Referees) via transform functions.
+
+Transform function are defined as follows:
+```typescript
+interface ITransformFunction {
+    (left : Referee, right : Referee) => any;
+}
+```
+
+Now, if you don't know TypeScript, the above is simply a definition for a function that accept two Referees and returns a result.
+
+For example, the merge function used in the Referee examples:
+```javascript
+//left and right are Referees
+function merge(left, right) {
+    return _.merge({}, left.value(), right.value(), function(a, b) {
+        return _.isArray(a) ? a.concat(b) : void 0;
+    } );
+}
+```
+
+Where `_` is lodash.
+
+The neat thing about this specification is that it is useful in both the `.join` and `.transform` modifiers.
+
+When used with `.join`, both left and right Referees are passed to it, but when used with `.transform`, only a left Referee is passed to it, and right is null.
+
+This is because `.transform` only works on a single Referee at a time, and the `.left` documentation states it will return `this` for an unjoined Referee. Although it may seem confusion, even a joined Referee is considered unjoined when being transformed simply because it has only one `.value` to read from, not two. It in itself takes care of the left and right Referees.
+
+So, to sum up all that, because it isn't very clear, here is an example of each:
+```javascript
+
+var manager = new Scriptor.Manager();
+
+var package = manager.once('package.json');
+
+var name = package.transform(function(ref) {
+    return 'Name: ' + ref.value().name;
+});
+
+console.log(name.value()); //"Name: scriptor"
+
+//Using the same files defined below
+var a = manager.once('a.json');
+var c = manager.once('c.json');
+
+var helloworld = a.join(b, function(left, right) {
+    return right.value().Goodbye + ', ' + left.value().Hello;
+});
+
+console.log(helloworld.value()); //"Hello, World!"
+```
+
+Or chain them as much as you desire:
+
+```javascript
+var html_hello = helloworld.transform(function(ref) {
+    return '<p>' + ref.value() + '</p>';
+});
+
+console.log(html_hello.value()); //<p>Hello, World!</p>
+```
+
+And if every source is being watched, any change to those files will be reflected at any level.
+
+<hr>
+
 ##Referee
 
 The Referee class is a tiny wrapper around the behavior for `reference_once`. It keeps track of the initial arguments, the statically cached value and updating it when the script changes.
@@ -459,9 +627,13 @@ True if the script has already run (and therefore the value is already cached), 
 
 <hr>
 
-#####`.join(ref : Referee, transform? : Function)` -> `Referee`
+#####`.transform(transform : ITransformFunction)` -> `Referee`
 
-This function allows you to join together referee instances using a transformation function, returning a new Referee to encompass it.
+Allows Referees to be chained together via a transform function. See the reference on [`ITransformFunction`](#itransformfunction) for more details.
+
+#####`.join(ref : Referee, transform? : ITransformFunction)` -> `Referee`
+
+This function allows you to join together referee instances using a transform function, returning a new Referee to encompass it.
 
 What this does is effectively create a tree of dependencies joined together by the transform function.
 
@@ -536,15 +708,15 @@ After all of the required changes are re-evaluated, `abc` once again becomes sta
 
 Of course this system can be used in other ways, with any custom transform function.
 
-By default, the transform function is `Scriptor.default_transform`, which is as follows;
+By default, the transform function is `Scriptor.identity`, which is as follows;
 
 ```typescript
 function(left : Referee, right : Referee) : any {
-    return right.value();
+    return left.value();
 }
 ```
 
-It's a variation of the identity function that just returns the rightmost value and ignores the left.
+It's a variation of the identity function that just returns the leftmost value and ignores the right. That is because `this` is the default left value, and `this` is always available.
 
 The merge function provided above is quite useful, but as stated, any transform with the above form can be used, and transforms are unique to each join operation, so incredibly complex chains of almost anything is possible.
 
@@ -582,11 +754,11 @@ After the Referee has been closed, it's behavior is useless or undefined.
 
 #####`.closed` -> `boolean`
 
-Returns true if the Referee has been closed.
+Returns true if the Referee has been closed. If the Referee is closed, it is useless and cannot be used. Discard it.
 
 <hr>
 
-#####`Referee.join(left : Referee, right : Referee, transform? : Function)` -> `Referee`
+#####`Referee.join(left : Referee, right : Referee, transform? : ITransformFunction)` -> `Referee`
 
 For easier use of the joined Referee system, this static method joins a left and a right Referee to create a new joined Referee.
 
@@ -626,7 +798,7 @@ Using the static join method might help understand the implicit tree structure a
 
 <hr>
 
-#####`Referee.join_all(refs : Referee[], transform? : Function)` -> `Referee`
+#####`Referee.join_all(refs : Referee[], transform? : ITransformFunction)` -> `Referee`
 
 Since the structure of joined Referees is similar to a binary tree, with each having left and right children to watch, it is very easy to create a lopsided tree using just `.join`.
 
@@ -769,6 +941,18 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+
+#####1.3.0
+* Added [`SourceScript`](#sourcescript)
+* Added [`.transform`](#transformtransform--itransformfunction---referee) method
+* Added documentation for [`ITransformFunction`](#itransformfunction)
+* Reworked some internals and changed some defaults
+* Added [`.call_once`](#call_onceargs--any---referee) and [`.apply_once`](#apply_onceargs--any---referee) methods
+* Made [`.reload`](#reload---boolean) invalidate Referees
+* Added [`Scriptor.load`](#scriptorloadfilename--string-watch--boolean---script) and [`Scriptor.compile`](#scriptorcompilesrc--stringreferee-watch--boolean---sourcescript) methods
+* Prevented multiple closing on Referees
+* Updated left/right join semantics
 
 #####1.2.4
 * Added [`.close()`](#closerecursive--boolean) methods and [`.closed`](#closed---boolean) properties to Referees

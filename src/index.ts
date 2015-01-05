@@ -13,6 +13,8 @@ import AMD = require('./define');
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
+    /**** BEGIN SECTION SCRIPT ****/
+
     export interface IScriptBase extends Module.IModulePublic {
         imports : {[key : string] : any};
         reference( filename : string, ...args : any[] ) : any;
@@ -27,10 +29,12 @@ module Scriptor {
 
     export class Script extends events.EventEmitter implements IScriptBase {
 
-        private _script : IScriptModule;
-        private _watcher : fs.FSWatcher;
-        private _recurse : number = 0;
-        private _maxRecursion : number = 1;
+        protected _script : IScriptModule;
+        protected _watcher : fs.FSWatcher;
+        protected _recurse : number = 0;
+        protected _maxRecursion : number = 1;
+
+        public _referee : Referee;
 
         public imports : {[key : string] : any} = {};
 
@@ -88,14 +92,12 @@ module Scriptor {
             //Create a new Module without an id. It will be set later
             this._script = <any>(new Module.Module( null, parent ));
 
-            if( filename !== void 0 ) {
+            if( filename !== void 0 && filename !== null ) {
                 this.load( filename );
             }
         }
 
-        private do_load() {
-            this._script.loaded = false;
-
+        protected do_setup() {
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
 
@@ -109,6 +111,12 @@ module Scriptor {
             this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
+        }
+
+        protected do_load() {
+            this.unload();
+
+            this.do_setup();
 
             this._script.load( this._script.filename );
 
@@ -154,6 +162,19 @@ module Scriptor {
             }
         }
 
+        public call_once( ...args : any[] ) : Referee {
+            return this.apply_once( args );
+        }
+
+        public apply_once( args : any[] ) : Referee {
+            if( this._referee !== void 0 ) {
+                return this._referee;
+
+            } else {
+                return new Referee( this, args );
+            }
+        }
+
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         public reference( filename : string ) : any {
             return null;
@@ -174,7 +195,7 @@ module Scriptor {
             return null;
         }
 
-        public load( filename : string, watch : boolean = false ) : Script {
+        public load( filename : string, watch : boolean = true ) : Script {
             filename = path.resolve( filename );
 
             this.close( false );
@@ -200,6 +221,10 @@ module Scriptor {
 
         public reload() : boolean {
             var was_loaded : boolean = this.loaded;
+
+            //If a Referee depends on this script, then it should be updated when it reloads
+            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
+            this.emit( 'change', 'change', this.filename );
 
             //Force it to reload and recompile the script.
             this.do_load();
@@ -278,6 +303,7 @@ module Scriptor {
                         if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
                             delete children[_i];
                             children.splice( _i, 1 );
+                            break;
                         }
                     }
                 }
@@ -288,10 +314,108 @@ module Scriptor {
         }
     }
 
-    export class ScriptAdapter extends Script {
-        //If the script is referred to by reference_once, this is set, allowing it to keep track of this script
-        public _referee : Referee;
+    export class SourceScript extends Script {
+        protected _source : any; //string|Referee
 
+        private _onChange : ( event : string, filename : string ) => any;
+
+        get filename() : string {
+            return this._script.filename;
+        }
+
+        set filename( value : string ) {
+            this._script.filename = value;
+        }
+
+        get watched() : boolean {
+            return this._onChange === void 0;
+        }
+
+        get source() : string {
+            if( this._source instanceof Referee ) {
+                var src : any = this._source.value();
+
+                assert.strictEqual( typeof src, 'string', 'Referee source must return string as value' );
+
+                return src;
+
+            } else {
+                return this._source;
+            }
+        }
+
+        constructor( src? : any, parent : Module.IModule = this_module ) {
+            super();
+
+            if( src !== void 0 && src !== null ) {
+                this.load( src );
+            }
+        }
+
+        protected do_compile() {
+            if( !this.loaded ) {
+                assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
+
+                this._script._compile( this.source, this.filename );
+
+                this._script.loaded = true;
+            }
+        }
+
+        protected do_load() {
+            this.unload();
+
+            this.do_setup();
+
+            this.do_compile();
+
+            this.emit( 'loaded', this.loaded );
+        }
+
+        public load( src : any, watch : boolean = true ) : SourceScript {
+            this.close( false );
+
+            assert( typeof src === 'string' || src instanceof Referee, 'Source must be a string or Referee' );
+
+            this._source = src;
+
+            if( watch ) {
+                this.watch();
+
+                this.emit( 'change', 'change', this.filename );
+            }
+
+            return this;
+        }
+
+        public watch() : boolean {
+            if( !this.watched && this._source instanceof Referee ) {
+
+                this._onChange = ( event : string, filename : string ) => {
+                    this.emit( 'change', event, filename );
+
+                    this.unload();
+                };
+
+                this._source.on( 'change', this._onChange );
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public unwatch() : boolean {
+            if( this.watched && this._source instanceof Referee ) {
+                this._source.removeListener( 'change', this._onChange );
+                return delete this._onChange;
+            }
+
+            return false;
+        }
+    }
+
+    export class ScriptAdapter extends Script {
         constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
         }
@@ -312,19 +436,7 @@ module Scriptor {
         public reference_once( filename : string, ...args : any[] ) : Referee {
             var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
 
-            //I didn't want to use this.include because it forces evaluation.
-            //With the Referee class, evaluation is only when .value is accessed
-            var script : ScriptAdapter = this.manager.add( real_filename );
-
-            //Use the existing one in the script or create a new one (which will attach itself)
-            if( script._referee !== void 0 ) {
-                return script._referee;
-
-            } else {
-                this._referee = new Referee( script, args );
-
-                return this._referee;
-            }
+            return this.manager.add( real_filename ).apply_once( args );
         }
 
         public include( filename : string, load : boolean = false ) : ScriptAdapter {
@@ -345,19 +457,44 @@ module Scriptor {
         }
     }
 
-    export interface ITransform {
+    export function load( filename : string, watch : boolean = true ) {
+        var script : Script = new Script( filename );
+
+        if( watch ) {
+            script.watch();
+        }
+
+        return script;
+    }
+
+    export function compile( src : any, watch : boolean = true ) {
+        var script : SourceScript = new SourceScript( src );
+
+        if( watch ) {
+            script.watch();
+        }
+
+        return script;
+    }
+
+    /**** END SECTION SCRIPT ****/
+
+    /**** BEGIN SECTION REFEREE ****/
+
+    export interface ITransformFunction {
         ( left : IReferee, right : IReferee ) : any;
     }
 
-    export var default_transform : ITransform = ( prev : IReferee, ref : IReferee ) => {
-        return ref.value();
+    export var identity : ITransformFunction = ( left : IReferee, right : IReferee ) => {
+        return left.value();
     };
 
     export interface IReferee extends NodeJS.EventEmitter {
         value() : any;
         ran : boolean;
         closed : boolean;
-        join( ref : IReferee, transform? : ITransform ) : IReferee;
+        join( ref : IReferee, transform? : ITransformFunction ) : IReferee;
+        transform( transform? : ITransformFunction )
         left() : IReferee;
         right() : IReferee;
         close( recursive? );
@@ -370,18 +507,16 @@ module Scriptor {
     }
 
     export class Referee extends RefereeBase implements IReferee {
-        constructor( private _script : ScriptAdapter, private _args : any[] ) {
+        constructor( private _script : Script, private _args : any[] ) {
             super();
 
             //Just mark this referee as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
             //but this referee would still not be run
             this._onChange = ( event : string, filename : string ) => {
-                if( this._ran ) {
-                    this._ran = false;
+                this.emit( 'change', event, filename );
 
-                    this.emit( 'change', event, filename );
-                }
+                this._ran = false;
             };
 
             this._script.on( 'change', this._onChange );
@@ -392,7 +527,7 @@ module Scriptor {
             //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
             //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
             //of where else it has been evaluated
-            if( !this._ran || !this._script.loaded ) {
+            if( !this._ran ) {
                 this._value = this._script.apply( this._args );
 
                 //Prevents overwriting over elements
@@ -414,12 +549,12 @@ module Scriptor {
             return this._script === void 0;
         }
 
-        static join( left : IReferee, right : IReferee, transform? : ITransform ) : IReferee {
+        static join( left : IReferee, right : IReferee, transform? : ITransformFunction ) : IReferee {
             return new JoinedReferee( left, right, transform );
         }
 
         //Creates a binary tree (essentially) of joins from an array of Referees using a single transform
-        static join_all( refs : IReferee[], transform? : ITransform ) : IReferee {
+        static join_all( refs : IReferee[], transform? : ITransformFunction ) : IReferee {
             assert( Array.isArray( refs ), 'join_all can only join arrays of Referees' );
 
             if( refs.length === 0 ) {
@@ -441,8 +576,16 @@ module Scriptor {
             }
         }
 
-        public join( ref : IReferee, transform? : ITransform ) : IReferee {
+        static transform( ref : IReferee, transform? : ITransformFunction ) {
+            return new TransformReferee( ref, transform );
+        }
+
+        public join( ref : IReferee, transform? : ITransformFunction ) : IReferee {
             return Referee.join( this, ref, transform );
+        }
+
+        public transform( transform? : ITransformFunction ) {
+            return Referee.transform( this, transform );
         }
 
         public left() : IReferee {
@@ -454,15 +597,85 @@ module Scriptor {
         }
 
         public close() {
-            this._script.removeListener( 'change', this._onChange );
-            delete this._value;
-            delete this._script._referee;
+            if( !this.closed ) {
+                this._script.removeListener( 'change', this._onChange );
+
+                delete this._value;
+                delete this._script._referee;
+                delete this._script; //Doesn't really delete it, just removes it from this
+            }
+        }
+    }
+
+    export class TransformReferee extends RefereeBase implements IReferee {
+        constructor( private _ref : IReferee, private _transform : ITransformFunction ) {
+            super();
+
+            this._onChange = ( event : string, filename : string ) => {
+                this.emit( 'change', event, filename );
+
+                this._ran = false;
+            };
+
+            this._ref.on( 'change', this._onChange );
+        }
+
+        public value() : any {
+            if( !this._ran ) {
+                this._value = this._transform( this._ref, null );
+
+                //Prevents overwriting over elements
+                if( typeof this._value === 'object' ) {
+                    this._value = Object.freeze( this._value );
+                }
+
+                this._ran = true;
+            }
+
+            return this._value;
+        }
+
+        get ran() : boolean {
+            return this._ran;
+        }
+
+        get closed() : boolean {
+            return this._ref === void 0;
+        }
+
+        public join( ref : IReferee, transform? : ITransformFunction ) {
+            return Referee.join( this, ref, transform );
+        }
+
+        public transform( transform? : ITransformFunction ) {
+            return Referee.transform( this, transform );
+        }
+
+        public left() : IReferee {
+            return this;
+        }
+
+        public right() : IReferee {
+            return null;
+        }
+
+        public close( recursive : boolean = false ) {
+            if( !this.closed ) {
+                this._ref.removeListener( 'change', this._onChange );
+                delete this._value;
+
+                if( recursive ) {
+                    this._ref.close( recursive );
+                }
+
+                delete this._ref;
+            }
         }
     }
 
     export class JoinedReferee extends RefereeBase implements IReferee {
         constructor( private _left : IReferee, private _right : IReferee,
-                     private _transform : ITransform = default_transform ) {
+                     private _transform : ITransformFunction = identity ) {
             super();
 
             //Just to prevent stupid mistakes
@@ -483,7 +696,7 @@ module Scriptor {
 
         public value() : any {
             //If anything needs to be re-run, re-run it
-            if( !(this._ran && this._left.ran && this._right.ran) ) {
+            if( !this._ran ) {
                 this._value = this._transform( this._left, this._right );
 
                 //Prevents overwriting over elements
@@ -505,11 +718,12 @@ module Scriptor {
             return this._left === void 0 || this._right === void 0;
         }
 
-        static join = Referee.join;
-        static join_all = Referee.join_all;
-
-        public join( ref : IReferee, transform? : ITransform ) : IReferee {
+        public join( ref : IReferee, transform? : ITransformFunction ) : IReferee {
             return Referee.join( this, ref, transform );
+        }
+
+        public transform( transform? : ITransformFunction ) {
+            return Referee.transform( this, transform );
         }
 
         public left() : IReferee {
@@ -521,20 +735,24 @@ module Scriptor {
         }
 
         public close( recursive : boolean = false ) {
-            this._left.removeListener( 'change', this._onChange );
-            this._right.removeListener( 'change', this._onChange );
+            if( !this.closed ) {
+                this._left.removeListener( 'change', this._onChange );
+                this._right.removeListener( 'change', this._onChange );
 
-            delete this._value;
+                delete this._value;
 
-            if( recursive ) {
-                this._left.close( recursive );
-                this._right.close( recursive );
+                if( recursive ) {
+                    this._left.close( recursive );
+                    this._right.close( recursive );
+                }
+
+                delete this._left;
+                delete this._right;
             }
-
-            delete this._left;
-            delete this._right;
         }
     }
+
+    /**** BEGIN SECTION MANAGER ****/
 
     export class Manager {
 
@@ -621,16 +839,7 @@ module Scriptor {
         }
 
         public once_apply( filename : string, args : any[] ) : Referee {
-            var script : ScriptAdapter = this.add( filename );
-
-            if( script._referee !== void 0 ) {
-                return script._referee;
-
-            } else {
-                script._referee = new Referee( script, args );
-
-                return script._referee;
-            }
+            return this.add( filename ).apply_once( args );
         }
 
         public get( filename : string ) : ScriptAdapter {
@@ -655,6 +864,8 @@ module Scriptor {
             this._scripts = {};
         }
     }
+
+    /**** END SECTION MANAGER ****/
 }
 
 export = Scriptor;
