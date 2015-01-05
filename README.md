@@ -942,6 +942,8 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.3.1
+* Updated package.json description.
 
 #####1.3.0
 * Added [`SourceScript`](#sourcescript)
