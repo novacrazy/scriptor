@@ -37,3 +37,6 @@ reference*.*
 
 # Source files
 src
+
+# test files
+test

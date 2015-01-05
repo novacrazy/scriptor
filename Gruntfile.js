@@ -8,6 +8,9 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks( 'grunt-contrib-clean' );
     grunt.loadNpmTasks( 'grunt-banner' );
 
+    var LICENSE = '/****\n * ' + grunt.file.read( './LICENSE', {encoding: 'utf-8'} ).replace( /\n/ig, '\n * ' )
+                  + '\n ****/';
+
     grunt.initConfig( {
         ts:        {
             options: {
@@ -33,6 +36,16 @@ module.exports = function(grunt) {
                 files:   {
                     src: ['./build/**/*.js']
                 }
+            },
+            license:      {
+                options: {
+                    position:  'top',
+                    banner:    LICENSE,
+                    linebreak: true
+                },
+                files:   {
+                    src: ['./build/**/*.js']
+                }
             }
         },
         clean:     {
@@ -42,6 +55,6 @@ module.exports = function(grunt) {
         }
     } );
 
-    grunt.registerTask( 'ts-build', ['clean:build', 'ts:build', 'usebanner:build_strict'] );
+    grunt.registerTask( 'ts-build', ['clean:build', 'ts:build', 'usebanner:build_strict', 'usebanner:license'] );
     grunt.registerTask( 'default', ['ts-build'] );
 };
