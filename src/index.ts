@@ -75,6 +75,8 @@ module Scriptor {
         set maxRecursion( value : number ) {
             //JSHint doesn't like bitwise operators
             this._maxRecursion = Math.floor( value );
+
+            assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
         }
 
         get maxRecursion() : number {
@@ -171,7 +173,9 @@ module Scriptor {
                 return this._referee;
 
             } else {
-                return new Referee( this, args );
+                this._referee = new Referee( this, args );
+
+                return this._referee;
             }
         }
 
@@ -208,6 +212,8 @@ module Scriptor {
                 this.watch();
             }
 
+            this.emit( 'change', 'change', this.filename );
+
             return this;
         }
 
@@ -241,12 +247,7 @@ module Scriptor {
                 watcher.on( 'change', ( event : string, filename : string ) => {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null && event === 'rename' ) {
-                        //if the file was deleted, there is nothing we can do so just mark it unloaded.
-                        //The next call to do_load will give an error akin to require's errors
-                        this.unload();
-                        this.unwatch();
-
-                        this._script.filename = null;
+                        this.close( false );
 
                     } else {
 
@@ -310,6 +311,9 @@ module Scriptor {
 
                 //Remove _script from current object
                 return delete this._script;
+
+            } else {
+                this._script.filename = null;
             }
         }
     }
@@ -332,16 +336,23 @@ module Scriptor {
         }
 
         get source() : string {
-            if( this._source instanceof Referee ) {
-                var src : any = this._source.value();
+            var src : string;
+
+            if( this._source instanceof RefereeBase ) {
+                src = this._source.value();
 
                 assert.strictEqual( typeof src, 'string', 'Referee source must return string as value' );
 
-                return src;
-
             } else {
-                return this._source;
+                src = this._source;
             }
+
+            //strip BOM
+            if( src.charCodeAt( 0 ) === 0xFEFF ) {
+                src = src.slice( 1 );
+            }
+
+            return src;
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {
@@ -375,21 +386,21 @@ module Scriptor {
         public load( src : any, watch : boolean = true ) : SourceScript {
             this.close( false );
 
-            assert( typeof src === 'string' || src instanceof Referee, 'Source must be a string or Referee' );
+            assert( typeof src === 'string' || src instanceof RefereeBase, 'Source must be a string or Referee' );
 
             this._source = src;
 
             if( watch ) {
                 this.watch();
-
-                this.emit( 'change', 'change', this.filename );
             }
+
+            this.emit( 'change', 'change', this.filename );
 
             return this;
         }
 
         public watch() : boolean {
-            if( !this.watched && this._source instanceof Referee ) {
+            if( !this.watched && this._source instanceof RefereeBase ) {
 
                 this._onChange = ( event : string, filename : string ) => {
                     this.emit( 'change', event, filename );
@@ -406,7 +417,7 @@ module Scriptor {
         }
 
         public unwatch() : boolean {
-            if( this.watched && this._source instanceof Referee ) {
+            if( this.watched && this._source instanceof RefereeBase ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -611,6 +622,9 @@ module Scriptor {
         constructor( private _ref : IReferee, private _transform : ITransformFunction ) {
             super();
 
+            assert( _ref instanceof RefereeBase, 'transform will only work on Referees' );
+            assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
+
             this._onChange = ( event : string, filename : string ) => {
                 this.emit( 'change', event, filename );
 
@@ -679,6 +693,7 @@ module Scriptor {
             super();
 
             //Just to prevent stupid mistakes
+            assert( _left instanceof RefereeBase && _right instanceof RefereeBase, 'join will only work on Referees' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
@@ -835,10 +850,14 @@ module Scriptor {
         }
 
         public once( filename : string, ...args : any[] ) : Referee {
-            return this.once_apply( filename, args );
+            return this.apply_once( filename, args );
         }
 
-        public once_apply( filename : string, args : any[] ) : Referee {
+        public call_once( filename : string, ...args : any[] ) : Referee {
+            return this.apply_once( filename, args );
+        }
+
+        public apply_once( filename : string, args : any[] ) : Referee {
             return this.add( filename ).apply_once( args );
         }
 

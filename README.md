@@ -94,7 +94,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.remove(filename : string, close? : boolean)`](#removefilename--string-close--boolean---boolean)
     - [`.call(filename : string, ...args : any[])`](#callfilename--string-args--any---any)
     - [`.apply(filename : string, args : any[])`](#applyfilename--string-args--any---any)
-    - [`.once(filename : string, ...args : any[])`](#oncefilename--string-args--any---referee)
+    - [`.call_once(filename : string, ...args : any[])`](#call_oncefilename--string-args--any---referee)
     - [`.once_apply(filename : string, args : any[])`](#once_applyfilename--string-args--any---referee)
     - [`.get(filename : string)`](#getfilename--string---script)
     - [`.clear(close? : boolean)`](#clearclose--boolean)
@@ -894,7 +894,7 @@ Equivalent to `.add(filename).apply(args)`
 
 <hr>
 
-#####`.once(filename : string, ...args : any[])` -> `Referee`
+#####`.call_once(filename : string, ...args : any[])` -> `Referee`
 
 Although this has the same effect as `reference_once` from a Script instance, it's adapted for use in the Manager. It behaves exactly the same otherwise.
 
@@ -941,6 +941,16 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.3.2
+* Added some type assertions
+* Fixed bug in script where Referees were not being stored
+* `.load` now emits 'change' events
+* Strip BOM on SourceScript if needed
+* Fixed bug where join and transform functions might not have worked chained together
+* Renamed Manager.once_apply to apply_once, and added call_once to manager.
+* Prepping to move Referee stuff over to a new transform library, as it's a bit too much to have in a scripting library.
+* Realized Referee is not a good name for those. "I are good namer."
 
 #####1.3.1
 * Updated package.json description.

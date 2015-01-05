@@ -102,6 +102,7 @@ var Scriptor;
             set:        function(value) {
                 //JSHint doesn't like bitwise operators
                 this._maxRecursion = Math.floor( value );
+                assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
             },
             enumerable: true,
             configurable: true
@@ -178,7 +179,8 @@ var Scriptor;
                 return this._referee;
             }
             else {
-                return new Referee( this, args );
+                this._referee = new Referee( this, args );
+                return this._referee;
             }
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
@@ -208,6 +210,7 @@ var Scriptor;
             if( watch ) {
                 this.watch();
             }
+            this.emit( 'change', 'change', this.filename );
             return this;
         };
         Script.prototype.unload = function() {
@@ -233,11 +236,7 @@ var Scriptor;
                 watcher.on( 'change', function(event, filename) {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null && event === 'rename' ) {
-                        //if the file was deleted, there is nothing we can do so just mark it unloaded.
-                        //The next call to do_load will give an error akin to require's errors
-                        _this.unload();
-                        _this.unwatch();
-                        _this._script.filename = null;
+                        _this.close( false );
                     }
                     else {
                         filename = path.resolve( path.dirname( _this.filename ), filename );
@@ -291,6 +290,9 @@ var Scriptor;
                 //Remove _script from current object
                 return delete this._script;
             }
+            else {
+                this._script.filename = null;
+            }
         };
         return Script;
     })( events.EventEmitter );
@@ -326,14 +328,19 @@ var Scriptor;
         } );
         Object.defineProperty( SourceScript.prototype, "source", {
             get:          function() {
-                if( this._source instanceof Referee ) {
-                    var src = this._source.value();
+                var src;
+                if( this._source instanceof RefereeBase ) {
+                    src = this._source.value();
                     assert.strictEqual( typeof src, 'string', 'Referee source must return string as value' );
-                    return src;
                 }
                 else {
-                    return this._source;
+                    src = this._source;
                 }
+                //strip BOM
+                if( src.charCodeAt( 0 ) === 0xFEFF ) {
+                    src = src.slice( 1 );
+                }
+                return src;
             },
             enumerable:   true,
             configurable: true
@@ -356,17 +363,17 @@ var Scriptor;
                 watch = true;
             }
             this.close( false );
-            assert( typeof src === 'string' || src instanceof Referee, 'Source must be a string or Referee' );
+            assert( typeof src === 'string' || src instanceof RefereeBase, 'Source must be a string or Referee' );
             this._source = src;
             if( watch ) {
                 this.watch();
-                this.emit( 'change', 'change', this.filename );
             }
+            this.emit( 'change', 'change', this.filename );
             return this;
         };
         SourceScript.prototype.watch = function() {
             var _this = this;
-            if( !this.watched && this._source instanceof Referee ) {
+            if( !this.watched && this._source instanceof RefereeBase ) {
                 this._onChange = function(event, filename) {
                     _this.emit( 'change', event, filename );
                     _this.unload();
@@ -377,7 +384,7 @@ var Scriptor;
             return false;
         };
         SourceScript.prototype.unwatch = function() {
-            if( this.watched && this._source instanceof Referee ) {
+            if( this.watched && this._source instanceof RefereeBase ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -573,6 +580,8 @@ var Scriptor;
             _super.call( this );
             this._ref = _ref;
             this._transform = _transform;
+            assert( _ref instanceof RefereeBase, 'transform will only work on Referees' );
+            assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
@@ -645,6 +654,7 @@ var Scriptor;
             this._right = _right;
             this._transform = _transform;
             //Just to prevent stupid mistakes
+            assert( _left instanceof RefereeBase && _right instanceof RefereeBase, 'join will only work on Referees' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             //This has to be a closure because the two emitters down below
@@ -796,9 +806,16 @@ var Scriptor;
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            return this.once_apply( filename, args );
+            return this.apply_once( filename, args );
         };
-        Manager.prototype.once_apply = function(filename, args) {
+        Manager.prototype.call_once = function(filename) {
+            var args = [];
+            for( var _i = 1; _i < arguments.length; _i++ ) {
+                args[_i - 1] = arguments[_i];
+            }
+            return this.apply_once( filename, args );
+        };
+        Manager.prototype.apply_once = function(filename, args) {
             return this.add( filename ).apply_once( args );
         };
         Manager.prototype.get = function(filename) {
