@@ -25,6 +25,7 @@ module Scriptor {
 
     export interface IScriptModule extends IScriptBase, Module.IModule {
         define : AMD.IDefine;
+        change();
     }
 
     export class Script extends events.EventEmitter implements IScriptBase {
@@ -113,6 +114,10 @@ module Scriptor {
             this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
+            this._script.change = () => {
+                //triggers reset of References
+                this.emit( 'change', 'change', this.filename );
+            }
         }
 
         protected do_load() {
@@ -561,7 +566,7 @@ module Scriptor {
         }
 
         static join( left : IReference, right : IReference, transform? : ITransformFunction ) : IReference {
-            return new JoinedReference( left, right, transform );
+            return new JoinedTransformReference( left, right, transform );
         }
 
         //Creates a binary tree (essentially) of joins from an array of References using a single transform
@@ -687,7 +692,7 @@ module Scriptor {
         }
     }
 
-    export class JoinedReference extends ReferenceBase implements IReference {
+    export class JoinedTransformReference extends ReferenceBase implements IReference {
         constructor( private _left : IReference, private _right : IReference,
                      private _transform : ITransformFunction = identity ) {
             super();

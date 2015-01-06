@@ -72,6 +72,7 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`module.reference_apply(filename : string, args : any[])`](#modulereference_applyfilename--string-args--any---any)
     - [`module.reference_once(filename : string, ...args : any[])`](#modulereference_oncefilename--string-args--any---reference)
     - [`module.include(filename : string, load? : boolean)`](#moduleincludefilename--string-load--boolean---script)
+    - [`module.change()`](#change)
     - [`module.imports`](#moduleimports---any)
 
 - [`ITransformFunction`](#itransformfunction)
@@ -513,6 +514,14 @@ This is alias for `<script>.include`, with script being the Script instance that
 
 <hr>
 
+#####`.change()`
+
+Will emit a 'change' event from the Script, causing any References listening on it to invalidate themselves, forcing it to be re-run the next time it is called.
+
+This is useful in the case of scripts that don't change, but the content they return does.
+
+<hr>
+
 #####`module.imports` -> `any`
 
 Variable(s) passed into the script by the user by setting `Script.imports` before the script has been evaluated.
@@ -941,6 +950,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.3.4
+* Added `.change` function to script environment so it can trigger Reference resets
 
 #####1.3.3
 * Renamed all Referee stuff into Reference. Referee was such a horrible name in retrospect.

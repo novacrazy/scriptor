@@ -136,6 +136,7 @@ var Scriptor;
             return this._script.require( path );
         };
         Script.prototype.do_setup = function() {
+            var _this = this;
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
             //This creates a new define function every time the script is loaded
@@ -147,6 +148,10 @@ var Scriptor;
             this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
+            this._script.change = function() {
+                //triggers reset of References
+                _this.emit( 'change', 'change', _this.filename );
+            };
         };
         Script.prototype.do_load = function() {
             this.unload();
@@ -550,7 +555,7 @@ var Scriptor;
             configurable: true
         } );
         Reference.join = function(left, right, transform) {
-            return new JoinedReference( left, right, transform );
+            return new JoinedTransformReference( left, right, transform );
         };
         //Creates a binary tree (essentially) of joins from an array of References using a single transform
         Reference.join_all = function(refs, transform) {
@@ -666,9 +671,9 @@ var Scriptor;
         return TransformReference;
     })( ReferenceBase );
     Scriptor.TransformReference = TransformReference;
-    var JoinedReference = (function(_super) {
-        __extends( JoinedReference, _super );
-        function JoinedReference(_left, _right, _transform) {
+    var JoinedTransformReference = (function(_super) {
+        __extends( JoinedTransformReference, _super );
+        function JoinedTransformReference(_left, _right, _transform) {
             var _this = this;
             if( _transform === void 0 ) {
                 _transform = Scriptor.identity;
@@ -692,7 +697,7 @@ var Scriptor;
             _right.on( 'change', this._onChange );
         }
 
-        JoinedReference.prototype.value = function() {
+        JoinedTransformReference.prototype.value = function() {
             //If anything needs to be re-run, re-run it
             if( !this._ran ) {
                 this._value = this._transform( this._left, this._right );
@@ -704,33 +709,33 @@ var Scriptor;
             }
             return this._value;
         };
-        Object.defineProperty( JoinedReference.prototype, "ran", {
+        Object.defineProperty( JoinedTransformReference.prototype, "ran", {
             get:        function() {
                 return this._ran;
             },
             enumerable: true,
             configurable: true
         } );
-        Object.defineProperty( JoinedReference.prototype, "closed", {
+        Object.defineProperty( JoinedTransformReference.prototype, "closed", {
             get:          function() {
                 return this._left === void 0 || this._right === void 0;
             },
             enumerable:   true,
             configurable: true
         } );
-        JoinedReference.prototype.join = function(ref, transform) {
+        JoinedTransformReference.prototype.join = function(ref, transform) {
             return Reference.join( this, ref, transform );
         };
-        JoinedReference.prototype.transform = function(transform) {
+        JoinedTransformReference.prototype.transform = function(transform) {
             return Reference.transform( this, transform );
         };
-        JoinedReference.prototype.left = function() {
+        JoinedTransformReference.prototype.left = function() {
             return this._left;
         };
-        JoinedReference.prototype.right = function() {
+        JoinedTransformReference.prototype.right = function() {
             return this._right;
         };
-        JoinedReference.prototype.close = function(recursive) {
+        JoinedTransformReference.prototype.close = function(recursive) {
             if( recursive === void 0 ) {
                 recursive = false;
             }
@@ -746,9 +751,9 @@ var Scriptor;
                 delete this._right;
             }
         };
-        return JoinedReference;
+        return JoinedTransformReference;
     })( ReferenceBase );
-    Scriptor.JoinedReference = JoinedReference;
+    Scriptor.JoinedTransformReference = JoinedTransformReference;
     /**** BEGIN SECTION MANAGER ****/
     var Manager = (function() {
         function Manager(grandParent) {
