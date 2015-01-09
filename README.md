@@ -951,6 +951,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.3.5
+* Fixed issue with instanceof not handling inherited classes
+
 #####1.3.4
 * Added `.change` function to script environment so it can trigger Reference resets
 

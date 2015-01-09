@@ -343,7 +343,7 @@ module Scriptor {
         get source() : string {
             var src : string;
 
-            if( this._source instanceof ReferenceBase ) {
+            if( Reference.isReference( this._source ) ) {
                 src = this._source.value();
 
                 assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
@@ -391,7 +391,7 @@ module Scriptor {
         public load( src : any, watch : boolean = true ) : SourceScript {
             this.close( false );
 
-            assert( typeof src === 'string' || src instanceof ReferenceBase, 'Source must be a string or Reference' );
+            assert( typeof src === 'string' || Reference.isReference( src ), 'Source must be a string or Reference' );
 
             this._source = src;
 
@@ -405,7 +405,7 @@ module Scriptor {
         }
 
         public watch() : boolean {
-            if( !this.watched && this._source instanceof ReferenceBase ) {
+            if( !this.watched && Reference.isReference( this._source ) ) {
 
                 this._onChange = ( event : string, filename : string ) => {
                     this.emit( 'change', event, filename );
@@ -422,7 +422,7 @@ module Scriptor {
         }
 
         public unwatch() : boolean {
-            if( this.watched && this._source instanceof ReferenceBase ) {
+            if( this.watched && Reference.isReference( this._source ) ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -520,6 +520,11 @@ module Scriptor {
         protected _onChange : ( event : string, filename : string ) => any;
         protected _value : any;
         protected _ran : boolean = false;
+
+        public static isReference( _ref : IReference ) : boolean {
+            return _ref instanceof ReferenceBase || _ref instanceof Reference || _ref instanceof TransformReference ||
+                   _ref instanceof JoinedTransformReference;
+        }
     }
 
     export class Reference extends ReferenceBase implements IReference {
@@ -627,7 +632,7 @@ module Scriptor {
         constructor( private _ref : IReference, private _transform : ITransformFunction ) {
             super();
 
-            assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
+            assert( Reference.isReference( _ref ), 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
             this._onChange = ( event : string, filename : string ) => {
@@ -698,8 +703,8 @@ module Scriptor {
             super();
 
             //Just to prevent stupid mistakes
-            assert( _left instanceof ReferenceBase &&
-                    _right instanceof ReferenceBase, 'join will only work on References' );
+            assert( Reference.isReference( _left ) &&
+                    Reference.isReference( _right ), 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
