@@ -32,7 +32,7 @@ module Scriptor {
 
         protected _script : IScriptModule;
         protected _watcher : fs.FSWatcher;
-        protected _recurse : number = 0;
+        protected _recursion : number = 0;
         protected _maxRecursion : number = 1;
 
         public _reference : Reference;
@@ -138,15 +138,18 @@ module Scriptor {
         //This is kept small because the try-catch block prevents any optimization
         public apply( args : any[] ) : any {
             //Just in case, always use recursion protection
-            if( this._recurse++ > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached' );
-            }
-
-            if( !this.loaded ) {
-                this.do_load();
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
             }
 
             try {
+                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                this._recursion++;
+
+                if( !this.loaded ) {
+                    this.do_load();
+                }
+
                 var main : any = this.exports;
 
                 if( typeof main === 'function' ) {
@@ -165,7 +168,7 @@ module Scriptor {
 
             } finally {
                 //release recurse
-                --this._recurse;
+                this._recursion--;
             }
         }
 

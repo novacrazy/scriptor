@@ -55,7 +55,7 @@ var Scriptor;
                 parent = Scriptor.this_module;
             }
             _super.call( this );
-            this._recurse = 0;
+            this._recursion = 0;
             this._maxRecursion = 1;
             this.imports = {};
             //Create a new Module without an id. It will be set later
@@ -170,13 +170,15 @@ var Scriptor;
         //This is kept small because the try-catch block prevents any optimization
         Script.prototype.apply = function(args) {
             //Just in case, always use recursion protection
-            if( this._recurse++ > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached' );
-            }
-            if( !this.loaded ) {
-                this.do_load();
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
             }
             try {
+                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                this._recursion++;
+                if( !this.loaded ) {
+                    this.do_load();
+                }
                 var main = this.exports;
                 if( typeof main === 'function' ) {
                     return main.apply( null, args );
@@ -193,7 +195,7 @@ var Scriptor;
             }
             finally {
                 //release recurse
-                --this._recurse;
+                this._recursion--;
             }
         };
         Script.prototype.call_once = function() {

@@ -951,6 +951,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.3.7
+* Fixed issue where the recursion protection would mess up and give false positives.
+
 #####1.3.6
 * Reverted last version changes because the issue was unrelated to the Scriptor library, but instead with dual module dependencies behaving weird.
 
