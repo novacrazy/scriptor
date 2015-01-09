@@ -35,7 +35,7 @@ module Scriptor {
         protected _recurse : number = 0;
         protected _maxRecursion : number = 1;
 
-        public _referee : Reference;
+        public _reference : Reference;
 
         public imports : {[key : string] : any} = {};
 
@@ -174,13 +174,13 @@ module Scriptor {
         }
 
         public apply_once( args : any[] ) : Reference {
-            if( this._referee !== void 0 ) {
-                return this._referee;
+            if( this._reference !== void 0 ) {
+                return this._reference;
 
             } else {
-                this._referee = new Reference( this, args );
+                this._reference = new Reference( this, args );
 
-                return this._referee;
+                return this._reference;
             }
         }
 
@@ -343,7 +343,7 @@ module Scriptor {
         get source() : string {
             var src : string;
 
-            if( Reference.isReference( this._source ) ) {
+            if( this._source instanceof ReferenceBase ) {
                 src = this._source.value();
 
                 assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
@@ -391,7 +391,7 @@ module Scriptor {
         public load( src : any, watch : boolean = true ) : SourceScript {
             this.close( false );
 
-            assert( typeof src === 'string' || Reference.isReference( src ), 'Source must be a string or Reference' );
+            assert( typeof src === 'string' || src instanceof ReferenceBase, 'Source must be a string or Reference' );
 
             this._source = src;
 
@@ -405,7 +405,7 @@ module Scriptor {
         }
 
         public watch() : boolean {
-            if( !this.watched && Reference.isReference( this._source ) ) {
+            if( !this.watched && this._source instanceof ReferenceBase ) {
 
                 this._onChange = ( event : string, filename : string ) => {
                     this.emit( 'change', event, filename );
@@ -422,7 +422,7 @@ module Scriptor {
         }
 
         public unwatch() : boolean {
-            if( this.watched && Reference.isReference( this._source ) ) {
+            if( this.watched && this._source instanceof ReferenceBase ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -520,20 +520,15 @@ module Scriptor {
         protected _onChange : ( event : string, filename : string ) => any;
         protected _value : any;
         protected _ran : boolean = false;
-
-        public static isReference( _ref : IReference ) : boolean {
-            return _ref instanceof ReferenceBase || _ref instanceof Reference || _ref instanceof TransformReference ||
-                   _ref instanceof JoinedTransformReference;
-        }
     }
 
     export class Reference extends ReferenceBase implements IReference {
         constructor( private _script : Script, private _args : any[] ) {
             super();
 
-            //Just mark this referee as not ran when a change occurs
+            //Just mark this reference as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
-            //but this referee would still not be run
+            //but this reference would still not be run
             this._onChange = ( event : string, filename : string ) => {
                 this.emit( 'change', event, filename );
 
@@ -622,7 +617,7 @@ module Scriptor {
                 this._script.removeListener( 'change', this._onChange );
 
                 delete this._value;
-                delete this._script._referee;
+                delete this._script._reference;
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         }
@@ -632,7 +627,7 @@ module Scriptor {
         constructor( private _ref : IReference, private _transform : ITransformFunction ) {
             super();
 
-            assert( Reference.isReference( _ref ), 'transform will only work on References' );
+            assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
             this._onChange = ( event : string, filename : string ) => {
@@ -703,8 +698,8 @@ module Scriptor {
             super();
 
             //Just to prevent stupid mistakes
-            assert( Reference.isReference( _left ) &&
-                    Reference.isReference( _right ), 'join will only work on References' );
+            assert( _left instanceof ReferenceBase &&
+                    _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 

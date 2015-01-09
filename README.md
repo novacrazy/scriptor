@@ -951,6 +951,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.3.6
+* Reverted last version changes because the issue was unrelated to the Scriptor library, but instead with dual module dependencies behaving weird.
+
 #####1.3.5
 * Fixed issue with instanceof not handling inherited classes
 

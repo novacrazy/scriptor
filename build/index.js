@@ -204,12 +204,12 @@ var Scriptor;
             return this.apply_once( args );
         };
         Script.prototype.apply_once = function(args) {
-            if( this._referee !== void 0 ) {
-                return this._referee;
+            if( this._reference !== void 0 ) {
+                return this._reference;
             }
             else {
-                this._referee = new Reference( this, args );
-                return this._referee;
+                this._reference = new Reference( this, args );
+                return this._reference;
             }
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
@@ -358,7 +358,7 @@ var Scriptor;
         Object.defineProperty( SourceScript.prototype, "source", {
             get:          function() {
                 var src;
-                if( Reference.isReference( this._source ) ) {
+                if( this._source instanceof ReferenceBase ) {
                     src = this._source.value();
                     assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
                 }
@@ -392,7 +392,7 @@ var Scriptor;
                 watch = true;
             }
             this.close( false );
-            assert( typeof src === 'string' || Reference.isReference( src ), 'Source must be a string or Reference' );
+            assert( typeof src === 'string' || src instanceof ReferenceBase, 'Source must be a string or Reference' );
             this._source = src;
             if( watch ) {
                 this.watch();
@@ -402,7 +402,7 @@ var Scriptor;
         };
         SourceScript.prototype.watch = function() {
             var _this = this;
-            if( !this.watched && Reference.isReference( this._source ) ) {
+            if( !this.watched && this._source instanceof ReferenceBase ) {
                 this._onChange = function(event, filename) {
                     _this.emit( 'change', event, filename );
                     _this.unload();
@@ -413,7 +413,7 @@ var Scriptor;
             return false;
         };
         SourceScript.prototype.unwatch = function() {
-            if( this.watched && Reference.isReference( this._source ) ) {
+            if( this.watched && this._source instanceof ReferenceBase ) {
                 this._source.removeListener( 'change', this._onChange );
                 return delete this._onChange;
             }
@@ -505,10 +505,6 @@ var Scriptor;
             this._ran = false;
         }
 
-        ReferenceBase.isReference = function(_ref) {
-            return _ref instanceof ReferenceBase || _ref instanceof Reference || _ref instanceof TransformReference
-                   || _ref instanceof JoinedTransformReference;
-        };
         return ReferenceBase;
     })( events.EventEmitter );
     Scriptor.ReferenceBase = ReferenceBase;
@@ -519,9 +515,9 @@ var Scriptor;
             _super.call( this );
             this._script = _script;
             this._args = _args;
-            //Just mark this referee as not ran when a change occurs
+            //Just mark this reference as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
-            //but this referee would still not be run
+            //but this reference would still not be run
             this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
@@ -599,7 +595,7 @@ var Scriptor;
             if( !this.closed ) {
                 this._script.removeListener( 'change', this._onChange );
                 delete this._value;
-                delete this._script._referee;
+                delete this._script._reference;
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         };
@@ -613,7 +609,7 @@ var Scriptor;
             _super.call( this );
             this._ref = _ref;
             this._transform = _transform;
-            assert( Reference.isReference( _ref ), 'transform will only work on References' );
+            assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
@@ -687,7 +683,7 @@ var Scriptor;
             this._right = _right;
             this._transform = _transform;
             //Just to prevent stupid mistakes
-            assert( Reference.isReference( _left ) && Reference.isReference( _right ),
+            assert( _left instanceof ReferenceBase && _right instanceof ReferenceBase,
                 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
