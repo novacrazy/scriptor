@@ -990,6 +990,9 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.3.9
+* Simplified a function call
+
 #####1.3.8
 * Upped protection of loading and executing scripts
 * Script.exports now evaluates the script if it has not already done so, thereby allowing direct use of .exports

@@ -157,9 +157,7 @@ module Scriptor {
 
         protected do_exports() : any {
             if( !this.loaded ) {
-                this._callWrapper( () => {
-                    this.do_load();
-                } );
+                this._callWrapper( this.do_load );
             }
 
             return this._script.exports;

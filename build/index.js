@@ -179,11 +179,8 @@ var Scriptor;
             this.emit( 'loaded', this.loaded );
         };
         Script.prototype.do_exports = function() {
-            var _this = this;
             if( !this.loaded ) {
-                this._callWrapper( function() {
-                    _this.do_load();
-                } );
+                this._callWrapper( this.do_load );
             }
             return this._script.exports;
         };
