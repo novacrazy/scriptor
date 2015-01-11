@@ -98,6 +98,8 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.call_once(filename : string, ...args : any[])`](#call_oncefilename--string-args--any---reference)
     - [`.once_apply(filename : string, args : any[])`](#once_applyfilename--string-args--any---reference)
     - [`.get(filename : string)`](#getfilename--string---script)
+    - [`.chdir(value : string)`](#chdirvalue--string---string)
+    - [`.cwd`](#cwd---string)
     - [`.clear(close? : boolean)`](#clearclose--boolean)
 
 - [Rational and Behavior](#rational-and-behavior)
@@ -860,6 +862,10 @@ Although the output is same, `.join_all` guarantees a balanced dependency tree, 
 
 Scriptor provides a Manager class that can effectively coordinate many inter-referencing scripts together with little effort.
 
+Including having scripts in an arbitrary location by setting the current working directory of the manager, of which all scripts (unless added by an absolute path) are relative to.
+
+By default, the current working directory of a manager is `process.cwd()`
+
 #####`new Manager(grandParent? : Module)` -> `Manager`
 
 Create a new Manager instance, optionally giving it a Module it will use as a grandparent when creating child scripts.
@@ -919,6 +925,39 @@ Same as the above, but allows an array of arguments instead of using variable ar
 
 Will return the Script instance stored in the Manager. If one does not exist, undefined is returned.
 
+<hr>
+
+#####`.chdir(value : string)` -> `string`
+
+Sets the current working directory of the script manager.
+
+`value` can be a relative or absolute path, as it is resolved upon setting.
+
+Returns the new directory path.
+
+<hr>
+
+#####`.cwd` <-> `string`
+
+Allows the getting or setting of the manager directory.
+
+When setting the directory, it really just calls `.chdir(value)`
+
+Example:
+```javascript
+var manager = new Scriptor.Manager();
+
+assert(manager.cwd === process.cwd());
+
+manager.cwd = '../';
+
+assert(manager.cwd === path.resolve(process.cwd(), '../'));
+```
+
+and so forth.
+
+<hr>
+
 #####`.clear(close? : boolean)`
 
 This will clear out the Manager and reset it.
@@ -950,6 +989,11 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+#####1.3.8
+* Upped protection of loading and executing scripts
+* Script.exports now evaluates the script if it has not already done so, thereby allowing direct use of .exports
+* Added `cwd` and `chdir` property and function to the script Manager class so scripts can have specific locations instead of relative to the manager.
 
 #####1.3.7
 * Fixed issue where the recursion protection would mess up and give false positives.

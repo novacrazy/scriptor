@@ -35,13 +35,36 @@ module Scriptor {
         protected _recursion : number = 0;
         protected _maxRecursion : number = 1;
 
-        public _reference : Reference;
+        //Wrap it before you tap it.
+        //No, but really, it's important to protect against errors in a generic way
+        protected _callWrapper( func : Function ) : any {
+            //Just in case, always use recursion protection
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+            }
+
+            try {
+                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                this._recursion++;
+
+                return func.call( this );
+
+            } catch( e ) {
+                if( e instanceof SyntaxError ) {
+                    this.unload();
+                }
+
+                throw e;
+
+            } finally {
+                //release recurse
+                this._recursion--;
+            }
+        }
+
+        public _reference : Reference = void 0;
 
         public imports : {[key : string] : any} = {};
-
-        get exports() : any {
-            return this._script.exports;
-        }
 
         get id() : string {
             return this._script.id;
@@ -95,6 +118,7 @@ module Scriptor {
             //Create a new Module without an id. It will be set later
             this._script = <any>(new Module.Module( null, parent ));
 
+            //Explicit comparisons to appease JSHint
             if( filename !== void 0 && filename !== null ) {
                 this.load( filename );
             }
@@ -120,6 +144,7 @@ module Scriptor {
             }
         }
 
+        //Should ALWAYS be called within a _callWrapper
         protected do_load() {
             this.unload();
 
@@ -130,46 +155,38 @@ module Scriptor {
             this.emit( 'loaded', this.loaded );
         }
 
+        protected do_exports() : any {
+            if( !this.loaded ) {
+                this._callWrapper( () => {
+                    this.do_load();
+                } );
+            }
+
+            return this._script.exports;
+        }
+
+        get exports() : any {
+            return this.do_exports();
+        }
+
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
         public call( ...args : any[] ) : any {
             return this.apply( args );
         }
 
-        //This is kept small because the try-catch block prevents any optimization
         public apply( args : any[] ) : any {
-            //Just in case, always use recursion protection
-            if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
-            }
+            //This will ensure it is loaded (safely) and return the exports
+            var main : any = this.exports;
 
-            try {
-                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
-                this._recursion++;
-
-                if( !this.loaded ) {
-                    this.do_load();
-                }
-
-                var main : any = this.exports;
-
+            //Use another call wrapper to execute the script
+            return this._callWrapper( () => {
                 if( typeof main === 'function' ) {
                     return main.apply( null, args );
 
                 } else {
                     return main;
                 }
-
-            } catch( e ) {
-                if( e instanceof SyntaxError ) {
-                    this.unload();
-                }
-
-                throw e;
-
-            } finally {
-                //release recurse
-                this._recursion--;
-            }
+            } );
         }
 
         public call_once( ...args : any[] ) : Reference {
@@ -236,12 +253,14 @@ module Scriptor {
         public reload() : boolean {
             var was_loaded : boolean = this.loaded;
 
+            //Force it to reload and recompile the script.
+            this._callWrapper( () => {
+                this.do_load();
+            } );
+
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
-
-            //Force it to reload and recompile the script.
-            this.do_load();
 
             return was_loaded;
         }
@@ -254,11 +273,15 @@ module Scriptor {
 
                 watcher.on( 'change', ( event : string, filename : string ) => {
                     //path.resolve doesn't like nulls, so this has to be done first
-                    if( filename === null && event === 'rename' ) {
+                    if( filename === null || filename === void 0 ) {
+                        //If filename is null, that is generally a bad sign, so just close the script (not permanently)
                         this.close( false );
 
                     } else {
 
+                        //This is important because fs.watch 'change' event only returns things like 'script.js'
+                        //as a filename, which when resolved normally is relative to process.cwd(), not where the script
+                        //actually is. So we have to get the directory of the last filename and combine it with the new name
                         filename = path.resolve( path.dirname( this.filename ), filename );
 
                         if( event === 'change' && this.loaded ) {
@@ -378,6 +401,8 @@ module Scriptor {
                 this._script._compile( this.source, this.filename );
 
                 this._script.loaded = true;
+
+                this.emit( 'loaded', this.loaded );
             }
         }
 
@@ -387,8 +412,6 @@ module Scriptor {
             this.do_setup();
 
             this.do_compile();
-
-            this.emit( 'loaded', this.loaded );
         }
 
         public load( src : any, watch : boolean = true ) : SourceScript {
@@ -521,7 +544,7 @@ module Scriptor {
 
     export class ReferenceBase extends events.EventEmitter {
         protected _onChange : ( event : string, filename : string ) => any;
-        protected _value : any;
+        protected _value : any = void 0;
         protected _ran : boolean = false;
     }
 
@@ -782,6 +805,20 @@ module Scriptor {
 
         private _scripts : {[key : string] : ScriptAdapter} = {};
 
+        private _cwd : string = process.cwd();
+
+        get cwd() : string {
+            return this._cwd;
+        }
+
+        set cwd( value : string ) {
+            this.chdir( value );
+        }
+
+        public chdir( value : string ) : string {
+            return this._cwd = path.resolve( this.cwd, value );
+        }
+
         private _parent : Module.IModule;
 
         get parent() : Module.IModule {
@@ -801,7 +838,7 @@ module Scriptor {
         //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
         //from watching a file.
         public add( filename : string, watch : boolean = true ) : ScriptAdapter {
-            filename = path.resolve( filename );
+            filename = path.resolve( this.cwd, filename );
 
             var script : ScriptAdapter = this._scripts[filename];
 
@@ -824,7 +861,7 @@ module Scriptor {
         //as it may sometimes make sense to move it out of a manager and use it independently.
         //However, that is quite rare so close defaults to true
         public remove( filename : string, close : boolean = true ) : boolean {
-            filename = path.resolve( filename );
+            filename = path.resolve( this.cwd, filename );
 
             var script : ScriptAdapter = this._scripts[filename];
 
@@ -845,17 +882,7 @@ module Scriptor {
         }
 
         public apply( filename : string, args : any[] ) : any {
-            filename = path.resolve( filename );
-
-            var script : ScriptAdapter = this._scripts[filename];
-
-            //By default add the script to the manager to make lookup faster in the future
-            if( script === void 0 ) {
-                return this.add( filename ).apply( args );
-
-            } else {
-                return script.apply( args );
-            }
+            return this.add( filename ).apply( args );
         }
 
         public once( filename : string, ...args : any[] ) : Reference {
@@ -871,7 +898,7 @@ module Scriptor {
         }
 
         public get( filename : string ) : ScriptAdapter {
-            filename = path.resolve( filename );
+            filename = path.resolve( this.cwd, filename );
 
             return this._scripts[filename];
         }

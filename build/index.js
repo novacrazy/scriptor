@@ -57,21 +57,39 @@ var Scriptor;
             _super.call( this );
             this._recursion = 0;
             this._maxRecursion = 1;
+            this._reference = void 0;
             this.imports = {};
             //Create a new Module without an id. It will be set later
             this._script = (new Module.Module( null, parent ));
+            //Explicit comparisons to appease JSHint
             if( filename !== void 0 && filename !== null ) {
                 this.load( filename );
             }
         }
 
-        Object.defineProperty( Script.prototype, "exports", {
-            get:        function() {
-                return this._script.exports;
-            },
-            enumerable: true,
-            configurable: true
-        } );
+        //Wrap it before you tap it.
+        //No, but really, it's important to protect against errors in a generic way
+        Script.prototype._callWrapper = function(func) {
+            //Just in case, always use recursion protection
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+            }
+            try {
+                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                this._recursion++;
+                return func.call( this );
+            }
+            catch( e ) {
+                if( e instanceof SyntaxError ) {
+                    this.unload();
+                }
+                throw e;
+            }
+            finally {
+                //release recurse
+                this._recursion--;
+            }
+        };
         Object.defineProperty( Script.prototype, "id", {
             get:        function() {
                 return this._script.id;
@@ -153,12 +171,29 @@ var Scriptor;
                 _this.emit( 'change', 'change', _this.filename );
             };
         };
+        //Should ALWAYS be called within a _callWrapper
         Script.prototype.do_load = function() {
             this.unload();
             this.do_setup();
             this._script.load( this._script.filename );
             this.emit( 'loaded', this.loaded );
         };
+        Script.prototype.do_exports = function() {
+            var _this = this;
+            if( !this.loaded ) {
+                this._callWrapper( function() {
+                    _this.do_load();
+                } );
+            }
+            return this._script.exports;
+        };
+        Object.defineProperty( Script.prototype, "exports", {
+            get:          function() {
+                return this.do_exports();
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
         Script.prototype.call = function() {
             var args = [];
@@ -167,36 +202,18 @@ var Scriptor;
             }
             return this.apply( args );
         };
-        //This is kept small because the try-catch block prevents any optimization
         Script.prototype.apply = function(args) {
-            //Just in case, always use recursion protection
-            if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
-            }
-            try {
-                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
-                this._recursion++;
-                if( !this.loaded ) {
-                    this.do_load();
-                }
-                var main = this.exports;
+            //This will ensure it is loaded (safely) and return the exports
+            var main = this.exports;
+            //Use another call wrapper to execute the script
+            return this._callWrapper( function() {
                 if( typeof main === 'function' ) {
                     return main.apply( null, args );
                 }
                 else {
                     return main;
                 }
-            }
-            catch( e ) {
-                if( e instanceof SyntaxError ) {
-                    this.unload();
-                }
-                throw e;
-            }
-            finally {
-                //release recurse
-                this._recursion--;
-            }
+            } );
         };
         Script.prototype.call_once = function() {
             var args = [];
@@ -250,12 +267,15 @@ var Scriptor;
             return was_loaded;
         };
         Script.prototype.reload = function() {
+            var _this = this;
             var was_loaded = this.loaded;
+            //Force it to reload and recompile the script.
+            this._callWrapper( function() {
+                _this.do_load();
+            } );
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
-            //Force it to reload and recompile the script.
-            this.do_load();
             return was_loaded;
         };
         Script.prototype.watch = function() {
@@ -266,10 +286,14 @@ var Scriptor;
                 } );
                 watcher.on( 'change', function(event, filename) {
                     //path.resolve doesn't like nulls, so this has to be done first
-                    if( filename === null && event === 'rename' ) {
+                    if( filename === null || filename === void 0 ) {
+                        //If filename is null, that is generally a bad sign, so just close the script (not permanently)
                         _this.close( false );
                     }
                     else {
+                        //This is important because fs.watch 'change' event only returns things like 'script.js'
+                        //as a filename, which when resolved normally is relative to process.cwd(), not where the script
+                        //actually is. So we have to get the directory of the last filename and combine it with the new name
                         filename = path.resolve( path.dirname( _this.filename ), filename );
                         if( event === 'change' && _this.loaded ) {
                             _this.unload();
@@ -381,13 +405,13 @@ var Scriptor;
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
                 this._script._compile( this.source, this.filename );
                 this._script.loaded = true;
+                this.emit( 'loaded', this.loaded );
             }
         };
         SourceScript.prototype.do_load = function() {
             this.unload();
             this.do_setup();
             this.do_compile();
-            this.emit( 'loaded', this.loaded );
         };
         SourceScript.prototype.load = function(src, watch) {
             if( watch === void 0 ) {
@@ -504,6 +528,7 @@ var Scriptor;
         __extends( ReferenceBase, _super );
         function ReferenceBase() {
             _super.apply( this, arguments );
+            this._value = void 0;
             this._ran = false;
         }
 
@@ -760,9 +785,23 @@ var Scriptor;
     var Manager = (function() {
         function Manager(grandParent) {
             this._scripts = {};
+            this._cwd = process.cwd();
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
 
+        Object.defineProperty( Manager.prototype, "cwd", {
+            get:          function() {
+                return this._cwd;
+            },
+            set:          function(value) {
+                this.chdir( value );
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Manager.prototype.chdir = function(value) {
+            return this._cwd = path.resolve( this.cwd, value );
+        };
         Object.defineProperty( Manager.prototype, "parent", {
             get:        function() {
                 return this._parent;
@@ -785,7 +824,7 @@ var Scriptor;
             if( watch === void 0 ) {
                 watch = true;
             }
-            filename = path.resolve( filename );
+            filename = path.resolve( this.cwd, filename );
             var script = this._scripts[filename];
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, filename, this._parent );
@@ -805,7 +844,7 @@ var Scriptor;
             if( close === void 0 ) {
                 close = true;
             }
-            filename = path.resolve( filename );
+            filename = path.resolve( this.cwd, filename );
             var script = this._scripts[filename];
             if( script !== void 0 ) {
                 if( close ) {
@@ -823,15 +862,7 @@ var Scriptor;
             return this.apply( filename, args );
         };
         Manager.prototype.apply = function(filename, args) {
-            filename = path.resolve( filename );
-            var script = this._scripts[filename];
-            //By default add the script to the manager to make lookup faster in the future
-            if( script === void 0 ) {
-                return this.add( filename ).apply( args );
-            }
-            else {
-                return script.apply( args );
-            }
+            return this.add( filename ).apply( args );
         };
         Manager.prototype.once = function(filename) {
             var args = [];
@@ -851,7 +882,7 @@ var Scriptor;
             return this.add( filename ).apply_once( args );
         };
         Manager.prototype.get = function(filename) {
-            filename = path.resolve( filename );
+            filename = path.resolve( this.cwd, filename );
             return this._scripts[filename];
         };
         //Make closing optional for the same reason as .remove
