@@ -800,7 +800,8 @@ var Scriptor;
             configurable: true
         } );
         Manager.prototype.chdir = function(value) {
-            return this._cwd = path.resolve( this.cwd, value );
+            this._cwd = path.resolve( this.cwd, value );
+            return this._cwd;
         };
         Object.defineProperty( Manager.prototype, "parent", {
             get:        function() {

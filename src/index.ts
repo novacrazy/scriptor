@@ -816,7 +816,9 @@ module Scriptor {
         }
 
         public chdir( value : string ) : string {
-            return this._cwd = path.resolve( this.cwd, value );
+            this._cwd = path.resolve( this.cwd, value );
+
+            return this._cwd;
         }
 
         private _parent : Module.IModule;
