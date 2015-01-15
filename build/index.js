@@ -41,16 +41,19 @@ var __extends = this.__extends || function(d, b) {
     };
 var fs = require( 'fs' );
 var assert = require( 'assert' );
+var url = require( 'url' );
 var path = require( 'path' );
 var events = require( 'events' );
 var Module = require( './Module' );
 var MapAdapter = require( './map' );
-function bind(func, to) {
+//Helper function to bind a function to an object AND retain any attached values
+//Also bounds a variable number of arguments to the function, which is neat.
+//The 'to' arguments is in ...args
+function bind(func) {
     var args = [];
-    for( var _i = 2; _i < arguments.length; _i++ ) {
-        args[_i - 2] = arguments[_i];
+    for( var _i = 1; _i < arguments.length; _i++ ) {
+        args[_i - 1] = arguments[_i];
     }
-    args.unshift( to );
     var res = Function.prototype.bind.apply( func, args );
     for( var i in func ) {
         if( func.hasOwnProperty( i ) ) {
@@ -61,12 +64,17 @@ function bind(func, to) {
 }
 var Scriptor;
 (function(Scriptor) {
+    //These *could* be changed is someone really wanted to, but there isn't a reason for it
     Scriptor.default_dependencies = ['require', 'exports', 'module'];
     Scriptor.this_module = module;
+    //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
+    //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
+    //well, mixed in. So ScriptBase just handles the most basic Script functions, mostly getters and setters
     var ScriptBase = (function(_super) {
         __extends( ScriptBase, _super );
         function ScriptBase() {
             _super.apply( this, arguments );
+            this.imports = {};
         }
 
         Object.defineProperty( ScriptBase.prototype, "id", {
@@ -149,7 +157,8 @@ var Scriptor;
                     filepath = _this.filename;
                 }
                 if( filepath.charAt( 0 ) === '.' ) {
-                    return path.resolve( _this.baseUrl, filepath );
+                    //Use the url.resolve instead of path.resolve, even though they usually do the same thing
+                    return url.resolve( _this.baseUrl, filepath );
                 }
                 else {
                     return filepath;
@@ -184,17 +193,21 @@ var Scriptor;
             var normalize = path.resolve.bind( null, this.baseUrl );
             var result;
             if( Array.isArray( id ) ) {
+                //We know it's an array, so just cast it to one to appease TypeScript
                 var ids = id;
+                //Love this line
                 result = ids.map( function(_id) {
                     return _this.require( _id );
                 } );
             }
             else {
-                assert.strictEqual( typeof id, 'string', 'id must be a string' );
+                assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
+                //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
                     //modules to be loaded through an AMD loader transform
                     var parts = id.split( '!', 2 );
                     var plugin = this.require( parts[0] );
+                    assert( plugin !== void 0 || plugin !== null, 'Invalid AMD plugin' );
                     if( plugin.normalize ) {
                         id = plugin.normalize( parts[1], normalize );
                     }
@@ -209,6 +222,7 @@ var Scriptor;
                         loader.fromText = function(text) {
                             _this._loadCache.set( id, Scriptor.compile( text ).exports );
                         };
+                        //Since loader is a closure, it 'this' is implicitly bound with TypeScript
                         plugin.load( id, bind( this.require, this ), loader, {} );
                     }
                     result = this._loadCache.get( id );
@@ -245,7 +259,7 @@ var Scriptor;
                         this._loadCache.set( id, result );
                     }
                     else {
-                        //normal modules
+                        //Normal module loading akin to the real 'require' function
                         result = Module.Module._load( id, this._script );
                     }
                 }
@@ -307,7 +321,6 @@ var Scriptor;
             this._recursion = 0;
             this._maxRecursion = 1;
             this._reference = void 0;
-            this.imports = {};
             //Create a new Module without an id. It will be set later
             this._script = (new Module.Module( null, parent ));
             //Explicit comparisons to appease JSHint
@@ -330,7 +343,7 @@ var Scriptor;
                 throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
             }
             try {
-                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                //This is placed in the try-block so the release is mirrored in the finally block
                 this._recursion++;
                 return func.apply( this_arg, args );
             }

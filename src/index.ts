@@ -4,6 +4,7 @@
 
 import fs = require('fs');
 import assert = require('assert');
+import url = require('url');
 import path = require('path');
 import events = require('events');
 
@@ -11,9 +12,10 @@ import Module = require('./Module');
 
 import MapAdapter = require('./map');
 
-function bind( func : Function, to : any, ...args : any[] ) {
-    args.unshift( to );
-
+//Helper function to bind a function to an object AND retain any attached values
+//Also bounds a variable number of arguments to the function, which is neat.
+//The 'to' arguments is in ...args
+function bind( func : Function, ...args : any[] ) {
     var res = Function.prototype.bind.apply( func, args );
 
     for( var i in func ) {
@@ -26,6 +28,7 @@ function bind( func : Function, to : any, ...args : any[] ) {
 }
 
 module Scriptor {
+    //These *could* be changed is someone really wanted to, but there isn't a reason for it
     export var default_dependencies : string[] = ['require', 'exports', 'module'];
 
     export var this_module : Module.IModule = <any>module;
@@ -42,6 +45,7 @@ module Scriptor {
 
     export interface IAMDScriptBase {
         require( path : string ) : any;
+        //overloads that can't be here because it would conflict with Module.IModule declarations
         //require( id : string[], cb? : (...deps : any[]) => any ) : any[];
         //require( id : string, cb? : (deps : any) => any ) : any;
 
@@ -58,8 +62,13 @@ module Scriptor {
         //Empty, just merges the interfaces
     }
 
+    //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
+    //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
+    //well, mixed in. So ScriptBase just handles the most basic Script functions, mostly getters and setters
     export class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
+
+        public imports : {[key : string] : any} = {};
 
         get id() : string {
             return this._script.id;
@@ -127,7 +136,8 @@ module Scriptor {
                 }
 
                 if( filepath.charAt( 0 ) === '.' ) {
-                    return path.resolve( this.baseUrl, filepath );
+                    //Use the url.resolve instead of path.resolve, even though they usually do the same thing
+                    return url.resolve( this.baseUrl, filepath );
 
                 } else {
                     return filepath;
@@ -160,7 +170,7 @@ module Scriptor {
             return result;
         }
 
-        //Overloads
+        //Overloads, which can differ from Module.IModule
         public require( path : string ) : any;
         public require( id : string[], cb? : ( ...deps : any[] ) => any ) : any[];
         public require( id : string, cb? : ( deps : any ) => any ) : any;
@@ -172,19 +182,24 @@ module Scriptor {
             var result;
 
             if( Array.isArray( id ) ) {
+                //We know it's an array, so just cast it to one to appease TypeScript
                 var ids : string[] = <any>id;
 
+                //Love this line
                 result = ids.map( _id => this.require( _id ) );
 
             } else {
-                assert.strictEqual( typeof id, 'string', 'id must be a string' );
+                assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
 
+                //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
 
                     //modules to be loaded through an AMD loader transform
                     var parts : string[] = id.split( '!', 2 );
 
                     var plugin : any = this.require( parts[0] );
+
+                    assert( plugin !== void 0 || plugin !== null, 'Invalid AMD plugin' );
 
                     if( plugin.normalize ) {
                         id = plugin.normalize( parts[1], normalize );
@@ -204,6 +219,7 @@ module Scriptor {
                             this._loadCache.set( id, Scriptor.compile( text ).exports );
                         };
 
+                        //Since loader is a closure, it 'this' is implicitly bound with TypeScript
                         plugin.load( id, bind( this.require, this ), loader, {} );
                     }
 
@@ -246,7 +262,7 @@ module Scriptor {
                         this._loadCache.set( id, result );
 
                     } else {
-                        //normal modules
+                        //Normal module loading akin to the real 'require' function
                         result = Module.Module._load( id, this._script );
                     }
                 }
@@ -333,7 +349,7 @@ module Scriptor {
             }
 
             try {
-                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                //This is placed in the try-block so the release is mirrored in the finally block
                 this._recursion++;
 
                 return func.apply( this_arg, args );
@@ -350,8 +366,6 @@ module Scriptor {
                 this._recursion--;
             }
         }
-
-        public imports : {[key : string] : any} = {};
 
         get watched() : boolean {
             return this._watcher !== void 0;
@@ -757,7 +771,7 @@ module Scriptor {
 
     /**** END SECTION SCRIPT ****/
 
-    /**** BEGIN SECTION REFEREE ****/
+    /**** BEGIN SECTION REFERENCE ****/
 
     export interface ITransformFunction {
         ( left : IReference, right : IReference ) : any;

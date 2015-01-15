@@ -990,6 +990,10 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.4.0-alpha.1
+* use `url.resolve` instead of `path.resolve` in `requite.toUrl`
+* assert AMD plugin is not null
+
 #####1.4.0-alpha.0
 * Big changes, though not breaking changes
 * Removed amdefine dependency
