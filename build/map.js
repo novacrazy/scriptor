@@ -63,7 +63,7 @@ var MapAdapter;
             }
         };
         ObjectMap.prototype.get = function(key) {
-            if( this.has( key ) ) {
+            if( this._map.hasOwnProperty( key ) ) {
                 return this._map[key];
             }
             return void 0;

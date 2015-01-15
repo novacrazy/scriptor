@@ -40,7 +40,7 @@ module MapAdapter {
         }
 
         public get( key : string ) : V {
-            if( this.has( key ) ) {
+            if( this._map.hasOwnProperty( key ) ) {
                 return this._map[key];
             }
 
