@@ -34,7 +34,7 @@ var MapAdapter;
         }
 
         Object.defineProperty( ObjectMap.prototype, "size", {
-            get:        function() {
+            get: function() {
                 return this.keys().length;
             },
             enumerable: true,

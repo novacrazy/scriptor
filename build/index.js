@@ -164,6 +164,12 @@ var Scriptor;
                     return filepath;
                 }
             };
+            this.require['defined'] = function(id) {
+                return _this._loadCache.has( id );
+            };
+            this.require['specified'] = function(id) {
+                return _this._defineCache.has( id );
+            };
             this.define['require'] = bind( this.require, this );
         }
 
@@ -208,22 +214,26 @@ var Scriptor;
                     var parts = id.split( '!', 2 );
                     var plugin = this.require( parts[0] );
                     assert( plugin !== void 0 || plugin !== null, 'Invalid AMD plugin' );
+                    id = parts[1];
                     if( plugin.normalize ) {
-                        id = plugin.normalize( parts[1], normalize );
+                        id = plugin.normalize( id, normalize );
                     }
-                    else {
-                        id = normalize( parts[1] );
+                    else if( id.charAt( 0 ) === '.' ) {
+                        id = normalize( id );
                     }
                     if( !this._loadCache.has( id ) ) {
                         assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
-                        var loader = function(value) {
+                        var onload = function(value) {
                             _this._loadCache.set( id, value );
                         };
-                        loader.fromText = function(text) {
+                        onload.fromText = function(text) {
                             _this._loadCache.set( id, Scriptor.compile( text ).exports );
                         };
-                        //Since loader is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, bind( this.require, this ), loader, {} );
+                        onload.error = function(err) {
+                            throw err;
+                        };
+                        //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                        plugin.load( id, bind( this.require, this ), onload, {} );
                     }
                     result = this._loadCache.get( id );
                 }
@@ -265,14 +275,12 @@ var Scriptor;
                 }
             }
             if( typeof cb === 'function' ) {
-                var onTick;
                 if( Array.isArray( result ) ) {
-                    onTick = Function.prototype.apply.bind( cb, null, result );
+                    cb.apply( null, result );
                 }
                 else {
-                    onTick = cb.bind( null, result );
+                    cb.call( null, result );
                 }
-                process.nextTick( onTick );
             }
             else {
                 return result;

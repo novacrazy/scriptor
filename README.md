@@ -990,6 +990,12 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.4.0-alpha.2
+* Removed fake async require
+    * It's better to just do it synchronously and get it over with
+* Added `require.specified`, `require.defined` and `onload.error` AMD functions
+* Fixed bug in plugin loading
+
 #####1.4.0-alpha.1
 * use `url.resolve` instead of `path.resolve` in `requite.toUrl`
 * assert AMD plugin is not null

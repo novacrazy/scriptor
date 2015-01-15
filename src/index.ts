@@ -144,6 +144,14 @@ module Scriptor {
                 }
             };
 
+            this.require['defined'] = ( id : string ) => {
+                return this._loadCache.has( id );
+            };
+
+            this.require['specified'] = ( id : string ) => {
+                return this._defineCache.has( id );
+            };
+
             this.define['require'] = bind( this.require, this );
         }
 
@@ -201,26 +209,32 @@ module Scriptor {
 
                     assert( plugin !== void 0 || plugin !== null, 'Invalid AMD plugin' );
 
-                    if( plugin.normalize ) {
-                        id = plugin.normalize( parts[1], normalize );
+                    id = parts[1];
 
-                    } else {
-                        id = normalize( parts[1] );
+                    if( plugin.normalize ) {
+                        id = plugin.normalize( id, normalize );
+
+                    } else if( id.charAt( 0 ) === '.' ) {
+                        id = normalize( id );
                     }
 
                     if( !this._loadCache.has( id ) ) {
                         assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
 
-                        var loader : any = ( value : any ) => {
+                        var onload : any = ( value : any ) => {
                             this._loadCache.set( id, value );
                         };
 
-                        loader.fromText = ( text : string ) => {
+                        onload.fromText = ( text : string ) => {
                             this._loadCache.set( id, Scriptor.compile( text ).exports );
                         };
 
-                        //Since loader is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, bind( this.require, this ), loader, {} );
+                        onload.error = ( err : any ) => {
+                            throw err; //default error
+                        };
+
+                        //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                        plugin.load( id, bind( this.require, this ), onload, {} );
                     }
 
                     result = this._loadCache.get( id );
@@ -269,16 +283,12 @@ module Scriptor {
             }
 
             if( typeof cb === 'function' ) {
-                var onTick : Function;
-
                 if( Array.isArray( result ) ) {
-                    onTick = Function.prototype.apply.bind( cb, null, result );
+                    cb.apply( null, result );
 
                 } else {
-                    onTick = cb.bind( null, result );
+                    cb.call( null, result );
                 }
-
-                process.nextTick( onTick );
 
             } else {
                 return result;
