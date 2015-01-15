@@ -990,6 +990,11 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.4.0-alpha.3
+* added `clearReference` function
+* Bettered inheritance model
+* Working on documentation now
+
 #####1.4.0-alpha.2
 * Removed fake async require
     * It's better to just do it synchronously and get it over with

@@ -69,14 +69,50 @@ var Scriptor;
     Scriptor.this_module = module;
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
-    //well, mixed in. So ScriptBase just handles the most basic Script functions, mostly getters and setters
+    //well, mixed in. So ScriptBase just handles the most basic Script functions
     var ScriptBase = (function(_super) {
         __extends( ScriptBase, _super );
-        function ScriptBase() {
-            _super.apply( this, arguments );
+        function ScriptBase(parent) {
+            _super.call( this );
+            this._recursion = 0;
+            this._maxRecursion = 1;
             this.imports = {};
+            this._script = (new Module.Module( null, parent ));
         }
 
+        //Wrap it before you tap it.
+        //No, but really, it's important to protect against errors in a generic way
+        ScriptBase.prototype._callWrapper = function(func, this_arg, args) {
+            if( this_arg === void 0 ) {
+                this_arg = this;
+            }
+            if( args === void 0 ) {
+                args = [];
+            }
+            //Just in case, always use recursion protection
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+            }
+            try {
+                //This is placed in the try-block so the release is mirrored in the finally block
+                this._recursion++;
+                return func.apply( this_arg, args );
+            }
+            catch( e ) {
+                if( e instanceof SyntaxError ) {
+                    this.unload();
+                }
+                throw e;
+            }
+            finally {
+                //release recurse
+                this._recursion--;
+            }
+        };
+        //Abstract method
+        ScriptBase.prototype.do_load = function() {
+            //pass
+        };
         Object.defineProperty( ScriptBase.prototype, "id", {
             get:          function() {
                 return this._script.id;
@@ -125,6 +161,63 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        Object.defineProperty( ScriptBase.prototype, "maxRecursion", {
+            get:          function() {
+                return this._maxRecursion;
+            },
+            set:          function(value) {
+                //JSHint doesn't like bitwise operators
+                this._maxRecursion = Math.floor( value );
+                assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        ScriptBase.prototype.unload = function() {
+            var was_loaded = this.loaded;
+            this._script.loaded = false;
+            this._script.exports = {};
+            return was_loaded;
+        };
+        ScriptBase.prototype.reload = function() {
+            var was_loaded = this.loaded;
+            //Force it to reload and recompile the script.
+            this._callWrapper( this.do_load );
+            //If a Reference depends on this script, then it should be updated when it reloads
+            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
+            this.emit( 'change', 'change', this.filename );
+            return was_loaded;
+        };
+        //Abstract method
+        ScriptBase.prototype.unwatch = function() {
+            return false;
+        };
+        ScriptBase.prototype.close = function(permanent) {
+            if( permanent === void 0 ) {
+                permanent = true;
+            }
+            this.unload();
+            this.unwatch();
+            if( permanent ) {
+                //Remove _script from parent
+                if( this.parent !== void 0 ) {
+                    var children = this.parent.children;
+                    for( var _i in children ) {
+                        //Find which child is this._script, delete it and remove the (now undefined) reference
+                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
+                            delete children[_i];
+                            children.splice( _i, 1 );
+                            break;
+                        }
+                    }
+                }
+                //Remove _script from current object
+                return delete this._script;
+            }
+            else {
+                this._script.filename = null;
+            }
+        };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         ScriptBase.prototype.reference = function(filename) {
             return null;
@@ -146,9 +239,9 @@ var Scriptor;
     Scriptor.ScriptBase = ScriptBase;
     var AMDScript = (function(_super) {
         __extends( AMDScript, _super );
-        function AMDScript() {
+        function AMDScript(parent) {
             var _this = this;
-            _super.call( this );
+            _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
             this.require['toUrl'] = function(filepath) {
@@ -325,62 +418,17 @@ var Scriptor;
             if( parent === void 0 ) {
                 parent = Scriptor.this_module;
             }
-            _super.call( this );
-            this._recursion = 0;
-            this._maxRecursion = 1;
+            _super.call( this, parent );
             this._reference = void 0;
-            //Create a new Module without an id. It will be set later
-            this._script = (new Module.Module( null, parent ));
             //Explicit comparisons to appease JSHint
             if( filename !== void 0 && filename !== null ) {
                 this.load( filename );
             }
         }
 
-        //Wrap it before you tap it.
-        //No, but really, it's important to protect against errors in a generic way
-        Script.prototype._callWrapper = function(func, this_arg, args) {
-            if( this_arg === void 0 ) {
-                this_arg = this;
-            }
-            if( args === void 0 ) {
-                args = [];
-            }
-            //Just in case, always use recursion protection
-            if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
-            }
-            try {
-                //This is placed in the try-block so the release is mirrored in the finally block
-                this._recursion++;
-                return func.apply( this_arg, args );
-            }
-            catch( e ) {
-                if( e instanceof SyntaxError ) {
-                    this.unload();
-                }
-                throw e;
-            }
-            finally {
-                //release recurse
-                this._recursion--;
-            }
-        };
         Object.defineProperty( Script.prototype, "watched", {
             get:        function() {
                 return this._watcher !== void 0;
-            },
-            enumerable: true,
-            configurable: true
-        } );
-        Object.defineProperty( Script.prototype, "maxRecursion", {
-            get:        function() {
-                return this._maxRecursion;
-            },
-            set:        function(value) {
-                //JSHint doesn't like bitwise operators
-                this._maxRecursion = Math.floor( value );
-                assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
             },
             enumerable: true,
             configurable: true
@@ -465,21 +513,6 @@ var Scriptor;
             this.emit( 'change', 'change', this.filename );
             return this;
         };
-        Script.prototype.unload = function() {
-            var was_loaded = this.loaded;
-            this._script.loaded = false;
-            this._script.exports = {};
-            return was_loaded;
-        };
-        Script.prototype.reload = function() {
-            var was_loaded = this.loaded;
-            //Force it to reload and recompile the script.
-            this._callWrapper( this.do_load );
-            //If a Reference depends on this script, then it should be updated when it reloads
-            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
-            this.emit( 'change', 'change', this.filename );
-            return was_loaded;
-        };
         Script.prototype.watch = function() {
             var _this = this;
             if( !this.watched ) {
@@ -526,31 +559,13 @@ var Scriptor;
             }
             return false;
         };
-        Script.prototype.close = function(permanent) {
-            if( permanent === void 0 ) {
-                permanent = true;
+        Script.prototype.clearReference = function() {
+            var was_referenced = this._reference !== void 0;
+            if( was_referenced ) {
+                this._reference.close();
             }
-            this.unload();
-            this.unwatch();
-            if( permanent ) {
-                //Remove _script from parent
-                if( this.parent !== void 0 ) {
-                    var children = this.parent.children;
-                    for( var _i in children ) {
-                        //Find which child is this._script, delete it and remove the (now undefined) reference
-                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
-                            delete children[_i];
-                            children.splice( _i, 1 );
-                            break;
-                        }
-                    }
-                }
-                //Remove _script from current object
-                return delete this._script;
-            }
-            else {
-                this._script.filename = null;
-            }
+            delete this._reference;
+            return was_referenced;
         };
         return Script;
     })( AMDScript );
@@ -561,7 +576,7 @@ var Scriptor;
             if( parent === void 0 ) {
                 parent = Scriptor.this_module;
             }
-            _super.call( this );
+            _super.call( this, null, parent );
             if( src !== void 0 && src !== null ) {
                 this.load( src );
             }
@@ -836,7 +851,7 @@ var Scriptor;
             if( !this.closed ) {
                 this._script.removeListener( 'change', this._onChange );
                 delete this._value;
-                delete this._script._reference;
+                this._script.clearReference();
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         };

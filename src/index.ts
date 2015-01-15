@@ -64,11 +64,51 @@ module Scriptor {
 
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
-    //well, mixed in. So ScriptBase just handles the most basic Script functions, mostly getters and setters
+    //well, mixed in. So ScriptBase just handles the most basic Script functions
     export class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
+        protected _recursion : number = 0;
+        protected _maxRecursion : number = 1;
 
         public imports : {[key : string] : any} = {};
+
+        constructor( parent : Module.IModule ) {
+            super();
+
+            this._script = <any>(new Module.Module( null, parent ));
+        }
+
+        //Wrap it before you tap it.
+        //No, but really, it's important to protect against errors in a generic way
+        protected _callWrapper( func : Function, this_arg : any = this, args : any[] = [] ) : any {
+            //Just in case, always use recursion protection
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+            }
+
+            try {
+                //This is placed in the try-block so the release is mirrored in the finally block
+                this._recursion++;
+
+                return func.apply( this_arg, args );
+
+            } catch( e ) {
+                if( e instanceof SyntaxError ) {
+                    this.unload();
+                }
+
+                throw e;
+
+            } finally {
+                //release recurse
+                this._recursion--;
+            }
+        }
+
+        //Abstract method
+        protected do_load() {
+            //pass
+        }
 
         get id() : string {
             return this._script.id;
@@ -101,6 +141,72 @@ module Scriptor {
             return path.dirname( this.filename );
         }
 
+        set maxRecursion( value : number ) {
+            //JSHint doesn't like bitwise operators
+            this._maxRecursion = Math.floor( value );
+
+            assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
+        }
+
+        get maxRecursion() : number {
+            return this._maxRecursion;
+        }
+
+        public unload() : boolean {
+            var was_loaded : boolean = this.loaded;
+
+            this._script.loaded = false;
+            this._script.exports = {};
+
+            return was_loaded;
+        }
+
+        public reload() : boolean {
+            var was_loaded : boolean = this.loaded;
+
+            //Force it to reload and recompile the script.
+            this._callWrapper( this.do_load );
+
+            //If a Reference depends on this script, then it should be updated when it reloads
+            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
+            this.emit( 'change', 'change', this.filename );
+
+            return was_loaded;
+        }
+
+        //Abstract method
+        public unwatch() : boolean {
+            return false;
+        }
+
+        public close( permanent : boolean = true ) {
+            this.unload();
+            this.unwatch();
+
+            if( permanent ) {
+
+                //Remove _script from parent
+                if( this.parent !== void 0 ) {
+                    var children : Module.IModule[] = this.parent.children;
+
+                    for( var _i in children ) {
+                        //Find which child is this._script, delete it and remove the (now undefined) reference
+                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
+                            delete children[_i];
+                            children.splice( _i, 1 );
+                            break;
+                        }
+                    }
+                }
+
+                //Remove _script from current object
+                return delete this._script;
+
+            } else {
+                this._script.filename = null;
+            }
+        }
+
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         public reference( filename : string ) : any {
             return null;
@@ -126,8 +232,8 @@ module Scriptor {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
 
-        constructor() {
-            super();
+        constructor( parent : Module.IModule ) {
+            super( parent );
 
             this.require['toUrl'] = ( filepath : string ) => {
                 //Typescript decided it didn't like doing this part, so I did it myself
@@ -345,58 +451,15 @@ module Scriptor {
     export class Script extends AMDScript implements IScriptBase {
 
         protected _watcher : fs.FSWatcher;
-        protected _recursion : number = 0;
-        protected _maxRecursion : number = 1;
 
-        public _reference : Reference = void 0;
-
-        //Wrap it before you tap it.
-        //No, but really, it's important to protect against errors in a generic way
-        protected _callWrapper( func : Function, this_arg : any = this, args : any[] = [] ) : any {
-            //Just in case, always use recursion protection
-            if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
-            }
-
-            try {
-                //This is placed in the try-block so the release is mirrored in the finally block
-                this._recursion++;
-
-                return func.apply( this_arg, args );
-
-            } catch( e ) {
-                if( e instanceof SyntaxError ) {
-                    this.unload();
-                }
-
-                throw e;
-
-            } finally {
-                //release recurse
-                this._recursion--;
-            }
-        }
+        protected _reference : Reference = void 0;
 
         get watched() : boolean {
             return this._watcher !== void 0;
         }
 
-        set maxRecursion( value : number ) {
-            //JSHint doesn't like bitwise operators
-            this._maxRecursion = Math.floor( value );
-
-            assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
-        }
-
-        get maxRecursion() : number {
-            return this._maxRecursion;
-        }
-
         constructor( filename? : string, parent : Module.IModule = this_module ) {
-            super();
-
-            //Create a new Module without an id. It will be set later
-            this._script = <any>(new Module.Module( null, parent ));
+            super( parent );
 
             //Explicit comparisons to appease JSHint
             if( filename !== void 0 && filename !== null ) {
@@ -492,28 +555,6 @@ module Scriptor {
             return this;
         }
 
-        public unload() : boolean {
-            var was_loaded : boolean = this.loaded;
-
-            this._script.loaded = false;
-            this._script.exports = {};
-
-            return was_loaded;
-        }
-
-        public reload() : boolean {
-            var was_loaded : boolean = this.loaded;
-
-            //Force it to reload and recompile the script.
-            this._callWrapper( this.do_load );
-
-            //If a Reference depends on this script, then it should be updated when it reloads
-            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
-            this.emit( 'change', 'change', this.filename );
-
-            return was_loaded;
-        }
-
         public watch() : boolean {
             if( !this.watched ) {
                 var watcher : fs.FSWatcher = this._watcher = fs.watch( this.filename, {
@@ -570,32 +611,16 @@ module Scriptor {
             return false;
         }
 
-        public close( permanent : boolean = true ) {
-            this.unload();
-            this.unwatch();
+        public clearReference() : boolean {
+            var was_referenced : boolean = this._reference !== void 0;
 
-            if( permanent ) {
-
-                //Remove _script from parent
-                if( this.parent !== void 0 ) {
-                    var children : Module.IModule[] = this.parent.children;
-
-                    for( var _i in children ) {
-                        //Find which child is this._script, delete it and remove the (now undefined) reference
-                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
-                            delete children[_i];
-                            children.splice( _i, 1 );
-                            break;
-                        }
-                    }
-                }
-
-                //Remove _script from current object
-                return delete this._script;
-
-            } else {
-                this._script.filename = null;
+            if( was_referenced ) {
+                this._reference.close();
             }
+
+            delete this._reference;
+
+            return was_referenced;
         }
     }
 
@@ -647,7 +672,7 @@ module Scriptor {
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {
-            super();
+            super( null, parent );
 
             if( src !== void 0 && src !== null ) {
                 this.load( src );
@@ -903,7 +928,7 @@ module Scriptor {
                 this._script.removeListener( 'change', this._onChange );
 
                 delete this._value;
-                delete this._script._reference;
+                this._script.clearReference();
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         }
