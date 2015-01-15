@@ -126,7 +126,7 @@ module Module {
          * reads in the file and compiles it, but uses the _cache entry if available
          *
          * */
-        _load: ( request : string, parent : IModule, isMain : boolean ) => any;
+        _load: ( request : string, parent : IModule, isMain? : boolean ) => any;
 
         /*
          * Finds the absolute path of the requested module script

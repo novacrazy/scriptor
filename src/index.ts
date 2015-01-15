@@ -8,9 +8,26 @@ import path = require('path');
 import events = require('events');
 
 import Module = require('./Module');
-import AMD = require('./define');
+
+import MapAdapter = require('./map');
+
+function bind( func : Function, to : any, ...args : any[] ) {
+    args.unshift( to );
+
+    var res = Function.prototype.bind.apply( func, args );
+
+    for( var i in func ) {
+        if( func.hasOwnProperty( i ) ) {
+            res[i] = func[i];
+        }
+    }
+
+    return res;
+}
 
 module Scriptor {
+    export var default_dependencies : string[] = ['require', 'exports', 'module'];
+
     export var this_module : Module.IModule = <any>module;
 
     /**** BEGIN SECTION SCRIPT ****/
@@ -23,54 +40,31 @@ module Scriptor {
         include( filename : string, load? : boolean ) : Script;
     }
 
-    export interface IScriptModule extends IScriptBase, Module.IModule {
-        define : AMD.IDefine;
-        change();
+    export interface IAMDScriptBase {
+        require( path : string ) : any;
+        //require( id : string[], cb? : (...deps : any[]) => any ) : any[];
+        //require( id : string, cb? : (deps : any) => any ) : any;
+
+        //overloads
+        define( id : string, deps : string[], factory : ( ...deps : any[] ) => any );
+        define( id : string, deps : string[], factory : {[key : string] : any} );
+        define( deps : string[], factory : ( ...deps : any[] ) => any );
+        define( deps : string[], factory : {[key : string] : any} );
+        define( factory : ( ...deps : any[] ) => any );
+        define( factory : {[key : string] : any} );
     }
 
-    export class Script extends events.EventEmitter implements IScriptBase {
+    export interface IScriptModule extends IScriptBase, Module.IModule, IAMDScriptBase {
+        //Empty, just merges the interfaces
+    }
 
+    export class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
-        protected _watcher : fs.FSWatcher;
-        protected _recursion : number = 0;
-        protected _maxRecursion : number = 1;
-
-        //Wrap it before you tap it.
-        //No, but really, it's important to protect against errors in a generic way
-        protected _callWrapper( func : Function ) : any {
-            //Just in case, always use recursion protection
-            if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
-            }
-
-            try {
-                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
-                this._recursion++;
-
-                return func.call( this );
-
-            } catch( e ) {
-                if( e instanceof SyntaxError ) {
-                    this.unload();
-                }
-
-                throw e;
-
-            } finally {
-                //release recurse
-                this._recursion--;
-            }
-        }
-
-        public _reference : Reference = void 0;
-
-        public imports : {[key : string] : any} = {};
 
         get id() : string {
             return this._script.id;
         }
 
-        //Allow id to be set because it isn't very important
         set id( value : string ) {
             this._script.id = value;
         }
@@ -87,13 +81,280 @@ module Scriptor {
             return this._script.loaded;
         }
 
-        get watched() : boolean {
-            return this._watcher !== void 0;
-        }
-
         //Only allow getting the filename, setting should be done through .load
         get filename() : string {
             return this._script.filename;
+        }
+
+        //Based on the RequireJS 'standard' for relative locations
+        //For SourceScripts, just set the filename to something relative
+        get baseUrl() : string {
+            return path.dirname( this.filename );
+        }
+
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public reference( filename : string ) : any {
+            return null;
+        }
+
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public reference_apply( filename : string, args : any[] ) : any {
+            return null;
+        }
+
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public reference_once( filename : string ) : Reference {
+            return null;
+        }
+
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        public include( filename : string ) : Script {
+            return null;
+        }
+    }
+
+    export class AMDScript extends ScriptBase implements IAMDScriptBase {
+        protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
+        protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
+
+        constructor() {
+            super();
+
+            this.require['toUrl'] = ( filepath : string ) => {
+                //Typescript decided it didn't like doing this part, so I did it myself
+                if( filepath === void 0 ) {
+                    filepath = this.filename;
+                }
+
+                if( filepath.charAt( 0 ) === '.' ) {
+                    return path.resolve( this.baseUrl, filepath );
+
+                } else {
+                    return filepath;
+                }
+            };
+
+            this.define['require'] = bind( this.require, this );
+        }
+
+        protected _runFactory( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : any {
+            var resolvedDeps : any[];
+
+            var result : any;
+
+            if( id !== void 0 ) {
+                this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
+            }
+
+            if( deps !== void 0 ) {
+                resolvedDeps = deps.map( dep => this.require( dep ) );
+            }
+
+            if( typeof factory === 'function' ) {
+                result = factory.apply( this._script.exports, resolvedDeps );
+
+            } else {
+                result = factory;
+            }
+
+            return result;
+        }
+
+        //Overloads
+        public require( path : string ) : any;
+        public require( id : string[], cb? : ( ...deps : any[] ) => any ) : any[];
+        public require( id : string, cb? : ( deps : any ) => any ) : any;
+
+        //Implementation
+        public require( id : any, cb? : ( deps : any ) => any ) : any {
+            var normalize = path.resolve.bind( null, this.baseUrl );
+
+            var result;
+
+            if( Array.isArray( id ) ) {
+                var ids : string[] = <any>id;
+
+                result = ids.map( _id => this.require( _id ) );
+
+            } else {
+                assert.strictEqual( typeof id, 'string', 'id must be a string' );
+
+                if( id.indexOf( '!' ) !== -1 ) {
+
+                    //modules to be loaded through an AMD loader transform
+                    var parts : string[] = id.split( '!', 2 );
+
+                    var plugin : any = this.require( parts[0] );
+
+                    if( plugin.normalize ) {
+                        id = plugin.normalize( parts[1], normalize );
+
+                    } else {
+                        id = normalize( parts[1] );
+                    }
+
+                    if( !this._loadCache.has( id ) ) {
+                        assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
+
+                        var loader : any = ( value : any ) => {
+                            this._loadCache.set( id, value );
+                        };
+
+                        loader.fromText = ( text : string ) => {
+                            this._loadCache.set( id, Scriptor.compile( text ).exports );
+                        };
+
+                        plugin.load( id, bind( this.require, this ), loader, {} );
+                    }
+
+                    result = this._loadCache.get( id );
+
+                } else if( id.charAt( 0 ) === '.' ) {
+                    //relative modules
+                    id = normalize( id );
+
+                    console.log( id );
+
+                    //If possible, take advantage of a manager
+                    var script = this.include( id );
+
+                    if( script === null || script === void 0 ) {
+                        //If no manager is available, use a normal require
+                        result = this.require( id );
+
+                    } else {
+                        result = script.exports;
+                    }
+
+                } else {
+
+                    if( id === 'require' ) {
+                        result = bind( this.require, this );
+
+                    } else if( id === 'exports' ) {
+                        result = this._script.exports;
+
+                    } else if( id === 'module' ) {
+                        result = this._script;
+
+                    } else if( this._loadCache.has( id ) ) {
+                        result = this._loadCache.get( id );
+
+                    } else if( this._defineCache.has( id ) ) {
+                        result = this._runFactory.apply( this, this._defineCache.get( id ) );
+
+                        this._loadCache.set( id, result );
+
+                    } else {
+                        //normal modules
+                        result = Module.Module._load( id, this._script );
+                    }
+                }
+            }
+
+            if( typeof cb === 'function' ) {
+                var onTick : Function;
+
+                if( Array.isArray( result ) ) {
+                    onTick = Function.prototype.apply.bind( cb, null, result );
+
+                } else {
+                    onTick = cb.bind( null, result );
+                }
+
+                process.nextTick( onTick );
+
+            } else {
+                return result;
+            }
+        }
+
+        //overloads
+        public define( id : string, deps : string[], factory : ( ...deps : any[] ) => any );
+        public define( id : string, deps : string[], factory : {[key : string] : any} );
+        public define( deps : string[], factory : ( ...deps : any[] ) => any );
+        public define( deps : string[], factory : {[key : string] : any} );
+        public define( factory : ( ...deps : any[] ) => any );
+        public define( factory : {[key : string] : any} );
+
+        //implementation
+        public define( id : any, deps? : any, factory? : any ) : any {
+            //This argument parsing code is taken from amdefine
+            if( Array.isArray( id ) ) {
+                factory = deps;
+                deps = id;
+                id = void 0;
+
+            } else if( typeof id !== 'string' ) {
+                factory = id;
+                id = deps = void 0;
+            }
+
+            if( deps !== void 0 && !Array.isArray( deps ) ) {
+                factory = deps;
+                deps = void 0;
+            }
+
+            if( deps === void 0 ) {
+                deps = default_dependencies;
+            }
+
+            var define_args = [id, deps.concat( default_dependencies ), factory];
+
+            if( id !== void 0 ) {
+                assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
+
+                this._defineCache.set( id, define_args );
+
+            } else {
+                var result = this._runFactory.apply( this, define_args );
+
+                this._script.exports = result;
+
+                return result;
+            }
+        }
+    }
+
+    export class Script extends AMDScript implements IScriptBase {
+
+        protected _watcher : fs.FSWatcher;
+        protected _recursion : number = 0;
+        protected _maxRecursion : number = 1;
+
+        public _reference : Reference = void 0;
+
+        //Wrap it before you tap it.
+        //No, but really, it's important to protect against errors in a generic way
+        protected _callWrapper( func : Function, this_arg : any = this, args : any[] = [] ) : any {
+            //Just in case, always use recursion protection
+            if( this._recursion > this._maxRecursion ) {
+                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+            }
+
+            try {
+                //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
+                this._recursion++;
+
+                return func.apply( this_arg, args );
+
+            } catch( e ) {
+                if( e instanceof SyntaxError ) {
+                    this.unload();
+                }
+
+                throw e;
+
+            } finally {
+                //release recurse
+                this._recursion--;
+            }
+        }
+
+        public imports : {[key : string] : any} = {};
+
+        get watched() : boolean {
+            return this._watcher !== void 0;
         }
 
         set maxRecursion( value : number ) {
@@ -105,11 +366,6 @@ module Scriptor {
 
         get maxRecursion() : number {
             return this._maxRecursion;
-        }
-
-        //Basically an alias for the real script's require
-        public require( path : string ) : any {
-            return this._script.require( path );
         }
 
         constructor( filename? : string, parent : Module.IModule = this_module ) {
@@ -128,9 +384,8 @@ module Scriptor {
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
 
-            //This creates a new define function every time the script is loaded
-            //attempting to reuse an old one complained about duplicate internal state and so forth
-            this._script.define = AMD.amdefine( this._script );
+            this._script.require = bind( this.require, this );
+            this._script.define = bind( this.define, this );
 
             //bind all these to this because calling them inside the script might do something weird.
             //probably not, but still
@@ -138,10 +393,6 @@ module Scriptor {
             this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
-            this._script.change = () => {
-                //triggers reset of References
-                this.emit( 'change', 'change', this.filename );
-            }
         }
 
         //Should ALWAYS be called within a _callWrapper
@@ -176,15 +427,12 @@ module Scriptor {
             //This will ensure it is loaded (safely) and return the exports
             var main : any = this.exports;
 
-            //Use another call wrapper to execute the script
-            return this._callWrapper( () => {
-                if( typeof main === 'function' ) {
-                    return main.apply( null, args );
+            if( typeof main === 'function' ) {
+                return this._callWrapper( main, null, args );
 
-                } else {
-                    return main;
-                }
-            } );
+            } else {
+                return main;
+            }
         }
 
         public call_once( ...args : any[] ) : Reference {
@@ -200,26 +448,6 @@ module Scriptor {
 
                 return this._reference;
             }
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference( filename : string ) : any {
-            return null;
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference_apply( filename : string, args : any[] ) : any {
-            return null;
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference_once( filename : string ) : Reference {
-            return null;
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public include( filename : string ) : Script {
-            return null;
         }
 
         public load( filename : string, watch : boolean = true ) : Script {
@@ -244,6 +472,7 @@ module Scriptor {
             var was_loaded : boolean = this.loaded;
 
             this._script.loaded = false;
+            this._script.exports = {};
 
             return was_loaded;
         }
@@ -252,9 +481,7 @@ module Scriptor {
             var was_loaded : boolean = this.loaded;
 
             //Force it to reload and recompile the script.
-            this._callWrapper( () => {
-                this.do_load();
-            } );
+            this._callWrapper( this.do_load );
 
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
@@ -280,7 +507,7 @@ module Scriptor {
                         //This is important because fs.watch 'change' event only returns things like 'script.js'
                         //as a filename, which when resolved normally is relative to process.cwd(), not where the script
                         //actually is. So we have to get the directory of the last filename and combine it with the new name
-                        filename = path.resolve( path.dirname( this.filename ), filename );
+                        filename = path.resolve( this.baseUrl, filename );
 
                         if( event === 'change' && this.loaded ) {
                             this.unload();
@@ -296,7 +523,8 @@ module Scriptor {
                 } );
 
                 watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
-                    this.unload();
+                    //In the event of an error, unload and unwatch
+                    this.close( false );
 
                     //Would it be better to throw?
                     this.emit( 'error', error );
@@ -358,6 +586,16 @@ module Scriptor {
 
         set filename( value : string ) {
             this._script.filename = value;
+        }
+
+        get baseUrl() : string {
+            return path.dirname( this.filename );
+        }
+
+        set baseUrl( value : string ) {
+            value = path.dirname( value );
+
+            this.filename = value + path.basename( this.filename );
         }
 
         get watched() : boolean {
@@ -474,14 +712,14 @@ module Scriptor {
 
         //Basically, whatever arguments you give this the first time it's called is all you get
         public reference_once( filename : string, ...args : any[] ) : Reference {
-            var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
+            var real_filename : string = path.resolve( this.baseUrl, filename );
 
             return this.manager.add( real_filename ).apply_once( args );
         }
 
         public include( filename : string, load : boolean = false ) : ScriptAdapter {
             //make sure filename can be relative to the current script
-            var real_filename : string = path.resolve( path.dirname( this.filename ), filename );
+            var real_filename : string = path.resolve( this.baseUrl, filename );
 
             //Since add doesn't do anything to already existing scripts, but does return a script,
             //it can take care of the lookup or adding at the same time. Two birds with one lookup.
@@ -801,7 +1039,7 @@ module Scriptor {
 
     export class Manager {
 
-        private _scripts : {[key : string] : ScriptAdapter} = {};
+        private _scripts : Map<string, ScriptAdapter> = MapAdapter.createMap<ScriptAdapter>();
 
         private _cwd : string = process.cwd();
 
@@ -840,12 +1078,12 @@ module Scriptor {
         public add( filename : string, watch : boolean = true ) : ScriptAdapter {
             filename = path.resolve( this.cwd, filename );
 
-            var script : ScriptAdapter = this._scripts[filename];
+            var script : ScriptAdapter = this._scripts.get( filename );
 
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, filename, this._parent );
 
-                this._scripts[filename] = script;
+                this._scripts.set( filename, script );
             }
 
             //Even if the script is added, this allows it to be watched, though not unwatched.
@@ -863,7 +1101,7 @@ module Scriptor {
         public remove( filename : string, close : boolean = true ) : boolean {
             filename = path.resolve( this.cwd, filename );
 
-            var script : ScriptAdapter = this._scripts[filename];
+            var script : ScriptAdapter = this._scripts.get( filename );
 
             if( script !== void 0 ) {
 
@@ -871,7 +1109,7 @@ module Scriptor {
                     script.close();
                 }
 
-                return delete this._scripts[filename];
+                return delete this._scripts.delete( filename );
             }
 
             return false;
@@ -900,23 +1138,18 @@ module Scriptor {
         public get( filename : string ) : ScriptAdapter {
             filename = path.resolve( this.cwd, filename );
 
-            return this._scripts[filename];
+            return this._scripts.get( filename );
         }
 
         //Make closing optional for the same reason as .remove
         public clear( close : boolean = true ) {
-            for( var _i in this._scripts ) {
-                if( this._scripts.hasOwnProperty( _i ) ) {
-                    if( close ) {
-                        this._scripts[_i].close();
-                    }
-
-                    delete this._scripts[_i];
-                }
+            if( close ) {
+                this._scripts.forEach( ( script : Script ) => {
+                    script.close();
+                } );
             }
 
-            //Set _scripts to a clean object
-            this._scripts = {};
+            this._scripts.clear();
         }
     }
 

@@ -990,6 +990,14 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.4.0-alpha.0
+* Big changes, though not breaking changes
+* Removed amdefine dependency
+* Implemented amdefine functionality into Scriptor natively
+* More AMD features taking advantage of Scriptor systems
+* Use of Map data structure where available, with standard object fallback.
+* Have not documented changes yet, but that is in progress.
+
 #####1.3.9
 * Simplified a function call
 

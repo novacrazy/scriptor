@@ -44,10 +44,259 @@ var assert = require( 'assert' );
 var path = require( 'path' );
 var events = require( 'events' );
 var Module = require( './Module' );
-var AMD = require( './define' );
+var MapAdapter = require( './map' );
+function bind(func, to) {
+    var args = [];
+    for( var _i = 2; _i < arguments.length; _i++ ) {
+        args[_i - 2] = arguments[_i];
+    }
+    args.unshift( to );
+    var res = Function.prototype.bind.apply( func, args );
+    for( var i in func ) {
+        if( func.hasOwnProperty( i ) ) {
+            res[i] = func[i];
+        }
+    }
+    return res;
+}
 var Scriptor;
 (function(Scriptor) {
+    Scriptor.default_dependencies = ['require', 'exports', 'module'];
     Scriptor.this_module = module;
+    var ScriptBase = (function(_super) {
+        __extends( ScriptBase, _super );
+        function ScriptBase() {
+            _super.apply( this, arguments );
+        }
+
+        Object.defineProperty( ScriptBase.prototype, "id", {
+            get:          function() {
+                return this._script.id;
+            },
+            set:          function(value) {
+                this._script.id = value;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "children", {
+            get:          function() {
+                return this._script.children;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "parent", {
+            get:          function() {
+                return this._script.parent;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "loaded", {
+            get:          function() {
+                return this._script.loaded;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "filename", {
+            //Only allow getting the filename, setting should be done through .load
+            get:          function() {
+                return this._script.filename;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "baseUrl", {
+            //Based on the RequireJS 'standard' for relative locations
+            //For SourceScripts, just set the filename to something relative
+            get:          function() {
+                return path.dirname( this.filename );
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        ScriptBase.prototype.reference = function(filename) {
+            return null;
+        };
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        ScriptBase.prototype.reference_apply = function(filename, args) {
+            return null;
+        };
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        ScriptBase.prototype.reference_once = function(filename) {
+            return null;
+        };
+        //Returns null unless using the Manager, which creates a special derived class that overrides this
+        ScriptBase.prototype.include = function(filename) {
+            return null;
+        };
+        return ScriptBase;
+    })( events.EventEmitter );
+    Scriptor.ScriptBase = ScriptBase;
+    var AMDScript = (function(_super) {
+        __extends( AMDScript, _super );
+        function AMDScript() {
+            var _this = this;
+            _super.call( this );
+            this._defineCache = MapAdapter.createMap();
+            this._loadCache = MapAdapter.createMap();
+            this.require['toUrl'] = function(filepath) {
+                //Typescript decided it didn't like doing this part, so I did it myself
+                if( filepath === void 0 ) {
+                    filepath = _this.filename;
+                }
+                if( filepath.charAt( 0 ) === '.' ) {
+                    return path.resolve( _this.baseUrl, filepath );
+                }
+                else {
+                    return filepath;
+                }
+            };
+            this.define['require'] = bind( this.require, this );
+        }
+
+        AMDScript.prototype._runFactory = function(id, deps, factory) {
+            var _this = this;
+            var resolvedDeps;
+            var result;
+            if( id !== void 0 ) {
+                this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
+            }
+            if( deps !== void 0 ) {
+                resolvedDeps = deps.map( function(dep) {
+                    return _this.require( dep );
+                } );
+            }
+            if( typeof factory === 'function' ) {
+                result = factory.apply( this._script.exports, resolvedDeps );
+            }
+            else {
+                result = factory;
+            }
+            return result;
+        };
+        //Implementation
+        AMDScript.prototype.require = function(id, cb) {
+            var _this = this;
+            var normalize = path.resolve.bind( null, this.baseUrl );
+            var result;
+            if( Array.isArray( id ) ) {
+                var ids = id;
+                result = ids.map( function(_id) {
+                    return _this.require( _id );
+                } );
+            }
+            else {
+                assert.strictEqual( typeof id, 'string', 'id must be a string' );
+                if( id.indexOf( '!' ) !== -1 ) {
+                    //modules to be loaded through an AMD loader transform
+                    var parts = id.split( '!', 2 );
+                    var plugin = this.require( parts[0] );
+                    if( plugin.normalize ) {
+                        id = plugin.normalize( parts[1], normalize );
+                    }
+                    else {
+                        id = normalize( parts[1] );
+                    }
+                    if( !this._loadCache.has( id ) ) {
+                        assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
+                        var loader = function(value) {
+                            _this._loadCache.set( id, value );
+                        };
+                        loader.fromText = function(text) {
+                            _this._loadCache.set( id, Scriptor.compile( text ).exports );
+                        };
+                        plugin.load( id, bind( this.require, this ), loader, {} );
+                    }
+                    result = this._loadCache.get( id );
+                }
+                else if( id.charAt( 0 ) === '.' ) {
+                    //relative modules
+                    id = normalize( id );
+                    console.log( id );
+                    //If possible, take advantage of a manager
+                    var script = this.include( id );
+                    if( script === null || script === void 0 ) {
+                        //If no manager is available, use a normal require
+                        result = this.require( id );
+                    }
+                    else {
+                        result = script.exports;
+                    }
+                }
+                else {
+                    if( id === 'require' ) {
+                        result = bind( this.require, this );
+                    }
+                    else if( id === 'exports' ) {
+                        result = this._script.exports;
+                    }
+                    else if( id === 'module' ) {
+                        result = this._script;
+                    }
+                    else if( this._loadCache.has( id ) ) {
+                        result = this._loadCache.get( id );
+                    }
+                    else if( this._defineCache.has( id ) ) {
+                        result = this._runFactory.apply( this, this._defineCache.get( id ) );
+                        this._loadCache.set( id, result );
+                    }
+                    else {
+                        //normal modules
+                        result = Module.Module._load( id, this._script );
+                    }
+                }
+            }
+            if( typeof cb === 'function' ) {
+                var onTick;
+                if( Array.isArray( result ) ) {
+                    onTick = Function.prototype.apply.bind( cb, null, result );
+                }
+                else {
+                    onTick = cb.bind( null, result );
+                }
+                process.nextTick( onTick );
+            }
+            else {
+                return result;
+            }
+        };
+        //implementation
+        AMDScript.prototype.define = function(id, deps, factory) {
+            //This argument parsing code is taken from amdefine
+            if( Array.isArray( id ) ) {
+                factory = deps;
+                deps = id;
+                id = void 0;
+            }
+            else if( typeof id !== 'string' ) {
+                factory = id;
+                id = deps = void 0;
+            }
+            if( deps !== void 0 && !Array.isArray( deps ) ) {
+                factory = deps;
+                deps = void 0;
+            }
+            if( deps === void 0 ) {
+                deps = Scriptor.default_dependencies;
+            }
+            var define_args = [id, deps.concat( Scriptor.default_dependencies ), factory];
+            if( id !== void 0 ) {
+                assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
+                this._defineCache.set( id, define_args );
+            }
+            else {
+                var result = this._runFactory.apply( this, define_args );
+                this._script.exports = result;
+                return result;
+            }
+        };
+        return AMDScript;
+    })( ScriptBase );
+    Scriptor.AMDScript = AMDScript;
     var Script = (function(_super) {
         __extends( Script, _super );
         function Script(filename, parent) {
@@ -69,7 +318,13 @@ var Scriptor;
 
         //Wrap it before you tap it.
         //No, but really, it's important to protect against errors in a generic way
-        Script.prototype._callWrapper = function(func) {
+        Script.prototype._callWrapper = function(func, this_arg, args) {
+            if( this_arg === void 0 ) {
+                this_arg = this;
+            }
+            if( args === void 0 ) {
+                args = [];
+            }
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
                 throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
@@ -77,7 +332,7 @@ var Scriptor;
             try {
                 //Just to make sure this happens in the try-catch-finally block so finally is assured to be decremented.
                 this._recursion++;
-                return func.call( this );
+                return func.apply( this_arg, args );
             }
             catch( e ) {
                 if( e instanceof SyntaxError ) {
@@ -90,49 +345,9 @@ var Scriptor;
                 this._recursion--;
             }
         };
-        Object.defineProperty( Script.prototype, "id", {
-            get:        function() {
-                return this._script.id;
-            },
-            //Allow id to be set because it isn't very important
-            set:        function(value) {
-                this._script.id = value;
-            },
-            enumerable: true,
-            configurable: true
-        } );
-        Object.defineProperty( Script.prototype, "children", {
-            get:        function() {
-                return this._script.children;
-            },
-            enumerable: true,
-            configurable: true
-        } );
-        Object.defineProperty( Script.prototype, "parent", {
-            get:        function() {
-                return this._script.parent;
-            },
-            enumerable: true,
-            configurable: true
-        } );
-        Object.defineProperty( Script.prototype, "loaded", {
-            get:        function() {
-                return this._script.loaded;
-            },
-            enumerable: true,
-            configurable: true
-        } );
         Object.defineProperty( Script.prototype, "watched", {
             get:        function() {
                 return this._watcher !== void 0;
-            },
-            enumerable: true,
-            configurable: true
-        } );
-        Object.defineProperty( Script.prototype, "filename", {
-            //Only allow getting the filename, setting should be done through .load
-            get:        function() {
-                return this._script.filename;
             },
             enumerable: true,
             configurable: true
@@ -149,27 +364,17 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
-        //Basically an alias for the real script's require
-        Script.prototype.require = function(path) {
-            return this._script.require( path );
-        };
         Script.prototype.do_setup = function() {
-            var _this = this;
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
-            //This creates a new define function every time the script is loaded
-            //attempting to reuse an old one complained about duplicate internal state and so forth
-            this._script.define = AMD.amdefine( this._script );
+            this._script.require = bind( this.require, this );
+            this._script.define = bind( this.define, this );
             //bind all these to this because calling them inside the script might do something weird.
             //probably not, but still
             this._script.reference = this.reference.bind( this );
             this._script.reference_apply = this.reference_apply.bind( this );
             this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
-            this._script.change = function() {
-                //triggers reset of References
-                _this.emit( 'change', 'change', _this.filename );
-            };
         };
         //Should ALWAYS be called within a _callWrapper
         Script.prototype.do_load = function() {
@@ -202,15 +407,12 @@ var Scriptor;
         Script.prototype.apply = function(args) {
             //This will ensure it is loaded (safely) and return the exports
             var main = this.exports;
-            //Use another call wrapper to execute the script
-            return this._callWrapper( function() {
-                if( typeof main === 'function' ) {
-                    return main.apply( null, args );
-                }
-                else {
-                    return main;
-                }
-            } );
+            if( typeof main === 'function' ) {
+                return this._callWrapper( main, null, args );
+            }
+            else {
+                return main;
+            }
         };
         Script.prototype.call_once = function() {
             var args = [];
@@ -227,22 +429,6 @@ var Scriptor;
                 this._reference = new Reference( this, args );
                 return this._reference;
             }
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        Script.prototype.reference = function(filename) {
-            return null;
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        Script.prototype.reference_apply = function(filename, args) {
-            return null;
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        Script.prototype.reference_once = function(filename) {
-            return null;
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        Script.prototype.include = function(filename) {
-            return null;
         };
         Script.prototype.load = function(filename, watch) {
             if( watch === void 0 ) {
@@ -261,15 +447,13 @@ var Scriptor;
         Script.prototype.unload = function() {
             var was_loaded = this.loaded;
             this._script.loaded = false;
+            this._script.exports = {};
             return was_loaded;
         };
         Script.prototype.reload = function() {
-            var _this = this;
             var was_loaded = this.loaded;
             //Force it to reload and recompile the script.
-            this._callWrapper( function() {
-                _this.do_load();
-            } );
+            this._callWrapper( this.do_load );
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
@@ -291,7 +475,7 @@ var Scriptor;
                         //This is important because fs.watch 'change' event only returns things like 'script.js'
                         //as a filename, which when resolved normally is relative to process.cwd(), not where the script
                         //actually is. So we have to get the directory of the last filename and combine it with the new name
-                        filename = path.resolve( path.dirname( _this.filename ), filename );
+                        filename = path.resolve( _this.baseUrl, filename );
                         if( event === 'change' && _this.loaded ) {
                             _this.unload();
                         }
@@ -304,7 +488,8 @@ var Scriptor;
                     _this.emit( 'change', event, filename );
                 } );
                 watcher.on( 'error', function(error) {
-                    _this.unload();
+                    //In the event of an error, unload and unwatch
+                    _this.close( false );
                     //Would it be better to throw?
                     _this.emit( 'error', error );
                 } );
@@ -347,7 +532,7 @@ var Scriptor;
             }
         };
         return Script;
-    })( events.EventEmitter );
+    })( AMDScript );
     Scriptor.Script = Script;
     var SourceScript = (function(_super) {
         __extends( SourceScript, _super );
@@ -367,6 +552,17 @@ var Scriptor;
             },
             set:          function(value) {
                 this._script.filename = value;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( SourceScript.prototype, "baseUrl", {
+            get:          function() {
+                return path.dirname( this.filename );
+            },
+            set:          function(value) {
+                value = path.dirname( value );
+                this.filename = value + path.basename( this.filename );
             },
             enumerable:   true,
             configurable: true
@@ -472,7 +668,7 @@ var Scriptor;
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            var real_filename = path.resolve( path.dirname( this.filename ), filename );
+            var real_filename = path.resolve( this.baseUrl, filename );
             return this.manager.add( real_filename ).apply_once( args );
         };
         ScriptAdapter.prototype.include = function(filename, load) {
@@ -480,7 +676,7 @@ var Scriptor;
                 load = false;
             }
             //make sure filename can be relative to the current script
-            var real_filename = path.resolve( path.dirname( this.filename ), filename );
+            var real_filename = path.resolve( this.baseUrl, filename );
             //Since add doesn't do anything to already existing scripts, but does return a script,
             //it can take care of the lookup or adding at the same time. Two birds with one lookup.
             var script = this.manager.add( real_filename );
@@ -781,7 +977,7 @@ var Scriptor;
     /**** BEGIN SECTION MANAGER ****/
     var Manager = (function() {
         function Manager(grandParent) {
-            this._scripts = {};
+            this._scripts = MapAdapter.createMap();
             this._cwd = process.cwd();
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
@@ -823,10 +1019,10 @@ var Scriptor;
                 watch = true;
             }
             filename = path.resolve( this.cwd, filename );
-            var script = this._scripts[filename];
+            var script = this._scripts.get( filename );
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, filename, this._parent );
-                this._scripts[filename] = script;
+                this._scripts.set( filename, script );
             }
             //Even if the script is added, this allows it to be watched, though not unwatched.
             //Unwatching still has to be done manually
@@ -843,12 +1039,12 @@ var Scriptor;
                 close = true;
             }
             filename = path.resolve( this.cwd, filename );
-            var script = this._scripts[filename];
+            var script = this._scripts.get( filename );
             if( script !== void 0 ) {
                 if( close ) {
                     script.close();
                 }
-                return delete this._scripts[filename];
+                return delete this._scripts.delete( filename );
             }
             return false;
         };
@@ -881,23 +1077,19 @@ var Scriptor;
         };
         Manager.prototype.get = function(filename) {
             filename = path.resolve( this.cwd, filename );
-            return this._scripts[filename];
+            return this._scripts.get( filename );
         };
         //Make closing optional for the same reason as .remove
         Manager.prototype.clear = function(close) {
             if( close === void 0 ) {
                 close = true;
             }
-            for( var _i in this._scripts ) {
-                if( this._scripts.hasOwnProperty( _i ) ) {
-                    if( close ) {
-                        this._scripts[_i].close();
-                    }
-                    delete this._scripts[_i];
-                }
+            if( close ) {
+                this._scripts.forEach( function(script) {
+                    script.close();
+                } );
             }
-            //Set _scripts to a clean object
-            this._scripts = {};
+            this._scripts.clear();
         };
         return Manager;
     })();
