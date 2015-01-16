@@ -41,6 +41,10 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.call_once(...args : any[])`](#call_onceargs--any---reference)
     - [`.apply_once(args : any[])`](#apply_onceargs--any---reference)
     - [`.require(path : string)`](#requirepath--string---any)
+        - [`.require.toUrl(path : string)`]()
+        - [`.require.specified(id : string)`]()
+        - [`.require.defined(id : string)`]()
+    - [`.define(id? : string, deps? : string[], factory : Function)`]()
     - [`.unload()`](#unload---boolean)
     - [`.reload()`](#reload---boolean)
     - [`.watch()`](#watch---boolean)
@@ -990,6 +994,13 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 ##Changelog
 
+#####1.4.0-alpha.4
+* Added in real async loading for situations that allows it
+* Implemented more of the AMD spec
+* Fixed and optimized a few things
+* Still working on documentation
+* Added async dependency for async.map
+
 #####1.4.0-alpha.3
 * added `clearReference` function
 * Bettered inheritance model
@@ -997,7 +1008,6 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 
 #####1.4.0-alpha.2
 * Removed fake async require
-    * It's better to just do it synchronously and get it over with
 * Added `require.specified`, `require.defined` and `onload.error` AMD functions
 * Fixed bug in plugin loading
 

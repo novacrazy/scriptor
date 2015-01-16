@@ -46,6 +46,7 @@ var path = require( 'path' );
 var events = require( 'events' );
 var Module = require( './Module' );
 var MapAdapter = require( './map' );
+var async = require( 'async' );
 //Helper function to bind a function to an object AND retain any attached values
 //Also bounds a variable number of arguments to the function, which is neat.
 //The 'to' arguments is in ...args
@@ -244,6 +245,7 @@ var Scriptor;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
+            //These all have to be done here as closures
             this.require['toUrl'] = function(filepath) {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
@@ -257,47 +259,119 @@ var Scriptor;
                     return filepath;
                 }
             };
+            var normalize = function(id) {
+                return id.charAt( 0 ) === '.' ? path.resolve( _this.baseUrl, id ) : id;
+            };
             this.require['defined'] = function(id) {
-                return _this._loadCache.has( id );
+                return _this._loadCache.has( normalize( id ) );
             };
             this.require['specified'] = function(id) {
-                return _this._defineCache.has( id );
+                return _this._defineCache.has( normalize( id ) );
+            };
+            this.require['undef'] = function(id) {
+                id = normalize( id );
+                _this._defineCache.delete( id );
+                _this._loadCache.delete( id );
+            };
+            this.require['onError'] = function onError(err) {
+                throw err;
             };
             this.define['require'] = bind( this.require, this );
         }
 
-        AMDScript.prototype._runFactory = function(id, deps, factory) {
+        AMDScript.prototype._runFactory = function(id, deps, factory, cb) {
             var _this = this;
-            var resolvedDeps;
-            var result;
             if( id !== void 0 ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
-            if( deps !== void 0 ) {
-                resolvedDeps = deps.map( function(dep) {
-                    return _this.require( dep );
-                } );
-            }
-            if( typeof factory === 'function' ) {
-                result = factory.apply( this._script.exports, resolvedDeps );
+            if( typeof cb === 'function' ) {
+                if( typeof factory === 'function' ) {
+                    //the spread is essential to pass along the arguments
+                    this.require( deps, function() {
+                        var resolvedDeps = [];
+                        for( var _i = 0; _i < arguments.length; _i++ ) {
+                            resolvedDeps[_i - 0] = arguments[_i];
+                        }
+                        cb( factory.apply( _this._script.exports, resolvedDeps ) );
+                    } );
+                }
+                else {
+                    async.nextTick( cb.bind( null, factory ) );
+                }
             }
             else {
-                result = factory;
+                if( typeof factory === 'function' ) {
+                    return factory.apply( this._script.exports, this.require( deps ) );
+                }
+                else {
+                    return factory;
+                }
             }
-            return result;
         };
-        //Implementation
-        AMDScript.prototype.require = function(id, cb) {
+        //Implementation, and holy crap is it huge
+        AMDScript.prototype.require = function(id, cb, errcb) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
+            var onError = function(_id, type, err) {
+                if( err === void 0 ) {
+                    err = {};
+                }
+                if( Array.isArray( err.requireModules ) && !Array.isArray( _id ) && err.requireModules.indexOf( _id )
+                                                                                    === -1 ) {
+                    err.requireModules.push( _id );
+                }
+                else {
+                    err.requireModules = Array.isArray( _id ) ? _id : [_id];
+                }
+                err.requireType = err.requireType || type;
+                if( typeof errcb === 'function' ) {
+                    errcb( err );
+                }
+                else {
+                    _this.require['onError']( err );
+                }
+            };
+            var nextTick = function(func, args) {
+                var onTick;
+                if( Array.isArray( args ) ) {
+                    onTick = Function.prototype.apply.bind( func, null, args );
+                }
+                else {
+                    onTick = func.bind( null, args );
+                }
+                //Use nextTick instead of process.nextTick
+                async.nextTick( onTick );
+            };
             var result;
             if( Array.isArray( id ) ) {
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids = id;
-                //Love this line
-                result = ids.map( function(_id) {
-                    return _this.require( _id );
-                } );
+                if( typeof cb === 'function' ) {
+                    //Because async.map requires a function of (item, cb : (err, result) => any) => any
+                    //instead of (item, cb, errcb), this is needed
+                    var requireNormalized = function(id, rcb) {
+                        _this.require( id, function(result) {
+                            return rcb( null, result );
+                        }, function(err) {
+                            return rcb( err );
+                        } );
+                    };
+                    async.map( ids, requireNormalized, function(err, results) {
+                        if( err !== null && err !== void 0 ) {
+                            onError( ids, 'nodefine', err );
+                        }
+                        else {
+                            nextTick( cb, results );
+                        }
+                    } );
+                    return result;
+                }
+                else {
+                    //Love this line
+                    result = ids.map( function(_id) {
+                        return _this.require( _id );
+                    } );
+                }
             }
             else {
                 assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
@@ -316,24 +390,28 @@ var Scriptor;
                     }
                     if( !this._loadCache.has( id ) ) {
                         assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
-                        var onload = function(value) {
+                        var onLoad = function(value) {
                             _this._loadCache.set( id, value );
+                            if( typeof cb === 'function' ) {
+                                nextTick( cb, value );
+                            }
                         };
-                        onload.fromText = function(text) {
-                            _this._loadCache.set( id, Scriptor.compile( text ).exports );
+                        onLoad.fromText = function(text) {
+                            //Exploit Scriptor as much as possible
+                            onLoad( Scriptor.compile( text ).exports );
                         };
-                        onload.error = function(err) {
-                            throw err;
-                        };
+                        onLoad.error = onError.bind( null, id, 'scripterror' );
+                        //This just makes sure it is set, otherwise if required while this is loading,
+                        //it'll try to run the factory again
+                        this._loadCache.set( id, void 0 );
                         //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, bind( this.require, this ), onload, {} );
+                        plugin.load( id, bind( this.require, this ), onLoad, {} );
                     }
                     result = this._loadCache.get( id );
                 }
                 else if( id.charAt( 0 ) === '.' ) {
                     //relative modules
                     id = normalize( id );
-                    console.log( id );
                     //If possible, take advantage of a manager
                     var script = this.include( id );
                     if( script === null || script === void 0 ) {
@@ -358,22 +436,37 @@ var Scriptor;
                         result = this._loadCache.get( id );
                     }
                     else if( this._defineCache.has( id ) ) {
-                        result = this._runFactory.apply( this, this._defineCache.get( id ) );
-                        this._loadCache.set( id, result );
+                        var args = this._defineCache.get( id );
+                        if( typeof cb === 'function' ) {
+                            var onComplete = function(result) {
+                                _this._loadCache.set( id, result );
+                                cb( result );
+                            };
+                            this._runFactory.apply( this, args.concat( [onComplete] ) );
+                            return result;
+                        }
+                        else {
+                            result = this._runFactory.apply( this, args );
+                            this._loadCache.set( id, result );
+                        }
                     }
                     else {
-                        //Normal module loading akin to the real 'require' function
-                        result = Module.Module._load( id, this._script );
+                        //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
+                        result = (function() {
+                            try {
+                                //Normal module loading akin to the real 'require' function
+                                return Module.Module._load( id, _this._script );
+                            }
+                            catch( err ) {
+                                onError( id, 'nodefine', err );
+                            }
+                        })();
                     }
                 }
             }
+            //Anything that gets to this point was synchronous, but if a callback was given, do it on the next tick
             if( typeof cb === 'function' ) {
-                if( Array.isArray( result ) ) {
-                    cb.apply( null, result );
-                }
-                else {
-                    cb.call( null, result );
-                }
+                nextTick( cb, result );
             }
             else {
                 return result;
@@ -398,16 +491,30 @@ var Scriptor;
             if( deps === void 0 ) {
                 deps = Scriptor.default_dependencies;
             }
-            var define_args = [id, deps.concat( Scriptor.default_dependencies ), factory];
+            else {
+                deps = deps.concat( Scriptor.default_dependencies );
+            }
+            var define_args = [id, deps, factory];
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
                 this._defineCache.set( id, define_args );
             }
             else {
                 var result = this._runFactory.apply( this, define_args );
-                this._script.exports = result;
+                //Allows for main factory to not return anything.
+                //for use with require(['exports']) and so forth, nothing is returned
+                if( result !== null && result !== void 0 ) {
+                    this._script.exports = result;
+                }
                 return result;
             }
+        };
+        AMDScript.prototype.unload = function() {
+            var res = _super.prototype.unload.call( this );
+            //unload also clears defines and requires
+            this._defineCache.clear();
+            this._loadCache.clear();
+            return res;
         };
         return AMDScript;
     })( ScriptBase );

@@ -12,12 +12,16 @@ import Module = require('./Module');
 
 import MapAdapter = require('./map');
 
+import async = require('async');
+
 //Helper function to bind a function to an object AND retain any attached values
 //Also bounds a variable number of arguments to the function, which is neat.
 //The 'to' arguments is in ...args
 function bind( func : Function, ...args : any[] ) {
     var res = Function.prototype.bind.apply( func, args );
 
+    //This assumes sub-functions can handle their own scopes
+    //or are closures that take that into account
     for( var i in func ) {
         if( func.hasOwnProperty( i ) ) {
             res[i] = func[i];
@@ -46,8 +50,8 @@ module Scriptor {
     export interface IAMDScriptBase {
         require( path : string ) : any;
         //overloads that can't be here because it would conflict with Module.IModule declarations
-        //require( id : string[], cb? : (...deps : any[]) => any ) : any[];
-        //require( id : string, cb? : (deps : any) => any ) : any;
+        //require( id : string[], cb? : ( deps : any[] ) => any, ecb? : (err : any) => any ) : any[];
+        //require( id : string, cb? : ( deps : any ) => any, ecb? : (err : any) => any ) : any;
 
         //overloads
         define( id : string, deps : string[], factory : ( ...deps : any[] ) => any );
@@ -235,6 +239,8 @@ module Scriptor {
         constructor( parent : Module.IModule ) {
             super( parent );
 
+            //These all have to be done here as closures
+
             this.require['toUrl'] = ( filepath : string ) => {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
@@ -250,57 +256,134 @@ module Scriptor {
                 }
             };
 
+            var normalize = ( id : string ) => {
+                return id.charAt( 0 ) === '.' ? path.resolve( this.baseUrl, id ) : id;
+            };
+
             this.require['defined'] = ( id : string ) => {
-                return this._loadCache.has( id );
+                return this._loadCache.has( normalize( id ) );
             };
 
             this.require['specified'] = ( id : string ) => {
-                return this._defineCache.has( id );
+                return this._defineCache.has( normalize( id ) );
+            };
+
+            this.require['undef'] = ( id : string ) => {
+                id = normalize( id );
+
+                this._defineCache.delete( id );
+                this._loadCache.delete( id );
+            };
+
+            this.require['onError'] = function onError( err : any ) {
+                throw err; //default error
             };
 
             this.define['require'] = bind( this.require, this );
         }
 
-        protected _runFactory( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : any {
-            var resolvedDeps : any[];
-
-            var result : any;
-
+        protected _runFactory( id : string,
+                               deps : string[],
+                               factory : ( ...deps : any[] ) => any,
+                               cb? : ( result : any ) => any ) : any {
             if( id !== void 0 ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
 
-            if( deps !== void 0 ) {
-                resolvedDeps = deps.map( dep => this.require( dep ) );
-            }
+            if( typeof cb === 'function' ) {
+                if( typeof factory === 'function' ) {
 
-            if( typeof factory === 'function' ) {
-                result = factory.apply( this._script.exports, resolvedDeps );
+                    //the spread is essential to pass along the arguments
+                    this.require( deps, ( ...resolvedDeps : any[] ) => {
+                        cb( factory.apply( this._script.exports, resolvedDeps ) );
+                    } );
+
+                } else {
+                    async.nextTick( cb.bind( null, factory ) );
+                }
 
             } else {
-                result = factory;
-            }
+                if( typeof factory === 'function' ) {
+                    return factory.apply( this._script.exports, this.require( deps ) );
 
-            return result;
+                } else {
+                    return factory;
+                }
+            }
         }
 
         //Overloads, which can differ from Module.IModule
         public require( path : string ) : any;
-        public require( id : string[], cb? : ( ...deps : any[] ) => any ) : any[];
-        public require( id : string, cb? : ( deps : any ) => any ) : any;
+        public require( id : string[], cb? : ( deps : any[] ) => any, ecb? : ( err : any ) => any ) : any[];
+        public require( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : any;
 
-        //Implementation
-        public require( id : any, cb? : ( deps : any ) => any ) : any {
+        //Implementation, and holy crap is it huge
+        public require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
             var normalize = path.resolve.bind( null, this.baseUrl );
 
-            var result;
+            var onError = ( _id : any, type : string, err : any = {} ) => {
+                if( Array.isArray( err.requireModules )
+                    && !Array.isArray( _id )
+                    && err.requireModules.indexOf( _id ) === -1 ) {
+                    err.requireModules.push( _id );
+
+                } else {
+                    err.requireModules = Array.isArray( _id ) ? _id : [_id];
+                }
+
+                err.requireType = err.requireType || type;
+
+                if( typeof errcb === 'function' ) {
+                    errcb( err );
+
+                } else {
+                    this.require['onError']( err );
+                }
+            };
+
+            var nextTick = ( func : Function, args : any ) => {
+                var onTick : Function;
+
+                if( Array.isArray( args ) ) {
+                    onTick = Function.prototype.apply.bind( func, null, args );
+
+                } else {
+                    onTick = func.bind( null, args );
+                }
+
+                //Use nextTick instead of process.nextTick
+                async.nextTick( onTick );
+            };
+
+            var result : any;
 
             if( Array.isArray( id ) ) {
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids : string[] = <any>id;
 
-                //Love this line
-                result = ids.map( _id => this.require( _id ) );
+                if( typeof cb === 'function' ) {
+
+                    //Because async.map requires a function of (item, cb : (err, result) => any) => any
+                    //instead of (item, cb, errcb), this is needed
+                    var requireNormalized = ( id : string, rcb : ( err : any, result? : any ) => any ) => {
+                        this.require( id, result => rcb( null, result ), err => rcb( err ) );
+                    };
+
+                    async.map( ids, requireNormalized, ( err : any, results : any[] ) => {
+                        if( err !== null && err !== void 0 ) {
+                            onError( ids, 'nodefine', err );
+
+                        } else {
+                            nextTick( cb, results );
+                        }
+                    } );
+
+                    return result;
+
+                } else {
+                    //Love this line
+                    result = ids.map( _id => this.require( _id ) );
+                }
 
             } else {
                 assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
@@ -327,20 +410,27 @@ module Scriptor {
                     if( !this._loadCache.has( id ) ) {
                         assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
 
-                        var onload : any = ( value : any ) => {
+                        var onLoad : any = ( value : any ) => {
                             this._loadCache.set( id, value );
+
+                            if( typeof cb === 'function' ) {
+                                nextTick( cb, value );
+                            }
                         };
 
-                        onload.fromText = ( text : string ) => {
-                            this._loadCache.set( id, Scriptor.compile( text ).exports );
+                        onLoad.fromText = ( text : string ) => {
+                            //Exploit Scriptor as much as possible
+                            onLoad( Scriptor.compile( text ).exports );
                         };
 
-                        onload.error = ( err : any ) => {
-                            throw err; //default error
-                        };
+                        onLoad.error = onError.bind( null, id, 'scripterror' );
+
+                        //This just makes sure it is set, otherwise if required while this is loading,
+                        //it'll try to run the factory again
+                        this._loadCache.set( id, void 0 );
 
                         //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, bind( this.require, this ), onload, {} );
+                        plugin.load( id, bind( this.require, this ), onLoad, {} );
                     }
 
                     result = this._loadCache.get( id );
@@ -348,8 +438,6 @@ module Scriptor {
                 } else if( id.charAt( 0 ) === '.' ) {
                     //relative modules
                     id = normalize( id );
-
-                    console.log( id );
 
                     //If possible, take advantage of a manager
                     var script = this.include( id );
@@ -377,24 +465,43 @@ module Scriptor {
                         result = this._loadCache.get( id );
 
                     } else if( this._defineCache.has( id ) ) {
-                        result = this._runFactory.apply( this, this._defineCache.get( id ) );
+                        var args : any[] = this._defineCache.get( id );
 
-                        this._loadCache.set( id, result );
+                        if( typeof cb === 'function' ) {
+                            var onComplete : Function = ( result : any ) => {
+                                this._loadCache.set( id, result );
+
+                                cb( result );
+                            };
+
+                            this._runFactory.apply( this, args.concat( [onComplete] ) );
+
+                            return result;
+
+                        } else {
+                            result = this._runFactory.apply( this, args );
+
+                            this._loadCache.set( id, result );
+                        }
 
                     } else {
-                        //Normal module loading akin to the real 'require' function
-                        result = Module.Module._load( id, this._script );
+                        //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
+                        result = (() => {
+                            try {
+                                //Normal module loading akin to the real 'require' function
+                                return Module.Module._load( id, this._script );
+
+                            } catch( err ) {
+                                onError( id, 'nodefine', err );
+                            }
+                        })();
                     }
                 }
             }
 
+            //Anything that gets to this point was synchronous, but if a callback was given, do it on the next tick
             if( typeof cb === 'function' ) {
-                if( Array.isArray( result ) ) {
-                    cb.apply( null, result );
-
-                } else {
-                    cb.call( null, result );
-                }
+                nextTick( cb, result );
 
             } else {
                 return result;
@@ -429,9 +536,11 @@ module Scriptor {
 
             if( deps === void 0 ) {
                 deps = default_dependencies;
+            } else {
+                deps = deps.concat( default_dependencies )
             }
 
-            var define_args = [id, deps.concat( default_dependencies ), factory];
+            var define_args = [id, deps, factory];
 
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
@@ -441,10 +550,24 @@ module Scriptor {
             } else {
                 var result = this._runFactory.apply( this, define_args );
 
-                this._script.exports = result;
+                //Allows for main factory to not return anything.
+                //for use with require(['exports']) and so forth, nothing is returned
+                if( result !== null && result !== void 0 ) {
+                    this._script.exports = result;
+                }
 
                 return result;
             }
+        }
+
+        public unload() : boolean {
+            var res : boolean = super.unload();
+
+            //unload also clears defines and requires
+            this._defineCache.clear();
+            this._loadCache.clear();
+
+            return res;
         }
     }
 
