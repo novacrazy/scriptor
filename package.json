@@ -1,6 +1,6 @@
 {
   "name": "scriptor",
-  "version": "1.4.0-alpha.2",
+  "version": "1.4.0-alpha.4",
   "description": "Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process.",
   "main": "index.js",
   "keywords": [
@@ -35,6 +35,8 @@
   "scripts": {
     "test": "mocha test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "async": "^0.9.0"
+  },
   "optionalDependencies": {}
 }
