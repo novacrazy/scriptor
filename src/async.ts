@@ -12,6 +12,8 @@ import Module = require('./Module');
 import Common = require('./common');
 import MapAdapter = require('./map');
 
+import Promise = require('bluebird');
+
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
@@ -64,28 +66,36 @@ module Scriptor {
 
         //Wrap it before you tap it.
         //No, but really, it's important to protect against errors in a generic way
-        protected _callWrapper( func : Function, this_arg : any = this, args : any[] = [] ) : any {
+        protected _callWrapper( func : Function, this_arg : any = this, args : any[] = [] ) : Promise<any> {
+
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
-            }
+                return Promise.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion ) );
 
-            try {
-                //This is placed in the try-block so the release is mirrored in the finally block
-                this._recursion++;
+            } else {
+                var result : Promise<any> = new Promise( ( resolve, reject ) => {
+                    try {
+                        //This is placed in the try-block so the release is mirrored in the finally block
+                        this._recursion++;
 
-                return func.apply( this_arg, args );
+                        resolve( func.apply( this_arg, args ) );
 
-            } catch( e ) {
-                if( e instanceof SyntaxError ) {
+                    } catch( e ) {
+                        if( e instanceof SyntaxError ) {
+                            this.unload();
+                        }
+
+                        reject( e );
+                    }
+                } );
+
+                return result.catch( SyntaxError, ( e ) => {
                     this.unload();
-                }
+                    throw e;
 
-                throw e;
-
-            } finally {
-                //release recurse
-                this._recursion--;
+                } ).finally( () => {
+                    this._recursion--;
+                } );
             }
         }
 
@@ -149,11 +159,11 @@ module Scriptor {
             var was_loaded : boolean = this.loaded;
 
             //Force it to reload and recompile the script.
-            this._callWrapper( this.do_load );
-
-            //If a Reference depends on this script, then it should be updated when it reloads
-            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
-            this.emit( 'change', 'change', this.filename );
+            this._callWrapper( this.do_load ).then( () => {
+                //If a Reference depends on this script, then it should be updated when it reloads
+                //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
+                this.emit( 'change', 'change', this.filename );
+            } );
 
             return was_loaded;
         }
@@ -192,12 +202,12 @@ module Scriptor {
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference( filename : string ) : any {
+        public reference( filename : string ) : Promise<any> {
             return null;
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference_apply( filename : string, args : any[] ) : any {
+        public reference_apply( filename : string, args : any[] ) : Promise<any> {
             return null;
         }
 
@@ -215,6 +225,7 @@ module Scriptor {
     export class AMDScript extends ScriptBase implements IAMDScriptBase {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
+        protected _resolver : Promise<any>;
 
         constructor( parent : Module.IModule ) {
             super( parent );
@@ -262,31 +273,31 @@ module Scriptor {
             this.define['require'] = Common.bind( this.require, this );
         }
 
-        protected _runFactory( id : string,
-                               deps : string[],
-                               factory : ( ...deps : any[] ) => any ) : any {
+        protected _runFactory( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : Promise<any> {
             if( id !== void 0 ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
 
             if( typeof factory === 'function' ) {
-                return factory.apply( this._script.exports, this.require( deps ) );
+                return this.require( deps ).then( ( resolvedDeps : any[] ) => {
+                    return factory.apply( this._script.exports, resolvedDeps );
+                } );
 
             } else {
-                return factory;
+                return Promise.resolve( factory );
             }
         }
 
         //Overloads, which can differ from Module.IModule
         public require( path : string ) : any;
-        public require( id : string[], cb? : ( deps : any[] ) => any, ecb? : ( err : any ) => any ) : any[];
-        public require( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : any;
+        public require( id : string[], cb? : ( deps : any[] ) => any, ecb? : ( err : any ) => any ) : Promise<any>;
+        public require( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : Promise<any>;
 
         //Implementation, and holy crap is it huge
         public require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
             var normalize = path.resolve.bind( null, this.baseUrl );
 
-            var onError = ( _id : any, type : string, err : any = {} ) => {
+            var normalizeError = ( _id : any, type : string, err : any = {} ) => {
                 if( Array.isArray( err.requireModules )
                     && !Array.isArray( _id )
                     && err.requireModules.indexOf( _id ) === -1 ) {
@@ -298,12 +309,7 @@ module Scriptor {
 
                 err.requireType = err.requireType || type;
 
-                if( typeof errcb === 'function' ) {
-                    errcb( err );
-
-                } else {
-                    this.require['onError']( err );
-                }
+                return err;
             };
 
             var result : any;
@@ -312,54 +318,55 @@ module Scriptor {
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids : string[] = <any>id;
 
-                //Love this line
-                result = ids.map( _id => this.require( _id ) );
+                result = Promise.map( ids, id => this.require( id ) );
 
             } else {
                 assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
 
                 //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
-
                     //modules to be loaded through an AMD loader transform
                     var parts : string[] = id.split( '!', 2 );
 
-                    var plugin : any = this.require( parts[0] );
+                    result = this.require( parts[0] ).then( ( plugin : any ) => {
+                        assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
+                        assert( typeof plugin.load === 'function', '.load function on AMD plugin not found' );
 
-                    assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
+                        id = parts[1];
 
-                    id = parts[1];
+                        if( plugin.normalize ) {
+                            id = plugin.normalize( id, normalize );
 
-                    if( plugin.normalize ) {
-                        id = plugin.normalize( id, normalize );
+                        } else if( id.charAt( 0 ) === '.' ) {
+                            id = normalize( id );
+                        }
 
-                    } else if( id.charAt( 0 ) === '.' ) {
-                        id = normalize( id );
-                    }
+                        return new Promise( ( resolve, reject ) => {
+                            if( !this._loadCache.has( id ) ) {
 
-                    if( !this._loadCache.has( id ) ) {
-                        assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
+                                var onLoad : any = ( value : any ) => {
+                                    this._loadCache.set( id, value );
 
-                        var onLoad : any = ( value : any ) => {
-                            this._loadCache.set( id, value );
+                                    resolve( value );
+                                };
 
-                            if( typeof cb === 'function' ) {
-                                cb( value );
+                                onLoad.fromText = ( text : string ) => {
+                                    //Exploit Scriptor as much as possible
+                                    Scriptor.compile( text ).exports.then( onLoad, onLoad.error );
+                                };
+
+                                onLoad.error = ( err : any ) => {
+                                    reject( normalizeError( id, 'scripterror', err ) );
+                                };
+
+                                //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                                plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
+
+                            } else {
+                                resolve( this._loadCache.get( id ) );
                             }
-                        };
-
-                        onLoad.fromText = ( text : string ) => {
-                            //Exploit Scriptor as much as possible
-                            onLoad( Scriptor.compile( text ).exports );
-                        };
-
-                        onLoad.error = onError.bind( null, id, 'scripterror' );
-
-                        //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
-                    }
-
-                    result = this._loadCache.get( id );
+                        } );
+                    } );
 
                 } else if( id.charAt( 0 ) === '.' ) {
                     //relative modules
@@ -377,7 +384,6 @@ module Scriptor {
                     }
 
                 } else {
-
                     if( id === 'require' ) {
                         result = Common.bind( this.require, this );
 
@@ -394,36 +400,48 @@ module Scriptor {
                         result = this._loadCache.get( id );
 
                     } else if( this._defineCache.has( id ) ) {
-                        result = this._runFactory.apply( this, this._defineCache.get( id ) );
+                        var args : any[] = this._defineCache.get( id );
 
-                        this._loadCache.set( id, result );
+                        result = this._runFactory( args[0], args[1], args[2] ).then( ( exported ) => {
+                            this._loadCache.set( id, exported );
+
+                            return exported;
+                        } );
+                        //The callbacks can be done pretty easily this way
 
                     } else {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
-                        result = (() => {
+
+                        result = new Promise( ( resolve, reject ) => {
                             try {
                                 //Normal module loading akin to the real 'require' function
-                                return Module.Module._load( id, this._script );
+                                resolve( Module.Module._load( id, this._script ) );
 
                             } catch( err ) {
-                                onError( id, 'nodefine', err );
+                                reject( normalizeError( id, 'nodefine', err ) );
                             }
-                        })();
+                        } );
                     }
                 }
             }
 
-            if( typeof cb === 'function' ) {
-                if( Array.isArray( result ) ) {
-                    cb.apply( null, result );
-
-                } else {
-                    cb.call( null, result );
-                }
-
-            } else {
-                return result;
+            if( !(result instanceof Promise) ) {
+                result = Promise.resolve( result );
             }
+
+            if( typeof cb === 'function' ) {
+                result.then( ( resolvedResult : any ) => {
+                    if( Array.isArray( resolvedResult ) ) {
+                        cb.apply( null, resolvedResult );
+
+                    } else {
+                        cb.call( null, resolvedResult );
+                    }
+
+                }, typeof errcb === 'function' ? errcb : this.require['onError'] );
+            }
+
+            return result;
         }
 
         //overloads
@@ -435,7 +453,7 @@ module Scriptor {
         public define( factory : {[key : string] : any} );
 
         //implementation
-        public define( id : any, deps? : any, factory? : any ) : any {
+        public define( id : any, deps? : any, factory? : any ) : void {
             //This argument parsing code is taken from amdefine
             if( Array.isArray( id ) ) {
                 factory = deps;
@@ -459,23 +477,22 @@ module Scriptor {
                 deps = deps.concat( default_dependencies )
             }
 
-            var define_args = [id, deps, factory];
-
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
 
-                this._defineCache.set( id, define_args );
+                this._defineCache.set( id, [id, deps, factory] );
 
             } else {
-                var result = this._runFactory.apply( this, define_args );
+                this._resolver = this._runFactory( id, deps, factory ).then( ( result ) => {
+                    //Allows for main factory to not return anything.
+                    if( result !== null && result !== void 0 ) {
+                        this._script.exports = result;
+                    }
 
-                //Allows for main factory to not return anything.
-                //for use with require(['exports']) and so forth, nothing is returned
-                if( result !== null && result !== void 0 ) {
-                    this._script.exports = result;
-                }
+                    delete this._resolver;
 
-                return result;
+                    return this._script.exports;
+                } );
             }
         }
 
@@ -485,6 +502,10 @@ module Scriptor {
             //unload also clears defines and requires
             this._defineCache.clear();
             this._loadCache.clear();
+
+            if( this._resolver !== void 0 ) {
+                delete this._resolver;
+            }
 
             return res;
         }
@@ -529,38 +550,47 @@ module Scriptor {
 
             this.do_setup();
 
+            //Because Scriptor uses require extensions, it has to go through this, which is synchronous. Damn.
             this._script.load( this._script.filename );
 
             this.emit( 'loaded', this.loaded );
         }
 
-        protected do_exports() : any {
+        protected do_exports() : Promise<any> {
             if( !this.loaded ) {
-                this._callWrapper( this.do_load );
+                return this._callWrapper( this.do_load ).then( () => {
+                    return this.do_exports();
+                } );
             }
 
-            return this._script.exports;
+            assert( this.loaded );
+
+            if( this._resolver !== void 0 && this._resolver.isPending() ) {
+                return this._resolver;
+
+            } else {
+                return Promise.resolve( this._script.exports );
+            }
         }
 
-        get exports() : any {
+        get exports() : Promise<any> {
             return this.do_exports();
         }
 
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
-        public call( ...args : any[] ) : any {
+        public call( ...args : any[] ) : Promise<any> {
             return this.apply( args );
         }
 
-        public apply( args : any[] ) : any {
-            //This will ensure it is loaded (safely) and return the exports
-            var main : any = this.exports;
+        public apply( args : any[] ) : Promise<any> {
+            return this.exports.then( ( main : any ) => {
+                if( typeof main === 'function' ) {
+                    return this._callWrapper( main, null, args );
 
-            if( typeof main === 'function' ) {
-                return this._callWrapper( main, null, args );
-
-            } else {
-                return main;
-            }
+                } else {
+                    return main;
+                }
+            } );
         }
 
         public call_once( ...args : any[] ) : Reference {
@@ -667,6 +697,7 @@ module Scriptor {
 
     export class SourceScript extends Script {
         protected _source : any; //string|Reference
+        protected _loadResolver : Promise<any>;
 
         private _onChange : ( event : string, filename : string ) => any;
 
@@ -692,24 +723,28 @@ module Scriptor {
             return this._onChange === void 0;
         }
 
-        get source() : string {
-            var src : string;
+        get source() : Promise<string> {
+            var srcPromise : Promise<string>;
 
             if( this._source instanceof ReferenceBase ) {
-                src = this._source.value();
+                srcPromise = this._source.value().then( ( src : string ) => {
+                    assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
 
-                assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                    return src;
+                } );
 
             } else {
-                src = this._source;
+                srcPromise = Promise.resolve( this._source );
             }
 
-            //strip BOM
-            if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                src = src.slice( 1 );
-            }
+            return srcPromise.then( ( src : string ) => {
+                //strip BOM
+                if( src.charCodeAt( 0 ) === 0xFEFF ) {
+                    src = src.slice( 1 );
+                }
 
-            return src;
+                return src;
+            } );
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {
@@ -724,11 +759,15 @@ module Scriptor {
             if( !this.loaded ) {
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
 
-                this._script._compile( this.source, this.filename );
+                this._loadResolver = this.source.then( ( src : string ) => {
+                    this._script._compile( src, this.filename );
 
-                this._script.loaded = true;
+                    this._script.loaded = true;
 
-                this.emit( 'loaded', this.loaded );
+                    delete this._loadResolver;
+
+                    this.emit( 'loaded', this.loaded );
+                } );
             }
         }
 
@@ -738,6 +777,27 @@ module Scriptor {
             this.do_setup();
 
             this.do_compile();
+        }
+
+        protected do_exports() : Promise<any> {
+            if( !this.loaded ) {
+                return this._callWrapper( this.do_load ).then( () => {
+                    return this.do_exports();
+                } );
+            }
+
+            if( this._loadResolver !== void 0 && this._loadResolver.isPending() ) {
+                return this._loadResolver.then( () => {
+                    return super.do_exports();
+                } );
+
+            } else {
+                return super.do_exports();
+            }
+        }
+
+        get exports() : Promise<any> {
+            return this.do_exports();
         }
 
         public load( src : any, watch : boolean = true ) : SourceScript {
@@ -789,12 +849,12 @@ module Scriptor {
         }
 
         //Again just taking advantage of TypeScript's variable arguments
-        public reference( filename : string, ...args : any[] ) : any {
+        public reference( filename : string, ...args : any[] ) : Promise<any> {
             return this.reference_apply( filename, args );
         }
 
         //This is kind of funny it's so simple
-        public reference_apply( filename : string, args : any[] ) : any {
+        public reference_apply( filename : string, args : any[] ) : Promise<any> {
             //include is used instead of this.manager.apply because include takes into account
             //relative includes/references
             return this.include( filename, false ).apply( args );
@@ -850,7 +910,7 @@ module Scriptor {
     /**** BEGIN SECTION REFERENCE ****/
 
     export interface ITransformFunction {
-        ( left : IReference, right : IReference ) : any;
+        ( left : IReference, right : IReference ) : Promise<any>;
     }
 
     export var identity : ITransformFunction = ( left : IReference, right : IReference ) => {
@@ -858,7 +918,7 @@ module Scriptor {
     };
 
     export interface IReference extends NodeJS.EventEmitter {
-        value() : any;
+        value() : Promise<any>;
         ran : boolean;
         closed : boolean;
         join( ref : IReference, transform? : ITransformFunction ) : IReference;
@@ -890,23 +950,24 @@ module Scriptor {
             this._script.on( 'change', this._onChange );
         }
 
-        public value() : any {
-            //Evaluation should only be performed here.
-            //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
-            //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
-            //of where else it has been evaluated
+        public value() : Promise<any> {
             if( !this._ran ) {
-                this._value = this._script.apply( this._args );
+                return this._script.apply( this._args ).then( ( value )=> {
+                    if( typeof this._value === 'object' ) {
+                        this._value = Object.freeze( this._value );
 
-                //Prevents overwriting over elements
-                if( typeof this._value === 'object' ) {
-                    this._value = Object.freeze( this._value );
-                }
+                    } else {
+                        this._value = value;
+                    }
 
-                this._ran = true;
+                    this._ran = true;
+
+                    return this._value;
+                } );
+
+            } else {
+                return Promise.resolve( this._value );
             }
-
-            return this._value;
         }
 
         get ran() : boolean {
@@ -991,19 +1052,24 @@ module Scriptor {
             this._ref.on( 'change', this._onChange );
         }
 
-        public value() : any {
+        public value() : Promise<any> {
             if( !this._ran ) {
-                this._value = this._transform( this._ref, null );
+                return this._transform( this._ref, null ).then( ( value ) => {
+                    if( typeof value === 'object' ) {
+                        this._value = Object.freeze( value );
 
-                //Prevents overwriting over elements
-                if( typeof this._value === 'object' ) {
-                    this._value = Object.freeze( this._value );
-                }
+                    } else {
+                        this._value = value;
+                    }
 
-                this._ran = true;
+                    this._ran = true;
+
+                    return this._value;
+                } );
+
+            } else {
+                return Promise.resolve( this._value );
             }
-
-            return this._value;
         }
 
         get ran() : boolean {
@@ -1067,20 +1133,24 @@ module Scriptor {
             _right.on( 'change', this._onChange );
         }
 
-        public value() : any {
-            //If anything needs to be re-run, re-run it
+        public value() : Promise<any> {
             if( !this._ran ) {
-                this._value = this._transform( this._left, this._right );
+                return this._transform( this._left, this._right ).then( ( value ) => {
+                    if( typeof value === 'object' ) {
+                        this._value = Object.freeze( value );
 
-                //Prevents overwriting over elements
-                if( typeof this._value === 'object' ) {
-                    this._value = Object.freeze( this._value );
-                }
+                    } else {
+                        this._value = value;
+                    }
 
-                this._ran = true;
+                    this._ran = true;
+
+                    return this._value;
+                } );
+
+            } else {
+                return Promise.resolve( this._value );
             }
-
-            return this._value;
         }
 
         get ran() : boolean {
@@ -1205,11 +1275,11 @@ module Scriptor {
             return false;
         }
 
-        public call( filename : string, ...args : any[] ) : any {
+        public call( filename : string, ...args : any[] ) : Promise<any> {
             return this.apply( filename, args );
         }
 
-        public apply( filename : string, args : any[] ) : any {
+        public apply( filename : string, args : any[] ) : Promise<any> {
             return this.add( filename ).apply( args );
         }
 

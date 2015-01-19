@@ -8,8 +8,8 @@
     "node/node.d.ts": {
       "commit": "2cc4331067a81e2ae6bc4590e7b33bf286c8f28f"
     },
-    "async/async.d.ts": {
-      "commit": "2cc4331067a81e2ae6bc4590e7b33bf286c8f28f"
+    "bluebird/bluebird.d.ts": {
+      "commit": "a283cea01a860b9e007a2e6e0f74d78cefcc798f"
     }
   }
 }

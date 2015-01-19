@@ -40,16 +40,20 @@ All documentation for this project is in TypeScript syntax for typed parameters.
     - [`.apply(args : any[])`](#applyargs--any---any)
     - [`.call_once(...args : any[])`](#call_onceargs--any---reference)
     - [`.apply_once(args : any[])`](#apply_onceargs--any---reference)
-    - [`.require(path : string)`](#requirepath--string---any)
+    - [`.require(path : string | string[], cb? : (...results) => any, errcb? : (err : any) => any)`]()
         - [`.require.toUrl(path : string)`]()
         - [`.require.specified(id : string)`]()
         - [`.require.defined(id : string)`]()
+        - [`.require.undef(id : string)`]()
+        - [`.require.onError`]()
     - [`.define(id? : string, deps? : string[], factory : Function)`]()
+        - [`.define.require`]()
     - [`.unload()`](#unload---boolean)
     - [`.reload()`](#reload---boolean)
     - [`.watch()`](#watch---boolean)
     - [`.unwatch()`](#unwatch---boolean)
     - [`.close(permanent? : boolean)`](#closepermanent--boolean)
+    - [`.baseUrl`]()
     - [`.imports`](#imports---any)
     - [`.exports`](#exports---any)
     - [`.id`](#id---string)
@@ -227,9 +231,57 @@ If this script already has been referenced via a `once` function, this returns t
 
 <hr>
 
-#####`.require(path : string)` -> `any`
+#####`.require(path : string | string[], cb? : (...results) => any, errcb? : (err : any) => any)` -> `any`
 
-This is an alias to the native `require` function used within the script.
+Instead of the normal Node.js `require`, Scriptor provides a `require` that coincides with the AMD specification.
+
+`.require` can be both synchronous and asynchronous depending on if a callback is given or not.
+
+If a callback is given and `.async` is true, the callback will be invoked with the loaded modules when they are done loading.
+
+It can also handle an array of module ids or paths to load, and will spread them across the callback.
+
+For example:
+```javascript
+/**** script.js ****/
+module.define(function(require) {
+    require(['assert', 'crypto'], function(assert, crypto) {
+        console.log('sometime after a');
+    });
+
+    require('assert', function(assert) {
+        console.log('sometime after b');
+    });
+
+    console.log('before');
+});
+```
+
+Example output:
+```
+before
+sometime after a
+sometime after b
+```
+
+If `.async` is set to false, the callbacks will be invoked immediately and the output of the above example would be:
+```
+sometime after a
+sometime after b
+before
+```
+
+**_WARNING_**: The 'main' define is always executed synchronously. There is no way around it. If a required dependency resolves asynchronously, like a plugin, it will fail.
+
+<hr>
+
+#####`.define(id? : string, deps? : string[], factory : Function)`
+
+Used for defining AMD modules in the script.
+
+
+
+**_WARNING_**: The 'main' define is always executed synchronously. There is no way around it. If a required dependency resolves asynchronously, like a plugin, it will fail.
 
 <hr>
 
@@ -267,7 +319,7 @@ In the event of file deletion, the script is unloaded, unwatched and `.filename`
 
 After file deletions, a call to `.load` will set things back up correctly.
 
-NOTE: For simple renames without changing file content, the script is not unloaded, but the `.filename` attribute is updated accordingly.
+*NOTE*: For simple renames without changing file content, the script is not unloaded, but the `.filename` attribute is updated accordingly.
 
 <hr>
 
@@ -277,7 +329,7 @@ Removes a file watcher if one existed.
 
 Returns true if it was able to remove an existing file watcher, false if one didn't exist in the first place.
 
-NOTE: After a call to `.unwatch`, file watching is disabled, and any file changes will not be reflected.
+*NOTE*: After a call to `.unwatch`, file watching is disabled, and any file changes will not be reflected.
 
 <hr>
 
@@ -993,6 +1045,18 @@ I lost a big chunk of latter part of this explanation when my IDE crashed parsin
 <hr>
 
 ##Changelog
+
+
+#####1.4.0
+* Removed amdefine dependency
+* Implemented most of the AMD spec in Scriptor itself, taking advantage of features where possible
+    * Actually more of the spec than amdefine implemented
+* Added real and fake async module definitions and require, with a flag to switch between them.
+* Use Map data structure when available and fallback to JS Objects when not.
+
+#####1.4.0-alpha.5
+* Added `.async` flag for switching between true async and fake async
+* Simplified a bit of logic in places
 
 #####1.4.0-alpha.4
 * Added in real async loading for situations that allows it
