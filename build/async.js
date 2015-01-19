@@ -47,6 +47,7 @@ var events = require( 'events' );
 var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
+var Promise = require( 'bluebird' );
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -67,6 +68,7 @@ var Scriptor;
         //Wrap it before you tap it.
         //No, but really, it's important to protect against errors in a generic way
         ScriptBase.prototype._callWrapper = function(func, this_arg, args) {
+            var _this = this;
             if( this_arg === void 0 ) {
                 this_arg = this;
             }
@@ -75,22 +77,19 @@ var Scriptor;
             }
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+                return Promise.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion ) );
             }
-            try {
-                //This is placed in the try-block so the release is mirrored in the finally block
-                this._recursion++;
-                return func.apply( this_arg, args );
-            }
-            catch( e ) {
-                if( e instanceof SyntaxError ) {
-                    this.unload();
-                }
-                throw e;
-            }
-            finally {
-                //release recurse
-                this._recursion--;
+            else {
+                var result = new Promise( function(resolve, reject) {
+                    _this._recursion++;
+                    resolve( func.apply( this_arg, args ) );
+                } );
+                return result.catch( SyntaxError, function(e) {
+                    _this.unload();
+                    return Promise.reject( e );
+                } ).finally( function() {
+                    _this._recursion--;
+                } );
             }
         };
         //Abstract method
@@ -98,63 +97,63 @@ var Scriptor;
             //pass
         };
         Object.defineProperty( ScriptBase.prototype, "id", {
-            get:        function() {
+            get:          function() {
                 return this._script.id;
             },
-            set:        function(value) {
+            set:          function(value) {
                 this._script.id = value;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "children", {
-            get:        function() {
+            get:          function() {
                 return this._script.children;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "parent", {
-            get:        function() {
+            get:          function() {
                 return this._script.parent;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "loaded", {
-            get:        function() {
+            get:          function() {
                 return this._script.loaded;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "filename", {
             //Only allow getting the filename, setting should be done through .load
-            get:        function() {
+            get:          function() {
                 return this._script.filename;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "baseUrl", {
             //Based on the RequireJS 'standard' for relative locations
             //For SourceScripts, just set the filename to something relative
-            get:        function() {
+            get:          function() {
                 return path.dirname( this.filename );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "maxRecursion", {
-            get:        function() {
+            get:          function() {
                 return this._maxRecursion;
             },
-            set:        function(value) {
+            set:          function(value) {
                 //JSHint doesn't like bitwise operators
                 this._maxRecursion = Math.floor( value );
                 assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         ScriptBase.prototype.unload = function() {
@@ -164,12 +163,14 @@ var Scriptor;
             return was_loaded;
         };
         ScriptBase.prototype.reload = function() {
+            var _this = this;
             var was_loaded = this.loaded;
             //Force it to reload and recompile the script.
-            this._callWrapper( this.do_load );
-            //If a Reference depends on this script, then it should be updated when it reloads
-            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
-            this.emit( 'change', 'change', this.filename );
+            this._callWrapper( this.do_load ).then( function() {
+                //If a Reference depends on this script, then it should be updated when it reloads
+                //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
+                _this.emit( 'change', 'change', _this.filename );
+            } );
             return was_loaded;
         };
         //Abstract method
@@ -264,27 +265,30 @@ var Scriptor;
 
         Object.defineProperty( AMDScript.prototype, "pending", {
             get:          function() {
-                return false;
+                return this._resolver !== void 0 && this._resolver.isPending();
             },
             enumerable:   true,
             configurable: true
         } );
         AMDScript.prototype._runFactory = function(id, deps, factory) {
+            var _this = this;
             if( id !== void 0 ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
             if( typeof factory === 'function' ) {
-                return factory.apply( this._script.exports, this.require( deps ) );
+                return this.require( deps ).then( function(resolvedDeps) {
+                    return factory.apply( _this._script.exports, resolvedDeps );
+                } );
             }
             else {
-                return factory;
+                return Promise.resolve( factory );
             }
         };
         //Implementation, and holy crap is it huge
         AMDScript.prototype.require = function(id, cb, errcb) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
-            var onError = function(_id, type, err) {
+            var normalizeError = function(_id, type, err) {
                 if( err === void 0 ) {
                     err = {};
                 }
@@ -296,20 +300,14 @@ var Scriptor;
                     err.requireModules = Array.isArray( _id ) ? _id : [_id];
                 }
                 err.requireType = err.requireType || type;
-                if( typeof errcb === 'function' ) {
-                    errcb( err );
-                }
-                else {
-                    _this.require['onError']( err );
-                }
+                return err;
             };
             var result;
             if( Array.isArray( id ) ) {
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids = id;
-                //Love this line
-                result = ids.map( function(_id) {
-                    return _this.require( _id );
+                result = Promise.map( ids, function(id) {
+                    return _this.require( id );
                 } );
             }
             else {
@@ -318,34 +316,37 @@ var Scriptor;
                 if( id.indexOf( '!' ) !== -1 ) {
                     //modules to be loaded through an AMD loader transform
                     var parts = id.split( '!', 2 );
-                    var plugin = this.require( parts[0] );
-                    assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
-                    id = parts[1];
-                    if( plugin.normalize ) {
-                        id = plugin.normalize( id, normalize );
-                    }
-                    else if( id.charAt( 0 ) === '.' ) {
-                        id = normalize( id );
-                    }
-                    if( !this._loadCache.has( id ) ) {
+                    result = this.require( parts[0] ).then( function(plugin) {
+                        assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
                         assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
-                        var onLoad = function(value) {
-                            _this._loadCache.set( id, value );
-                            if( typeof cb === 'function' ) {
-                                cb( value );
+                        id = parts[1];
+                        if( plugin.normalize ) {
+                            id = plugin.normalize( id, normalize );
+                        }
+                        else if( id.charAt( 0 ) === '.' ) {
+                            id = normalize( id );
+                        }
+                        return new Promise( function(resolve, reject) {
+                            if( _this._loadCache.has( id ) ) {
+                                resolve( _this._loadCache.get( id ) );
                             }
-                        };
-                        onLoad.fromText = function(text) {
-                            //Exploit Scriptor as much as possible
-                            onLoad( Scriptor.compile( text ).exports() );
-                        };
-                        onLoad.error = onError.bind( null, id, 'scripterror' );
-                        //For the sync build, set this to undefined just to make it known the result is out-of-order
-                        this._loadCache.set( id, void 0 );
-                        //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
-                    }
-                    result = this._loadCache.get( id );
+                            else {
+                                var onLoad = function(value) {
+                                    _this._loadCache.set( id, value );
+                                    resolve( value );
+                                };
+                                onLoad.fromText = function(text) {
+                                    //Exploit Scriptor as much as possible
+                                    Scriptor.compile( text ).exports().then( onLoad, onLoad.error );
+                                };
+                                onLoad.error = function(err) {
+                                    reject( normalizeError( id, 'scripterror', err ) );
+                                };
+                                //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                                plugin.load( id, Common.bind( _this.require, _this ), onLoad, {} );
+                            }
+                        } );
+                    } );
                 }
                 else if( id.charAt( 0 ) === '.' ) {
                     //relative modules
@@ -377,37 +378,44 @@ var Scriptor;
                         result = this._loadCache.get( id );
                     }
                     else if( this._defineCache.has( id ) ) {
-                        result = this._runFactory.apply( this, this._defineCache.get( id ) );
-                        this._loadCache.set( id, result );
+                        var args = this._defineCache.get( id );
+                        result = this._runFactory( args[0], args[1], args[2] ).then( function(exported) {
+                            _this._loadCache.set( id, exported );
+                            return exported;
+                        } );
                     }
                     else {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
-                        result = (function() {
+                        result = new Promise( function(resolve, reject) {
                             try {
                                 //Normal module loading akin to the real 'require' function
-                                return Module.Module._load( id, _this._script );
+                                resolve( Module.Module._load( id, _this._script ) );
                             }
                             catch( err ) {
-                                onError( id, 'nodefine', err );
+                                reject( normalizeError( id, 'nodefine', err ) );
                             }
-                        })();
+                        } );
                     }
                 }
             }
+            if( !(result instanceof Promise) ) {
+                result = Promise.resolve( result );
+            }
             if( typeof cb === 'function' ) {
-                if( Array.isArray( result ) ) {
-                    cb.apply( null, result );
-                }
-                else {
-                    cb.call( null, result );
-                }
+                result.then( function(resolvedResult) {
+                    if( Array.isArray( resolvedResult ) ) {
+                        cb.apply( null, resolvedResult );
+                    }
+                    else {
+                        cb.call( null, resolvedResult );
+                    }
+                }, typeof errcb === 'function' ? errcb : this.require['onError'] );
             }
-            else {
-                return result;
-            }
+            return result;
         };
         //implementation
         AMDScript.prototype.define = function(id, deps, factory) {
+            var _this = this;
             //This argument parsing code is taken from amdefine
             if( Array.isArray( id ) ) {
                 factory = deps;
@@ -428,19 +436,19 @@ var Scriptor;
             else {
                 deps = deps.concat( Scriptor.default_dependencies );
             }
-            var define_args = [id, deps, factory];
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
-                this._defineCache.set( id, define_args );
+                this._defineCache.set( id, [id, deps, factory] );
             }
             else {
-                var result = this._runFactory.apply( this, define_args );
-                //Allows for main factory to not return anything.
-                //for use with require(['exports']) and so forth, nothing is returned
-                if( result !== null && result !== void 0 ) {
-                    this._script.exports = result;
-                }
-                return result;
+                this._resolver = this._runFactory( id, deps, factory ).then( function(result) {
+                    //Allows for main factory to not return anything.
+                    if( result !== null && result !== void 0 ) {
+                        _this._script.exports = result;
+                    }
+                    delete _this._resolver;
+                    return _this._script.exports;
+                } );
             }
         };
         AMDScript.prototype.unload = function() {
@@ -448,6 +456,12 @@ var Scriptor;
             //unload also clears defines and requires
             this._defineCache.clear();
             this._loadCache.clear();
+            if( this._resolver !== void 0 ) {
+                if( this._resolver.isCancellable() ) {
+                    this._resolver.cancel();
+                }
+                delete this._resolver;
+            }
             return res;
         };
         return AMDScript;
@@ -468,10 +482,10 @@ var Scriptor;
         }
 
         Object.defineProperty( Script.prototype, "watched", {
-            get:        function() {
+            get:          function() {
                 return this._watcher !== void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Script.prototype.do_setup = function() {
@@ -489,14 +503,26 @@ var Scriptor;
         Script.prototype.do_load = function() {
             this.unload();
             this.do_setup();
+            //Because Scriptor uses require extensions, it has to go through this, which is synchronous. Damn.
             this._script.load( this._script.filename );
             this.emit( 'loaded', this.loaded );
         };
         Script.prototype.exports = function() {
-            if( !this.loaded ) {
-                this._callWrapper( this.do_load );
+            var _this = this;
+            if( this.loaded ) {
+                assert( this.loaded );
+                if( this.pending ) {
+                    return this._resolver;
+                }
+                else {
+                    return Promise.resolve( this._script.exports );
+                }
             }
-            return this._script.exports;
+            else {
+                return this._callWrapper( this.do_load ).then( function() {
+                    return _this.exports();
+                } );
+            }
         };
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
         Script.prototype.call = function() {
@@ -507,14 +533,15 @@ var Scriptor;
             return this.apply( args );
         };
         Script.prototype.apply = function(args) {
-            //This will ensure it is loaded (safely) and return the exports
-            var main = this.exports();
-            if( typeof main === 'function' ) {
-                return this._callWrapper( main, null, args );
-            }
-            else {
-                return main;
-            }
+            var _this = this;
+            return this.exports().then( function(main) {
+                if( typeof main === 'function' ) {
+                    return _this._callWrapper( main, null, args );
+                }
+                else {
+                    return main;
+                }
+            } );
         };
         Script.prototype.call_once = function() {
             var args = [];
@@ -616,64 +643,90 @@ var Scriptor;
         }
 
         Object.defineProperty( SourceScript.prototype, "filename", {
-            get:        function() {
+            get:          function() {
                 return this._script.filename;
             },
-            set:        function(value) {
+            set:          function(value) {
                 this._script.filename = value;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( SourceScript.prototype, "baseUrl", {
-            get:        function() {
+            get:          function() {
                 return path.dirname( this.filename );
             },
-            set:        function(value) {
+            set:          function(value) {
                 value = path.dirname( value );
                 this.filename = value + path.basename( this.filename );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( SourceScript.prototype, "watched", {
-            get:        function() {
+            get:          function() {
                 return this._onChange === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( SourceScript.prototype, "source", {
-            get:        function() {
-                var src;
+            get:          function() {
+                var srcPromise;
                 if( this._source instanceof ReferenceBase ) {
-                    src = this._source.value();
-                    assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                    srcPromise = this._source.value().then( function(src) {
+                        assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                        return src;
+                    } );
                 }
                 else {
-                    src = this._source;
+                    srcPromise = Promise.resolve( this._source );
                 }
-                //strip BOM
-                if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                    src = src.slice( 1 );
-                }
-                return src;
+                return srcPromise.then( function(src) {
+                    //strip BOM
+                    if( src.charCodeAt( 0 ) === 0xFEFF ) {
+                        src = src.slice( 1 );
+                    }
+                    return src;
+                } );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         SourceScript.prototype.do_compile = function() {
+            var _this = this;
             if( !this.loaded ) {
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
-                this._script._compile( this.source, this.filename );
-                this._script.loaded = true;
-                this.emit( 'loaded', this.loaded );
+                this._loadResolver = this.source.then( function(src) {
+                    _this._script._compile( src, _this.filename );
+                    _this._script.loaded = true;
+                    delete _this._loadResolver;
+                    _this.emit( 'loaded', _this.loaded );
+                } );
             }
         };
         SourceScript.prototype.do_load = function() {
             this.unload();
             this.do_setup();
             this.do_compile();
+        };
+        SourceScript.prototype.exports = function() {
+            var _this = this;
+            if( this.loaded ) {
+                if( this._loadResolver !== void 0 && this._loadResolver.isPending() ) {
+                    return this._loadResolver.then( function() {
+                        return _super.prototype.exports.call( _this );
+                    } );
+                }
+                else {
+                    return _super.prototype.exports.call( this );
+                }
+            }
+            else {
+                return this._callWrapper( this.do_load ).then( function() {
+                    return _this.exports();
+                } );
+            }
         };
         SourceScript.prototype.load = function(src, watch) {
             if( watch === void 0 ) {
@@ -815,39 +868,42 @@ var Scriptor;
         }
 
         Reference.prototype.value = function() {
-            //Evaluation should only be performed here.
-            //The inclusion of the _ran variable is because this script is always open to reference elsewhere,
-            //so _ran keeps track of if it has been ran for this particular set or arguments and value regardless
-            //of where else it has been evaluated
+            var _this = this;
             if( !this._ran ) {
-                this._value = this._script.apply( this._args );
-                //Prevents overwriting over elements
-                if( typeof this._value === 'object' ) {
-                    this._value = Object.freeze( this._value );
-                }
-                this._ran = true;
+                return this._script.apply( this._args ).then( function(value) {
+                    if( typeof _this._value === 'object' ) {
+                        _this._value = Object.freeze( _this._value );
+                    }
+                    else {
+                        _this._value = value;
+                    }
+                    _this._ran = true;
+                    return _this._value;
+                } );
             }
-            return this._value;
+            else {
+                return Promise.resolve( this._value );
+            }
         };
         Object.defineProperty( Reference.prototype, "ran", {
-            get:        function() {
+            get:          function() {
                 return this._ran;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( Reference.prototype, "closed", {
-            get:        function() {
+            get:          function() {
                 return this._script === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
-        Reference.resolve = function(value) {
-            return new ResolvedReference( value );
-        };
         Reference.join = function(left, right, transform) {
             return new JoinedTransformReference( left, right, transform );
+        };
+        Reference.resolve = function(value) {
+            return new ResolvedReference( value );
         };
         //Creates a binary tree (essentially) of joins from an array of References using a single transform
         Reference.join_all = function(refs, transform) {
@@ -911,28 +967,35 @@ var Scriptor;
         }
 
         TransformReference.prototype.value = function() {
+            var _this = this;
             if( !this._ran ) {
-                this._value = this._transform( this._ref, null );
-                //Prevents overwriting over elements
-                if( typeof this._value === 'object' ) {
-                    this._value = Object.freeze( this._value );
-                }
-                this._ran = true;
+                return this._transform( this._ref, null ).then( function(value) {
+                    if( typeof value === 'object' ) {
+                        _this._value = Object.freeze( value );
+                    }
+                    else {
+                        _this._value = value;
+                    }
+                    _this._ran = true;
+                    return _this._value;
+                } );
             }
-            return this._value;
+            else {
+                return Promise.resolve( this._value );
+            }
         };
         Object.defineProperty( TransformReference.prototype, "ran", {
-            get:        function() {
+            get:          function() {
                 return this._ran;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( TransformReference.prototype, "closed", {
-            get:        function() {
+            get:          function() {
                 return this._ref === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         TransformReference.prototype.join = function(ref, transform) {
@@ -990,29 +1053,35 @@ var Scriptor;
         }
 
         JoinedTransformReference.prototype.value = function() {
-            //If anything needs to be re-run, re-run it
+            var _this = this;
             if( !this._ran ) {
-                this._value = this._transform( this._left, this._right );
-                //Prevents overwriting over elements
-                if( typeof this._value === 'object' ) {
-                    this._value = Object.freeze( this._value );
-                }
-                this._ran = true;
+                return this._transform( this._left, this._right ).then( function(value) {
+                    if( typeof value === 'object' ) {
+                        _this._value = Object.freeze( value );
+                    }
+                    else {
+                        _this._value = value;
+                    }
+                    _this._ran = true;
+                    return _this._value;
+                } );
             }
-            return this._value;
+            else {
+                return Promise.resolve( this._value );
+            }
         };
         Object.defineProperty( JoinedTransformReference.prototype, "ran", {
-            get:        function() {
+            get:          function() {
                 return this._ran;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( JoinedTransformReference.prototype, "closed", {
-            get:        function() {
+            get:          function() {
                 return this._left === void 0 || this._right === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         JoinedTransformReference.prototype.join = function(ref, transform) {
@@ -1049,19 +1118,35 @@ var Scriptor;
     var ResolvedReference = (function(_super) {
         __extends( ResolvedReference, _super );
         function ResolvedReference(value) {
+            var _this = this;
             _super.call( this );
-            if( typeof value === 'object' ) {
-                this._value = Object.freeze( value );
+            if( value instanceof Promise ) {
+                this._resolver = value.then( function(result) {
+                    if( typeof result === 'object' ) {
+                        _this._value = Object.freeze( result );
+                    }
+                    else {
+                        _this._value = result;
+                    }
+                    _this._ran = true;
+                    delete _this._resolver;
+                    return _this._value;
+                } );
             }
             else {
-                this._value = value;
+                if( typeof value === 'object' ) {
+                    this._value = Object.freeze( value );
+                }
+                else {
+                    this._value = value;
+                }
+                this._ran = true;
             }
-            this._ran = true;
         }
 
         Object.defineProperty( ResolvedReference.prototype, "closed", {
             get:          function() {
-                return !this._ran;
+                return this._resolver === void 0 && !this._ran;
             },
             enumerable:   true,
             configurable: true
@@ -1074,7 +1159,12 @@ var Scriptor;
             configurable: true
         } );
         ResolvedReference.prototype.value = function() {
-            return this._value;
+            if( this._resolver !== void 0 && !this._ran ) {
+                return this._resolver;
+            }
+            else {
+                return Promise.resolve( this._value );
+            }
         };
         ResolvedReference.prototype.join = function(ref, transform) {
             return Reference.join( this, ref, transform );
@@ -1106,13 +1196,13 @@ var Scriptor;
         }
 
         Object.defineProperty( Manager.prototype, "cwd", {
-            get:        function() {
+            get:          function() {
                 return this._cwd;
             },
-            set:        function(value) {
+            set:          function(value) {
                 this.chdir( value );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Manager.prototype.chdir = function(value) {
@@ -1120,17 +1210,17 @@ var Scriptor;
             return this._cwd;
         };
         Object.defineProperty( Manager.prototype, "parent", {
-            get:        function() {
+            get:          function() {
                 return this._parent;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
-            get:        function() {
+            get:          function() {
                 return Object.freeze( this._scripts );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched

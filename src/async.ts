@@ -74,24 +74,15 @@ module Scriptor {
 
             } else {
                 var result : Promise<any> = new Promise( ( resolve, reject ) => {
-                    try {
-                        //This is placed in the try-block so the release is mirrored in the finally block
-                        this._recursion++;
+                    this._recursion++;
 
-                        resolve( func.apply( this_arg, args ) );
-
-                    } catch( e ) {
-                        if( e instanceof SyntaxError ) {
-                            this.unload();
-                        }
-
-                        reject( e );
-                    }
+                    resolve( func.apply( this_arg, args ) );
                 } );
 
                 return result.catch( SyntaxError, ( e ) => {
                     this.unload();
-                    throw e;
+
+                    return Promise.reject( e );
 
                 } ).finally( () => {
                     this._recursion--;
@@ -273,6 +264,10 @@ module Scriptor {
             this.define['require'] = Common.bind( this.require, this );
         }
 
+        get pending() : boolean {
+            return this._resolver !== void 0 && this._resolver.isPending();
+        }
+
         protected _runFactory( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : Promise<any> {
             if( id !== void 0 ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
@@ -330,7 +325,7 @@ module Scriptor {
 
                     result = this.require( parts[0] ).then( ( plugin : any ) => {
                         assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
-                        assert( typeof plugin.load === 'function', '.load function on AMD plugin not found' );
+                        assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
 
                         id = parts[1];
 
@@ -342,8 +337,10 @@ module Scriptor {
                         }
 
                         return new Promise( ( resolve, reject ) => {
-                            if( !this._loadCache.has( id ) ) {
+                            if( this._loadCache.has( id ) ) {
+                                resolve( this._loadCache.get( id ) );
 
+                            } else {
                                 var onLoad : any = ( value : any ) => {
                                     this._loadCache.set( id, value );
 
@@ -352,7 +349,7 @@ module Scriptor {
 
                                 onLoad.fromText = ( text : string ) => {
                                     //Exploit Scriptor as much as possible
-                                    Scriptor.compile( text ).exports.then( onLoad, onLoad.error );
+                                    Scriptor.compile( text ).exports().then( onLoad, onLoad.error );
                                 };
 
                                 onLoad.error = ( err : any ) => {
@@ -362,8 +359,6 @@ module Scriptor {
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
                                 plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
 
-                            } else {
-                                resolve( this._loadCache.get( id ) );
                             }
                         } );
                     } );
@@ -380,7 +375,7 @@ module Scriptor {
                         result = this.require( id );
 
                     } else {
-                        result = script.exports;
+                        result = script.exports();
                     }
 
                 } else {
@@ -504,6 +499,10 @@ module Scriptor {
             this._loadCache.clear();
 
             if( this._resolver !== void 0 ) {
+                if( this._resolver.isCancellable() ) {
+                    this._resolver.cancel();
+                }
+
                 delete this._resolver;
             }
 
@@ -556,25 +555,20 @@ module Scriptor {
             this.emit( 'loaded', this.loaded );
         }
 
-        protected do_exports() : Promise<any> {
-            if( !this.loaded ) {
-                return this._callWrapper( this.do_load ).then( () => {
-                    return this.do_exports();
-                } );
-            }
+        public exports() : Promise<any> {
+            if( this.loaded ) {
+                assert( this.loaded );
 
-            assert( this.loaded );
+                if( this.pending ) {
+                    return this._resolver;
 
-            if( this._resolver !== void 0 && this._resolver.isPending() ) {
-                return this._resolver;
+                } else {
+                    return Promise.resolve( this._script.exports );
+                }
 
             } else {
-                return Promise.resolve( this._script.exports );
+                return this._callWrapper( this.do_load ).then( () => this.exports() );
             }
-        }
-
-        get exports() : Promise<any> {
-            return this.do_exports();
         }
 
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
@@ -583,7 +577,7 @@ module Scriptor {
         }
 
         public apply( args : any[] ) : Promise<any> {
-            return this.exports.then( ( main : any ) => {
+            return this.exports().then( ( main : any ) => {
                 if( typeof main === 'function' ) {
                     return this._callWrapper( main, null, args );
 
@@ -779,25 +773,18 @@ module Scriptor {
             this.do_compile();
         }
 
-        protected do_exports() : Promise<any> {
-            if( !this.loaded ) {
-                return this._callWrapper( this.do_load ).then( () => {
-                    return this.do_exports();
-                } );
-            }
+        public exports() : Promise<any> {
+            if( this.loaded ) {
+                if( this._loadResolver !== void 0 && this._loadResolver.isPending() ) {
+                    return this._loadResolver.then( () => super.exports() );
 
-            if( this._loadResolver !== void 0 && this._loadResolver.isPending() ) {
-                return this._loadResolver.then( () => {
-                    return super.do_exports();
-                } );
+                } else {
+                    return super.exports();
+                }
 
             } else {
-                return super.do_exports();
+                return this._callWrapper( this.do_load ).then( () => this.exports() );
             }
-        }
-
-        get exports() : Promise<any> {
-            return this.do_exports();
         }
 
         public load( src : any, watch : boolean = true ) : SourceScript {
@@ -980,6 +967,10 @@ module Scriptor {
 
         static join( left : IReference, right : IReference, transform? : ITransformFunction ) : IReference {
             return new JoinedTransformReference( left, right, transform );
+        }
+
+        static resolve( value : any ) : IReference {
+            return new ResolvedReference( value );
         }
 
         //Creates a binary tree (essentially) of joins from an array of References using a single transform
@@ -1191,6 +1182,81 @@ module Scriptor {
 
                 delete this._left;
                 delete this._right;
+            }
+        }
+    }
+
+    export class ResolvedReference extends ReferenceBase implements IReference {
+        protected _resolver : Promise<any>;
+
+        constructor( value : any ) {
+            super();
+
+            if( value instanceof Promise ) {
+                this._resolver = value.then( ( result ) => {
+                    if( typeof result === 'object' ) {
+                        this._value = Object.freeze( result );
+
+                    } else {
+                        this._value = result;
+                    }
+
+                    this._ran = true;
+
+                    delete this._resolver;
+
+                    return this._value;
+                } );
+
+            } else {
+                if( typeof value === 'object' ) {
+                    this._value = Object.freeze( value );
+
+                } else {
+                    this._value = value;
+                }
+
+                this._ran = true;
+            }
+        }
+
+        get closed() : boolean {
+            return this._resolver === void 0 && !this._ran;
+        }
+
+        get ran() : boolean {
+            return this._ran;
+        }
+
+        public value() : Promise<any> {
+            if( this._resolver !== void 0 && !this._ran ) {
+                return this._resolver;
+
+            } else {
+                return Promise.resolve( this._value );
+            }
+        }
+
+        public join( ref : IReference, transform? : ITransformFunction ) : IReference {
+            return Reference.join( this, ref, transform );
+        }
+
+        public transform( transform? : ITransformFunction ) {
+            return Reference.transform( this, transform );
+        }
+
+        public left() : IReference {
+            return this;
+        }
+
+        public right() : IReference {
+            return null;
+        }
+
+        public close() {
+            if( this._ran ) {
+                this._ran = false;
+                delete this._value;
             }
         }
     }

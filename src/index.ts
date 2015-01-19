@@ -262,6 +262,10 @@ module Scriptor {
             this.define['require'] = Common.bind( this.require, this );
         }
 
+        get pending() : boolean {
+            return false;
+        }
+
         protected _runFactory( id : string,
                                deps : string[],
                                factory : ( ...deps : any[] ) => any ) : any {
@@ -350,10 +354,13 @@ module Scriptor {
 
                         onLoad.fromText = ( text : string ) => {
                             //Exploit Scriptor as much as possible
-                            onLoad( Scriptor.compile( text ).exports );
+                            onLoad( Scriptor.compile( text ).exports() );
                         };
 
                         onLoad.error = onError.bind( null, id, 'scripterror' );
+
+                        //For the sync build, set this to undefined just to make it known the result is out-of-order
+                        this._loadCache.set( id, void 0 );
 
                         //Since onload is a closure, it 'this' is implicitly bound with TypeScript
                         plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
@@ -373,7 +380,7 @@ module Scriptor {
                         result = this.require( id );
 
                     } else {
-                        result = script.exports;
+                        result = script.exports();
                     }
 
                 } else {
@@ -534,16 +541,12 @@ module Scriptor {
             this.emit( 'loaded', this.loaded );
         }
 
-        protected do_exports() : any {
+        public exports() : any {
             if( !this.loaded ) {
                 this._callWrapper( this.do_load );
             }
 
             return this._script.exports;
-        }
-
-        get exports() : any {
-            return this.do_exports();
         }
 
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
@@ -553,7 +556,7 @@ module Scriptor {
 
         public apply( args : any[] ) : any {
             //This will ensure it is loaded (safely) and return the exports
-            var main : any = this.exports;
+            var main : any = this.exports();
 
             if( typeof main === 'function' ) {
                 return this._callWrapper( main, null, args );
@@ -917,6 +920,10 @@ module Scriptor {
             return this._script === void 0;
         }
 
+        static resolve( value : any ) : IReference {
+            return new ResolvedReference( value );
+        }
+
         static join( left : IReference, right : IReference, transform? : ITransformFunction ) : IReference {
             return new JoinedTransformReference( left, right, transform );
         }
@@ -1121,6 +1128,56 @@ module Scriptor {
 
                 delete this._left;
                 delete this._right;
+            }
+        }
+    }
+
+    export class ResolvedReference extends ReferenceBase implements IReference {
+        constructor( value : any ) {
+            super();
+
+            if( typeof value === 'object' ) {
+                this._value = Object.freeze( value );
+
+            } else {
+                this._value = value;
+            }
+
+            this._ran = true;
+        }
+
+        get closed() : boolean {
+            return !this._ran;
+        }
+
+        get ran() : boolean {
+            return this._ran;
+        }
+
+        public value() : any {
+            return this._value;
+        }
+
+        public join( ref : IReference, transform? : ITransformFunction ) : IReference {
+            return Reference.join( this, ref, transform );
+        }
+
+        public transform( transform? : ITransformFunction ) {
+            return Reference.transform( this, transform );
+        }
+
+        public left() : IReference {
+            return this;
+        }
+
+        public right() : IReference {
+            return null;
+        }
+
+        public close() {
+            if( this._ran ) {
+                this._ran = false;
+                delete this._value;
             }
         }
     }
