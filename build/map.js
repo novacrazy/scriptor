@@ -34,10 +34,10 @@ var MapAdapter;
         }
 
         Object.defineProperty( ObjectMap.prototype, "size", {
-            get:        function() {
+            get:          function() {
                 return this.keys().length;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         ObjectMap.prototype.clear = function() {

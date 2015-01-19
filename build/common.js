@@ -47,6 +47,21 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.bind = bind;
+    function normalizeError(id, type, err) {
+        if( err === void 0 ) {
+            err = {};
+        }
+        if( Array.isArray( err.requireModules ) && !Array.isArray( id ) && err.requireModules.indexOf( id ) === -1 ) {
+            err.requireModules.push( id );
+        }
+        else {
+            err.requireModules = Array.isArray( id ) ? id : [id];
+        }
+        err.requireType = err.requireType || type;
+        return err;
+    }
+
+    ScriptorCommon.normalizeError = normalizeError;
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
 })( ScriptorCommon || (ScriptorCommon = {}) );

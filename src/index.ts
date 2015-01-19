@@ -290,17 +290,8 @@ module Scriptor {
         public require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
             var normalize = path.resolve.bind( null, this.baseUrl );
 
-            var onError = ( _id : any, type : string, err : any = {} ) => {
-                if( Array.isArray( err.requireModules )
-                    && !Array.isArray( _id )
-                    && err.requireModules.indexOf( _id ) === -1 ) {
-                    err.requireModules.push( _id );
-
-                } else {
-                    err.requireModules = Array.isArray( _id ) ? _id : [_id];
-                }
-
-                err.requireType = err.requireType || type;
+            var onError = ( _id : any, type : string, err : any ) => {
+                err = Common.normalizeError( _id, type, err );
 
                 if( typeof errcb === 'function' ) {
                     errcb( err );

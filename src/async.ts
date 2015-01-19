@@ -292,21 +292,6 @@ module Scriptor {
         public require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
             var normalize = path.resolve.bind( null, this.baseUrl );
 
-            var normalizeError = ( _id : any, type : string, err : any = {} ) => {
-                if( Array.isArray( err.requireModules )
-                    && !Array.isArray( _id )
-                    && err.requireModules.indexOf( _id ) === -1 ) {
-                    err.requireModules.push( _id );
-
-                } else {
-                    err.requireModules = Array.isArray( _id ) ? _id : [_id];
-                }
-
-                err.requireType = err.requireType || type;
-
-                return err;
-            };
-
             var result : any;
 
             if( Array.isArray( id ) ) {
@@ -353,7 +338,7 @@ module Scriptor {
                                 };
 
                                 onLoad.error = ( err : any ) => {
-                                    reject( normalizeError( id, 'scripterror', err ) );
+                                    reject( Common.normalizeError( id, 'scripterror', err ) );
                                 };
 
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
@@ -413,7 +398,7 @@ module Scriptor {
                                 resolve( Module.Module._load( id, this._script ) );
 
                             } catch( err ) {
-                                reject( normalizeError( id, 'nodefine', err ) );
+                                reject( Common.normalizeError( id, 'nodefine', err ) );
                             }
                         } );
                     }

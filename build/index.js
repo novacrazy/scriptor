@@ -285,17 +285,7 @@ var Scriptor;
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
             var onError = function(_id, type, err) {
-                if( err === void 0 ) {
-                    err = {};
-                }
-                if( Array.isArray( err.requireModules ) && !Array.isArray( _id ) && err.requireModules.indexOf( _id )
-                                                                                    === -1 ) {
-                    err.requireModules.push( _id );
-                }
-                else {
-                    err.requireModules = Array.isArray( _id ) ? _id : [_id];
-                }
-                err.requireType = err.requireType || type;
+                err = Common.normalizeError( _id, type, err );
                 if( typeof errcb === 'function' ) {
                     errcb( err );
                 }

@@ -288,20 +288,6 @@ var Scriptor;
         AMDScript.prototype.require = function(id, cb, errcb) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
-            var normalizeError = function(_id, type, err) {
-                if( err === void 0 ) {
-                    err = {};
-                }
-                if( Array.isArray( err.requireModules ) && !Array.isArray( _id ) && err.requireModules.indexOf( _id )
-                                                                                    === -1 ) {
-                    err.requireModules.push( _id );
-                }
-                else {
-                    err.requireModules = Array.isArray( _id ) ? _id : [_id];
-                }
-                err.requireType = err.requireType || type;
-                return err;
-            };
             var result;
             if( Array.isArray( id ) ) {
                 //We know it's an array, so just cast it to one to appease TypeScript
@@ -340,7 +326,7 @@ var Scriptor;
                                     Scriptor.compile( text ).exports().then( onLoad, onLoad.error );
                                 };
                                 onLoad.error = function(err) {
-                                    reject( normalizeError( id, 'scripterror', err ) );
+                                    reject( Common.normalizeError( id, 'scripterror', err ) );
                                 };
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
                                 plugin.load( id, Common.bind( _this.require, _this ), onLoad, {} );
@@ -392,7 +378,7 @@ var Scriptor;
                                 resolve( Module.Module._load( id, _this._script ) );
                             }
                             catch( err ) {
-                                reject( normalizeError( id, 'nodefine', err ) );
+                                reject( Common.normalizeError( id, 'nodefine', err ) );
                             }
                         } );
                     }

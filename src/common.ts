@@ -21,6 +21,21 @@ module ScriptorCommon {
         return res;
     }
 
+    export function normalizeError( id : any, type : string, err : any = {} ) {
+        if( Array.isArray( err.requireModules )
+            && !Array.isArray( id )
+            && err.requireModules.indexOf( id ) === -1 ) {
+            err.requireModules.push( id );
+
+        } else {
+            err.requireModules = Array.isArray( id ) ? id : [id];
+        }
+
+        err.requireType = err.requireType || type;
+
+        return err;
+    }
+
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     export var default_dependencies : string[] = ['require', 'exports', 'module', 'imports'];
 }
