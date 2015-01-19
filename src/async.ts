@@ -14,6 +14,21 @@ import MapAdapter = require('./map');
 
 import Promise = require('bluebird');
 
+function isPromise( value : any ) : boolean {
+    return (value !== void 0 && value !== null)
+           && (value instanceof Promise || value.hasOwnProperty( '_promise0' )
+               || (typeof value.then === 'function' && typeof value.catch === 'function'));
+}
+
+function tryPromise( value : any ) {
+    if( isPromise( value ) ) {
+        return value;
+
+    } else {
+        return Promise.resolve( value );
+    }
+}
+
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
@@ -279,7 +294,15 @@ module Scriptor {
                 } );
 
             } else {
-                return Promise.resolve( factory );
+                //On the off chance the function factory is a promise, run it through again if need be
+                return tryPromise( factory ).then( ( resolvedFactory ) => {
+                    if( typeof factory === 'function' ) {
+                        return this._runFactory( id, deps, resolvedFactory );
+
+                    } else {
+                        return resolvedFactory;
+                    }
+                } );
             }
         }
 
@@ -405,7 +428,7 @@ module Scriptor {
                 }
             }
 
-            if( !(result instanceof Promise) ) {
+            if( !isPromise( result ) ) {
                 result = Promise.resolve( result );
             }
 
@@ -1177,32 +1200,20 @@ module Scriptor {
         constructor( value : any ) {
             super();
 
-            if( value instanceof Promise ) {
-                this._resolver = value.then( ( result ) => {
-                    if( typeof result === 'object' ) {
-                        this._value = Object.freeze( result );
-
-                    } else {
-                        this._value = result;
-                    }
-
-                    this._ran = true;
-
-                    delete this._resolver;
-
-                    return this._value;
-                } );
-
-            } else {
-                if( typeof value === 'object' ) {
-                    this._value = Object.freeze( value );
+            this._resolver = tryPromise( value ).then( ( result ) => {
+                if( typeof result === 'object' ) {
+                    this._value = Object.freeze( result );
 
                 } else {
-                    this._value = value;
+                    this._value = result;
                 }
 
                 this._ran = true;
-            }
+
+                delete this._resolver;
+
+                return this._value;
+            } );
         }
 
         get closed() : boolean {

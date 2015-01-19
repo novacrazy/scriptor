@@ -48,6 +48,19 @@ var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
+function isPromise(value) {
+    return (value !== void 0 && value !== null) && (value instanceof Promise || value.hasOwnProperty( '_promise0' )
+                                                    || (typeof value.then === 'function' && typeof value.catch
+                                                                                            === 'function'));
+}
+function tryPromise(value) {
+    if( isPromise( value ) ) {
+        return value;
+    }
+    else {
+        return Promise.resolve( value );
+    }
+}
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -281,7 +294,14 @@ var Scriptor;
                 } );
             }
             else {
-                return Promise.resolve( factory );
+                return tryPromise( factory ).then( function(resolvedFactory) {
+                    if( typeof factory === 'function' ) {
+                        return _this._runFactory( id, deps, resolvedFactory );
+                    }
+                    else {
+                        return resolvedFactory;
+                    }
+                } );
             }
         };
         //Implementation, and holy crap is it huge
@@ -384,7 +404,7 @@ var Scriptor;
                     }
                 }
             }
-            if( !(result instanceof Promise) ) {
+            if( !isPromise( result ) ) {
                 result = Promise.resolve( result );
             }
             if( typeof cb === 'function' ) {
@@ -1106,28 +1126,17 @@ var Scriptor;
         function ResolvedReference(value) {
             var _this = this;
             _super.call( this );
-            if( value instanceof Promise ) {
-                this._resolver = value.then( function(result) {
-                    if( typeof result === 'object' ) {
-                        _this._value = Object.freeze( result );
-                    }
-                    else {
-                        _this._value = result;
-                    }
-                    _this._ran = true;
-                    delete _this._resolver;
-                    return _this._value;
-                } );
-            }
-            else {
-                if( typeof value === 'object' ) {
-                    this._value = Object.freeze( value );
+            this._resolver = tryPromise( value ).then( function(result) {
+                if( typeof result === 'object' ) {
+                    _this._value = Object.freeze( result );
                 }
                 else {
-                    this._value = value;
+                    _this._value = result;
                 }
-                this._ran = true;
-            }
+                _this._ran = true;
+                delete _this._resolver;
+                return _this._value;
+            } );
         }
 
         Object.defineProperty( ResolvedReference.prototype, "closed", {
