@@ -58,6 +58,7 @@ var ScriptorCommon;
             err.requireModules = Array.isArray( id ) ? id : [id];
         }
         err.requireType = err.requireType || type;
+        err.message = (err.message || '') + ' - ' + id;
         return err;
     }
 

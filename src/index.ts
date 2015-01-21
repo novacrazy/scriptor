@@ -388,6 +388,37 @@ module Scriptor {
                     } else if( id === 'imports' ) {
                         result = Object.freeze( this.imports );
 
+                    } else if( id === '_script' ) {
+                        result = {
+                            load: ( id, require, onLoad, config ) => {
+                                var script = this.include( id );
+
+                                if( script !== null && script !== void 0 ) {
+                                    onLoad( script );
+
+                                } else {
+                                    onLoad( new Script( id, this._script ) );
+                                }
+                            }
+                        };
+
+                    } else if( id === '_once' ) {
+                        result = {
+                            load: ( id, require, onLoad, config ) => {
+                                var reference = this.reference_once( id );
+
+                                if( reference !== null && reference !== void 0 ) {
+                                    onLoad( reference );
+
+                                } else {
+                                    onLoad.error( {
+                                        requireType: 'nodefine',
+                                        message:     'Cannot reference module outside of a manager'
+                                    } );
+                                }
+                            }
+                        };
+
                     } else if( this._loadCache.has( id ) ) {
                         result = this._loadCache.get( id );
 
@@ -592,9 +623,16 @@ module Scriptor {
 
         public watch() : boolean {
             if( !this.watched ) {
-                var watcher : fs.FSWatcher = this._watcher = fs.watch( this.filename, {
-                    persistent: false
-                } );
+                var watcher : fs.FSWatcher;
+
+                try {
+                    watcher = this._watcher = fs.watch( this.filename, {
+                        persistent: false
+                    } );
+
+                } catch( err ) {
+                    throw Common.normalizeError( this.filename, 'nodefine', err );
+                }
 
                 watcher.on( 'change', ( event : string, filename : string ) => {
                     //path.resolve doesn't like nulls, so this has to be done first

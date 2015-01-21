@@ -33,6 +33,8 @@ module ScriptorCommon {
 
         err.requireType = err.requireType || type;
 
+        err.message = (err.message || '') + ' - ' + id;
+
         return err;
     }
 
