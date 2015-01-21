@@ -48,13 +48,14 @@ var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
-function isPromise(value) {
+var readFile = Promise.promisify( fs.readFile );
+function isThenable(value) {
     return (value !== void 0 && value !== null) && (value instanceof Promise || value.hasOwnProperty( '_promise0' )
                                                     || (typeof value.then === 'function' && typeof value.catch
                                                                                             === 'function'));
 }
 function tryPromise(value) {
-    if( isPromise( value ) ) {
+    if( isThenable( value ) ) {
         return value;
     }
     else {
@@ -65,6 +66,41 @@ var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
     Scriptor.default_dependencies = Common.default_dependencies;
+    Scriptor.extensions = {};
+    function enableCustomExtensions(enable) {
+        if( enable === void 0 ) {
+            enable = true;
+        }
+        if( enable ) {
+            Scriptor.extensions['.js'] = function(module, filename) {
+                return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
+                    return module._compile( content, filename );
+                } );
+            };
+            Scriptor.extensions['.json'] = function(module, filename) {
+                return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
+                    try {
+                        module.exports = JSON.parse( content );
+                    }
+                    catch( err ) {
+                        err.message = filename + ': ' + err.message;
+                        throw err;
+                    }
+                } );
+            };
+        }
+        else {
+            delete Scriptor.extensions['.js'];
+            delete Scriptor.extensions['.json'];
+        }
+    }
+
+    Scriptor.enableCustomExtensions = enableCustomExtensions;
+    function disableCustomExtension() {
+        enableCustomExtensions( false );
+    }
+
+    Scriptor.disableCustomExtension = disableCustomExtension;
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
     //well, mixed in. So ScriptBase just handles the most basic Script functions
@@ -93,21 +129,20 @@ var Scriptor;
                 return Promise.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion ) );
             }
             else {
-                var result = new Promise( function(resolve, reject) {
+                return new Promise( function(resolve, reject) {
                     _this._recursion++;
                     resolve( func.apply( this_arg, args ) );
-                } );
-                return result.catch( SyntaxError, function(e) {
-                    _this.unload();
-                    return Promise.reject( e );
-                } ).finally( function() {
-                    _this._recursion--;
-                } );
+                } ).catch( SyntaxError, function(e) {
+                        _this.unload();
+                        return Promise.reject( e );
+                    } ).finally( function() {
+                        _this._recursion--;
+                    } );
             }
         };
         //Abstract method
         ScriptBase.prototype.do_load = function() {
-            //pass
+            return Promise.resolve( void 0 );
         };
         Object.defineProperty( ScriptBase.prototype, "id", {
             get:          function() {
@@ -198,17 +233,7 @@ var Scriptor;
             this.unwatch();
             if( permanent ) {
                 //Remove _script from parent
-                if( this.parent !== void 0 ) {
-                    var children = this.parent.children;
-                    for( var _i in children ) {
-                        //Find which child is this._script, delete it and remove the (now undefined) reference
-                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
-                            delete children[_i];
-                            children.splice( _i, 1 );
-                            break;
-                        }
-                    }
-                }
+                Common.removeFromParent( this._script );
                 //Remove _script from current object
                 return delete this._script;
             }
@@ -434,7 +459,7 @@ var Scriptor;
                     }
                 }
             }
-            if( !isPromise( result ) ) {
+            if( !isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
             if( typeof cb === 'function' ) {
@@ -450,34 +475,16 @@ var Scriptor;
             return result;
         };
         //implementation
-        AMDScript.prototype.define = function(id, deps, factory) {
+        AMDScript.prototype.define = function() {
             var _this = this;
-            //This argument parsing code is taken from amdefine
-            if( Array.isArray( id ) ) {
-                factory = deps;
-                deps = id;
-                id = void 0;
-            }
-            else if( typeof id !== 'string' ) {
-                factory = id;
-                id = deps = void 0;
-            }
-            if( deps !== void 0 && !Array.isArray( deps ) ) {
-                factory = deps;
-                deps = void 0;
-            }
-            if( deps === void 0 ) {
-                deps = Scriptor.default_dependencies;
-            }
-            else {
-                deps = deps.concat( Scriptor.default_dependencies );
-            }
+            var define_args = Common.parseDefine.apply( null, arguments );
+            var id = define_args[0];
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
-                this._defineCache.set( id, [id, deps, factory] );
+                this._defineCache.set( id, define_args );
             }
             else {
-                this._resolver = this._runFactory( id, deps, factory ).then( function(result) {
+                this._resolver = this._runFactory.apply( this, define_args ).then( function(result) {
                     //Allows for main factory to not return anything.
                     if( result !== null && result !== void 0 ) {
                         _this._script.exports = result;
@@ -537,11 +544,22 @@ var Scriptor;
         };
         //Should ALWAYS be called within a _callWrapper
         Script.prototype.do_load = function() {
+            var _this = this;
             this.unload();
             this.do_setup();
-            //Because Scriptor uses require extensions, it has to go through this, which is synchronous. Damn.
-            this._script.load( this._script.filename );
-            this.emit( 'loaded', this.loaded );
+            var ext = path.extname( this.filename ) || '.js';
+            //Use custom extension if available
+            if( Scriptor.extensions.hasOwnProperty( ext ) ) {
+                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                return Scriptor.extensions[ext]( this._script, this.filename ).then( function() {
+                    _this._script.loaded = true;
+                    _this.emit( 'loaded', _this.loaded );
+                } );
+            }
+            else {
+                this._script.load( this._script.filename );
+                this.emit( 'loaded', this.loaded );
+            }
         };
         Script.prototype.exports = function() {
             var _this = this;
@@ -724,51 +742,25 @@ var Scriptor;
                 else {
                     srcPromise = Promise.resolve( this._source );
                 }
-                return srcPromise.then( function(src) {
-                    //strip BOM
-                    if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                        src = src.slice( 1 );
-                    }
-                    return src;
-                } );
+                return srcPromise.then( Common.stripBOM );
             },
             enumerable:   true,
             configurable: true
         } );
         SourceScript.prototype.do_compile = function() {
             var _this = this;
-            if( !this.loaded ) {
-                assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
-                this._loadResolver = this.source.then( function(src) {
-                    _this._script._compile( src, _this.filename );
-                    _this._script.loaded = true;
-                    delete _this._loadResolver;
-                    _this.emit( 'loaded', _this.loaded );
-                } );
-            }
+            assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
+            return this.source.then( function(src) {
+                _this._script._compile( src, _this.filename );
+                _this._script.loaded = true;
+                _this.emit( 'loaded', _this.loaded );
+                return _this.exports();
+            } );
         };
         SourceScript.prototype.do_load = function() {
             this.unload();
             this.do_setup();
-            this.do_compile();
-        };
-        SourceScript.prototype.exports = function() {
-            var _this = this;
-            if( this.loaded ) {
-                if( this._loadResolver !== void 0 && this._loadResolver.isPending() ) {
-                    return this._loadResolver.then( function() {
-                        return _super.prototype.exports.call( _this );
-                    } );
-                }
-                else {
-                    return _super.prototype.exports.call( this );
-                }
-            }
-            else {
-                return this._callWrapper( this.do_load ).then( function() {
-                    return _this.exports();
-                } );
-            }
+            return this.do_compile();
         };
         SourceScript.prototype.load = function(src, watch) {
             if( watch === void 0 ) {

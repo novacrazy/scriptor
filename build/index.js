@@ -184,17 +184,7 @@ var Scriptor;
             this.unwatch();
             if( permanent ) {
                 //Remove _script from parent
-                if( this.parent !== void 0 ) {
-                    var children = this.parent.children;
-                    for( var _i in children ) {
-                        //Find which child is this._script, delete it and remove the (now undefined) reference
-                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
-                            delete children[_i];
-                            children.splice( _i, 1 );
-                            break;
-                        }
-                    }
-                }
+                Common.removeFromParent( this._script );
                 //Remove _script from current object
                 return delete this._script;
             }
@@ -426,28 +416,9 @@ var Scriptor;
             }
         };
         //implementation
-        AMDScript.prototype.define = function(id, deps, factory) {
-            //This argument parsing code is taken from amdefine
-            if( Array.isArray( id ) ) {
-                factory = deps;
-                deps = id;
-                id = void 0;
-            }
-            else if( typeof id !== 'string' ) {
-                factory = id;
-                id = deps = void 0;
-            }
-            if( deps !== void 0 && !Array.isArray( deps ) ) {
-                factory = deps;
-                deps = void 0;
-            }
-            if( deps === void 0 ) {
-                deps = Scriptor.default_dependencies;
-            }
-            else {
-                deps = deps.concat( Scriptor.default_dependencies );
-            }
-            var define_args = [id, deps, factory];
+        AMDScript.prototype.define = function() {
+            var define_args = Common.parseDefine.apply( null, arguments );
+            var id = define_args[0];
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
                 this._defineCache.set( id, define_args );

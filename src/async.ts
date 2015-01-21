@@ -14,14 +14,16 @@ import MapAdapter = require('./map');
 
 import Promise = require('bluebird');
 
-function isPromise( value : any ) : boolean {
+var readFile = Promise.promisify( fs.readFile );
+
+function isThenable( value : any ) : boolean {
     return (value !== void 0 && value !== null)
            && (value instanceof Promise || value.hasOwnProperty( '_promise0' )
                || (typeof value.then === 'function' && typeof value.catch === 'function'));
 }
 
 function tryPromise( value : any ) {
-    if( isPromise( value ) ) {
+    if( isThenable( value ) ) {
         return value;
 
     } else {
@@ -33,6 +35,38 @@ module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
     export var default_dependencies : string[] = Common.default_dependencies;
+
+    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<any>} = {};
+
+    export function enableCustomExtensions( enable : boolean = true ) {
+        if( enable ) {
+            extensions['.js'] = ( module : Module.IModule, filename : string ) => {
+                return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( ( content : string ) => {
+                    return module._compile( content, filename );
+                } );
+            };
+
+            extensions['.json'] = ( module : Module.IModule, filename : string ) => {
+                return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( ( content : string ) => {
+                    try {
+                        module.exports = JSON.parse( content );
+
+                    } catch( err ) {
+                        err.message = filename + ': ' + err.message;
+                        throw err;
+                    }
+                } );
+            };
+
+        } else {
+            delete extensions['.js'];
+            delete extensions['.json'];
+        }
+    }
+
+    export function disableCustomExtension() {
+        enableCustomExtensions( false );
+    }
 
     /**** BEGIN SECTION SCRIPT ****/
 
@@ -88,26 +122,25 @@ module Scriptor {
                 return Promise.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion ) );
 
             } else {
-                var result : Promise<any> = new Promise( ( resolve, reject ) => {
+                return new Promise( ( resolve, reject ) => {
                     this._recursion++;
 
                     resolve( func.apply( this_arg, args ) );
-                } );
 
-                return result.catch( SyntaxError, ( e ) => {
-                    this.unload();
+                } ).catch( SyntaxError, ( e ) => {
+                        this.unload();
 
-                    return Promise.reject( e );
+                        return Promise.reject( e );
 
-                } ).finally( () => {
-                    this._recursion--;
-                } );
+                    } ).finally( () => {
+                        this._recursion--;
+                    } );
             }
         }
 
         //Abstract method
-        protected do_load() {
-            //pass
+        protected do_load() : Promise<any> {
+            return Promise.resolve( void 0 );
         }
 
         get id() : string {
@@ -186,18 +219,7 @@ module Scriptor {
             if( permanent ) {
 
                 //Remove _script from parent
-                if( this.parent !== void 0 ) {
-                    var children : Module.IModule[] = this.parent.children;
-
-                    for( var _i in children ) {
-                        //Find which child is this._script, delete it and remove the (now undefined) reference
-                        if( children.hasOwnProperty( _i ) && children[_i] === this._script ) {
-                            delete children[_i];
-                            children.splice( _i, 1 );
-                            break;
-                        }
-                    }
-                }
+                Common.removeFromParent( this._script );
 
                 //Remove _script from current object
                 return delete this._script;
@@ -459,7 +481,7 @@ module Scriptor {
                 }
             }
 
-            if( !isPromise( result ) ) {
+            if( !isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
 
@@ -487,37 +509,18 @@ module Scriptor {
         public define( factory : {[key : string] : any} );
 
         //implementation
-        public define( id : any, deps? : any, factory? : any ) : void {
-            //This argument parsing code is taken from amdefine
-            if( Array.isArray( id ) ) {
-                factory = deps;
-                deps = id;
-                id = void 0;
+        public define( /*...*/ ) : any {
+            var define_args : any[] = Common.parseDefine.apply( null, arguments );
 
-            } else if( typeof id !== 'string' ) {
-                factory = id;
-                id = deps = void 0;
-            }
-
-            if( deps !== void 0 && !Array.isArray( deps ) ) {
-                factory = deps;
-                deps = void 0;
-            }
-
-            if( deps === void 0 ) {
-                deps = default_dependencies;
-
-            } else {
-                deps = deps.concat( default_dependencies )
-            }
+            var id : string = define_args[0];
 
             if( id !== void 0 ) {
                 assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
 
-                this._defineCache.set( id, [id, deps, factory] );
+                this._defineCache.set( id, define_args );
 
             } else {
-                this._resolver = this._runFactory( id, deps, factory ).then( ( result ) => {
+                this._resolver = this._runFactory.apply( this, define_args ).then( ( result ) => {
                     //Allows for main factory to not return anything.
                     if( result !== null && result !== void 0 ) {
                         this._script.exports = result;
@@ -583,15 +586,28 @@ module Scriptor {
         }
 
         //Should ALWAYS be called within a _callWrapper
-        protected do_load() {
+        protected do_load() : Promise<any> {
             this.unload();
 
             this.do_setup();
 
-            //Because Scriptor uses require extensions, it has to go through this, which is synchronous. Damn.
-            this._script.load( this._script.filename );
+            var ext = path.extname( this.filename ) || '.js';
 
-            this.emit( 'loaded', this.loaded );
+            //Use custom extension if available
+            if( extensions.hasOwnProperty( ext ) ) {
+                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+
+                return extensions[ext]( this._script, this.filename ).then( () => {
+                    this._script.loaded = true;
+
+                    this.emit( 'loaded', this.loaded );
+                } );
+
+            } else {
+                this._script.load( this._script.filename );
+
+                this.emit( 'loaded', this.loaded );
+            }
         }
 
         public exports() : Promise<any> {
@@ -737,7 +753,6 @@ module Scriptor {
 
     export class SourceScript extends Script {
         protected _source : any; //string|Reference
-        protected _loadResolver : Promise<any>;
 
         private _onChange : ( event : string, filename : string ) => any;
 
@@ -777,14 +792,7 @@ module Scriptor {
                 srcPromise = Promise.resolve( this._source );
             }
 
-            return srcPromise.then( ( src : string ) => {
-                //strip BOM
-                if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                    src = src.slice( 1 );
-                }
-
-                return src;
-            } );
+            return srcPromise.then( Common.stripBOM );
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {
@@ -795,42 +803,26 @@ module Scriptor {
             }
         }
 
-        protected do_compile() {
-            if( !this.loaded ) {
-                assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
+        protected do_compile() : Promise<any> {
+            assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
 
-                this._loadResolver = this.source.then( ( src : string ) => {
-                    this._script._compile( src, this.filename );
+            return this.source.then( ( src : string ) => {
+                this._script._compile( src, this.filename );
 
-                    this._script.loaded = true;
+                this._script.loaded = true;
 
-                    delete this._loadResolver;
+                this.emit( 'loaded', this.loaded );
 
-                    this.emit( 'loaded', this.loaded );
-                } );
-            }
+                return this.exports();
+            } );
         }
 
-        protected do_load() {
+        protected do_load() : Promise<any> {
             this.unload();
 
             this.do_setup();
 
-            this.do_compile();
-        }
-
-        public exports() : Promise<any> {
-            if( this.loaded ) {
-                if( this._loadResolver !== void 0 && this._loadResolver.isPending() ) {
-                    return this._loadResolver.then( () => super.exports() );
-
-                } else {
-                    return super.exports();
-                }
-
-            } else {
-                return this._callWrapper( this.do_load ).then( () => this.exports() );
-            }
+            return this.do_compile();
         }
 
         public load( src : any, watch : boolean = true ) : SourceScript {

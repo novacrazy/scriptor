@@ -2,6 +2,8 @@
  * Created by novacrazy on 1/18/2015.
  */
 
+import Module = require('./Module');
+
 module ScriptorCommon {
     //Helper function to bind a function to an object AND retain any attached values
     //Also bounds a variable number of arguments to the function, which is neat.
@@ -21,6 +23,33 @@ module ScriptorCommon {
         return res;
     }
 
+    export function parseDefine( id : any, deps : any, factory : any ) {
+        //This argument parsing code is taken from amdefine
+        if( Array.isArray( id ) ) {
+            factory = deps;
+            deps = id;
+            id = void 0;
+
+        } else if( typeof id !== 'string' ) {
+            factory = id;
+            id = deps = void 0;
+        }
+
+        if( deps !== void 0 && !Array.isArray( deps ) ) {
+            factory = deps;
+            deps = void 0;
+        }
+
+        if( deps === void 0 ) {
+            deps = default_dependencies;
+
+        } else {
+            deps = deps.concat( default_dependencies )
+        }
+
+        return [id, deps, factory];
+    }
+
     export function normalizeError( id : any, type : string, err : any = {} ) {
         if( Array.isArray( err.requireModules )
             && !Array.isArray( id )
@@ -36,6 +65,31 @@ module ScriptorCommon {
         err.message = (err.message || '') + ' - ' + id;
 
         return err;
+    }
+
+    export function removeFromParent( script : Module.IModule ) {
+        var parent : Module.IModule = script.parent;
+
+        if( parent !== void 0 && parent !== null ) {
+            for( var _i in parent.children ) {
+                //Find which child is this._script, delete it and remove the (now undefined) reference
+                if( parent.children.hasOwnProperty( _i ) && parent.children[_i] === script ) {
+                    delete parent.children[_i];
+                    parent.children.splice( _i, 1 );
+                    break;
+                }
+            }
+        }
+    }
+
+    export function stripBOM( content : string ) {
+        // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
+        // because the buffer-to-string conversion in `fs.readFileSync()`
+        // translates it to FEFF, the UTF-16 BOM.
+        if( content.charCodeAt( 0 ) === 0xFEFF ) {
+            content = content.slice( 1 );
+        }
+        return content;
     }
 
     //These *could* be changed is someone really wanted to, but there isn't a reason for it

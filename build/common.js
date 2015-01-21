@@ -47,6 +47,31 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.bind = bind;
+    function parseDefine(id, deps, factory) {
+        //This argument parsing code is taken from amdefine
+        if( Array.isArray( id ) ) {
+            factory = deps;
+            deps = id;
+            id = void 0;
+        }
+        else if( typeof id !== 'string' ) {
+            factory = id;
+            id = deps = void 0;
+        }
+        if( deps !== void 0 && !Array.isArray( deps ) ) {
+            factory = deps;
+            deps = void 0;
+        }
+        if( deps === void 0 ) {
+            deps = ScriptorCommon.default_dependencies;
+        }
+        else {
+            deps = deps.concat( ScriptorCommon.default_dependencies );
+        }
+        return [id, deps, factory];
+    }
+
+    ScriptorCommon.parseDefine = parseDefine;
     function normalizeError(id, type, err) {
         if( err === void 0 ) {
             err = {};
@@ -63,6 +88,32 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.normalizeError = normalizeError;
+    function removeFromParent(script) {
+        var parent = script.parent;
+        if( parent !== void 0 && parent !== null ) {
+            for( var _i in parent.children ) {
+                //Find which child is this._script, delete it and remove the (now undefined) reference
+                if( parent.children.hasOwnProperty( _i ) && parent.children[_i] === script ) {
+                    delete parent.children[_i];
+                    parent.children.splice( _i, 1 );
+                    break;
+                }
+            }
+        }
+    }
+
+    ScriptorCommon.removeFromParent = removeFromParent;
+    function stripBOM(content) {
+        // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
+        // because the buffer-to-string conversion in `fs.readFileSync()`
+        // translates it to FEFF, the UTF-16 BOM.
+        if( content.charCodeAt( 0 ) === 0xFEFF ) {
+            content = content.slice( 1 );
+        }
+        return content;
+    }
+
+    ScriptorCommon.stripBOM = stripBOM;
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
 })( ScriptorCommon || (ScriptorCommon = {}) );
