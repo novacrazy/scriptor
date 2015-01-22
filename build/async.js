@@ -730,27 +730,23 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        Object.defineProperty( SourceScript.prototype, "source", {
-            get:          function() {
-                var srcPromise;
-                if( this._source instanceof ReferenceBase ) {
-                    srcPromise = this._source.value().then( function(src) {
-                        assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
-                        return src;
-                    } );
-                }
-                else {
-                    srcPromise = Promise.resolve( this._source );
-                }
-                return srcPromise.then( Common.stripBOM );
-            },
-            enumerable:   true,
-            configurable: true
-        } );
+        SourceScript.prototype.source = function() {
+            var srcPromise;
+            if( this._source instanceof ReferenceBase ) {
+                srcPromise = this._source.value().then( function(src) {
+                    assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                    return src;
+                } );
+            }
+            else {
+                srcPromise = Promise.resolve( this._source );
+            }
+            return srcPromise.then( Common.stripBOM );
+        };
         SourceScript.prototype.do_compile = function() {
             var _this = this;
             assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
-            return this.source.then( function(src) {
+            return this.source().then( function(src) {
                 _this._script._compile( src, _this.filename );
                 _this._script.loaded = true;
                 _this.emit( 'loaded', _this.loaded );

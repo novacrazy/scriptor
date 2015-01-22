@@ -692,7 +692,7 @@ module Scriptor {
             return this._onChange === void 0;
         }
 
-        get source() : string {
+        public source() : string {
             var src : string;
 
             if( this._source instanceof ReferenceBase ) {
@@ -724,7 +724,7 @@ module Scriptor {
             if( !this.loaded ) {
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
 
-                this._script._compile( this.source, this.filename );
+                this._script._compile( this.source(), this.filename );
 
                 this._script.loaded = true;
 

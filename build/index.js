@@ -639,29 +639,25 @@ var Scriptor;
             enumerable: true,
             configurable: true
         } );
-        Object.defineProperty( SourceScript.prototype, "source", {
-            get:        function() {
-                var src;
-                if( this._source instanceof ReferenceBase ) {
-                    src = this._source.value();
-                    assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
-                }
-                else {
-                    src = this._source;
-                }
-                //strip BOM
-                if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                    src = src.slice( 1 );
-                }
-                return src;
-            },
-            enumerable: true,
-            configurable: true
-        } );
+        SourceScript.prototype.source = function() {
+            var src;
+            if( this._source instanceof ReferenceBase ) {
+                src = this._source.value();
+                assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+            }
+            else {
+                src = this._source;
+            }
+            //strip BOM
+            if( src.charCodeAt( 0 ) === 0xFEFF ) {
+                src = src.slice( 1 );
+            }
+            return src;
+        };
         SourceScript.prototype.do_compile = function() {
             if( !this.loaded ) {
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
-                this._script._compile( this.source, this.filename );
+                this._script._compile( this.source(), this.filename );
                 this._script.loaded = true;
                 this.emit( 'loaded', this.loaded );
             }

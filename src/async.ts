@@ -778,7 +778,7 @@ module Scriptor {
             return this._onChange === void 0;
         }
 
-        get source() : Promise<string> {
+        public source() : Promise<string> {
             var srcPromise : Promise<string>;
 
             if( this._source instanceof ReferenceBase ) {
@@ -806,7 +806,7 @@ module Scriptor {
         protected do_compile() : Promise<any> {
             assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
 
-            return this.source.then( ( src : string ) => {
+            return this.source().then( ( src : string ) => {
                 this._script._compile( src, this.filename );
 
                 this._script.loaded = true;
