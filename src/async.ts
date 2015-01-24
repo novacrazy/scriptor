@@ -16,14 +16,12 @@ import Promise = require('bluebird');
 
 var readFile = Promise.promisify( fs.readFile );
 
-function isThenable( value : any ) : boolean {
-    return (value !== void 0 && value !== null)
-           && (value instanceof Promise || value.hasOwnProperty( '_promise0' )
-               || (typeof value.then === 'function' && typeof value.catch === 'function'));
+function isPromise( obj : any ) : boolean {
+    return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
 }
 
 function tryPromise( value : any ) {
-    if( isThenable( value ) ) {
+    if( isPromise( value ) ) {
         return value;
 
     } else {
@@ -42,7 +40,7 @@ module Scriptor {
         if( enable ) {
             extensions['.js'] = ( module : Module.IModule, filename : string ) => {
                 return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( ( content : string ) => {
-                    return module._compile( content, filename );
+                    module._compile( content, filename );
                 } );
             };
 
@@ -481,7 +479,7 @@ module Scriptor {
                 }
             }
 
-            if( !isThenable( result ) ) {
+            if( !isPromise( result ) ) {
                 result = Promise.resolve( result );
             }
 

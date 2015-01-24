@@ -49,13 +49,11 @@ var Common = require( './common' );
 var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
 var readFile = Promise.promisify( fs.readFile );
-function isThenable(value) {
-    return (value !== void 0 && value !== null) && (value instanceof Promise || value.hasOwnProperty( '_promise0' )
-                                                    || (typeof value.then === 'function' && typeof value.catch
-                                                                                            === 'function'));
+function isPromise(obj) {
+    return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
 }
 function tryPromise(value) {
-    if( isThenable( value ) ) {
+    if( isPromise( value ) ) {
         return value;
     }
     else {
@@ -74,7 +72,7 @@ var Scriptor;
         if( enable ) {
             Scriptor.extensions['.js'] = function(module, filename) {
                 return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
-                    return module._compile( content, filename );
+                    module._compile( content, filename );
                 } );
             };
             Scriptor.extensions['.json'] = function(module, filename) {
@@ -459,7 +457,7 @@ var Scriptor;
                     }
                 }
             }
-            if( !isThenable( result ) ) {
+            if( !isPromise( result ) ) {
                 result = Promise.resolve( result );
             }
             if( typeof cb === 'function' ) {
