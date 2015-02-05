@@ -9,5 +9,5 @@ module.define( ['crypto'], function(crypto) {
         }
 
         return crypto.createHash( 'md5' ).update( message, 'utf-8' ).digest( 'hex' );
-    }
+    };
 } );

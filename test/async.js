@@ -199,10 +199,10 @@ describe( 'A simple MD5 script with AMD exporting', function() {
         assert( script.watched );
     } );
 
-    it( 'should load the file upon calling it (lazy execution)', function() {
-        var script_exports = script.exports();
-
-        assert( script.loaded );
+    it( 'should load the file upon calling it (lazy evaluation)', function(done) {
+        script.exports().then( function(script_exports) {
+            assert( script.loaded );
+        } ).then( done );
     } );
 
     it( 'should have exported the main function', function(done) {
