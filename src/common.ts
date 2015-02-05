@@ -92,6 +92,18 @@ module ScriptorCommon {
         return content;
     }
 
+    export function clone( obj : any ) {
+        var newObj = {};
+
+        for( var it in obj ) {
+            if( obj.hasOwnProperty( it ) ) {
+                newObj[it] = obj[it];
+            }
+        }
+
+        return newObj;
+    }
+
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     export var default_dependencies : string[] = ['require', 'exports', 'module', 'imports'];
 }

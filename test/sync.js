@@ -131,7 +131,7 @@ describe( 'new Script() with filename and module', function() {
     } );
 
     it( 'should trigger the change event when the file is modified', function(done) {
-        script.once( 'change', function(event) {
+        script.once( 'change', function() {
             done();
         } );
 
@@ -156,7 +156,7 @@ describe( 'new Script() with filename and module', function() {
     } );
 
     it( 'should not unload if the file is changed when the script is not watched', function(done) {
-        var watcher = fs.watch( name, function(event) {
+        var watcher = fs.watch( name, function() {
             assert( script.loaded );
             watcher.close();
             done();
@@ -168,6 +168,54 @@ describe( 'new Script() with filename and module', function() {
 
 describe( 'A simple MD5 script with AMD exporting', function() {
     var script, name = './test/scripts/md5.js';
+
+    var message = 'Hello, World!';
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy execution)', function() {
+        script.exports();
+
+        assert( script.loaded );
+    } );
+
+    it( 'should have exported the main function', function() {
+        var script_exports = script.exports();
+
+        assert.strictEqual( typeof script_exports, 'function' );
+    } );
+
+    it( 'should execute the main function', function() {
+        var result = script.call( message );
+
+        assert.strictEqual( result, common.md5( message ) );
+    } );
+
+    it( 'should use default arguments (in the script)', function() {
+        var result = script.call();
+
+        assert.strictEqual( result, common.md5( message ) );
+    } );
+} );
+
+describe( 'Another simple MD5 script with AMD exporting', function() {
+    var script, name = './test/scripts/simple.js';
 
     var message = 'Hello, World!';
 

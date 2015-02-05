@@ -355,6 +355,25 @@ module Scriptor {
                             }
                         } );
 
+                    } else if( plugin_id === 'promisify' ) {
+                        plugin_resolver = Promise.resolve( {
+                            load: ( id, require, _onLoad, config ) => {
+                                this.require( id ).then( function( obj : any ) {
+                                    if( typeof obj === 'function' ) {
+                                        return Promise.promisify( obj );
+
+                                    } else if( typeof obj === 'object' ) {
+                                        var newObj = Common.clone( obj );
+                                        return Promise.promisifyAll( newObj );
+
+                                    } else {
+                                        return null;
+                                    }
+
+                                } ).then( _onLoad );
+                            }
+                        } );
+
                     } else {
                         plugin_resolver = this.require( parts[0] );
                     }
@@ -426,6 +445,9 @@ module Scriptor {
 
                     } else if( id === 'imports' ) {
                         result = Object.freeze( this.imports );
+
+                    } else if( id === 'Promise' ) {
+                        return Promise;
 
                     } else if( this._loadCache.has( id ) ) {
                         result = this._loadCache.get( id );

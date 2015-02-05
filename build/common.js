@@ -114,6 +114,17 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.stripBOM = stripBOM;
+    function clone(obj) {
+        var newObj = {};
+        for( var it in obj ) {
+            if( obj.hasOwnProperty( it ) ) {
+                newObj[it] = obj[it];
+            }
+        }
+        return newObj;
+    }
+
+    ScriptorCommon.clone = clone;
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
 })( ScriptorCommon || (ScriptorCommon = {}) );
