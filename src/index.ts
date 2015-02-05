@@ -21,9 +21,8 @@ module Scriptor {
 
     export interface IScriptBase extends Module.IModulePublic {
         imports : {[key : string] : any};
-        reference( filename : string, ...args : any[] ) : any;
-        reference_apply( filename : string, args : any[] ) : any;
-        reference_once( filename : string, ...args : any[] ) : Reference;
+        reference( ...args : any[] ) : Reference;
+        reference_apply( args : any[] ) : Reference;
         include( filename : string, load? : boolean ) : Script;
     }
 
@@ -42,7 +41,7 @@ module Scriptor {
         define( factory : {[key : string] : any} );
     }
 
-    export interface IScriptModule extends IScriptBase, Module.IModule, IAMDScriptBase {
+    export interface IScriptModule extends IScriptBase, Module.IModule, IAMDScriptBase, events.EventEmitter {
         //Empty, just merges the interfaces
     }
 
@@ -139,6 +138,8 @@ module Scriptor {
         public unload() : boolean {
             var was_loaded : boolean = this.loaded;
 
+            this.emit( 'unload' );
+
             this._script.loaded = false;
             this._script.exports = {};
 
@@ -178,21 +179,6 @@ module Scriptor {
             } else {
                 this._script.filename = null;
             }
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference( filename : string ) : any {
-            return null;
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference_apply( filename : string, args : any[] ) : any {
-            return null;
-        }
-
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        public reference_once( filename : string ) : Reference {
-            return null;
         }
 
         //Returns null unless using the Manager, which creates a special derived class that overrides this
@@ -308,7 +294,27 @@ module Scriptor {
                     //modules to be loaded through an AMD loader transform
                     var parts : string[] = id.split( '!', 2 );
 
-                    var plugin : any = this.require( parts[0] );
+                    var plugin_id : string = parts[0];
+
+                    var plugin : any;
+
+                    if( plugin_id === 'include' ) {
+                        plugin = {
+                            load: ( id, require, _onLoad, config ) => {
+                                var script = this.include( id );
+
+                                if( script !== null && script !== void 0 ) {
+                                    _onLoad( script );
+
+                                } else {
+                                    _onLoad( new Script( id, this._script ) );
+                                }
+                            }
+                        }
+
+                    } else {
+                        plugin = this.require( parts[0] );
+                    }
 
                     assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
 
@@ -376,37 +382,6 @@ module Scriptor {
 
                     } else if( id === 'imports' ) {
                         result = Object.freeze( this.imports );
-
-                    } else if( id === '_script' ) {
-                        result = {
-                            load: ( id, require, onLoad, config ) => {
-                                var script = this.include( id );
-
-                                if( script !== null && script !== void 0 ) {
-                                    onLoad( script );
-
-                                } else {
-                                    onLoad( new Script( id, this._script ) );
-                                }
-                            }
-                        };
-
-                    } else if( id === '_once' ) {
-                        result = {
-                            load: ( id, require, onLoad, config ) => {
-                                var reference = this.reference_once( id );
-
-                                if( reference !== null && reference !== void 0 ) {
-                                    onLoad( reference );
-
-                                } else {
-                                    onLoad.error( {
-                                        requireType: 'nodefine',
-                                        message:     'Cannot reference module outside of a manager'
-                                    } );
-                                }
-                            }
-                        };
 
                     } else if( this._loadCache.has( id ) ) {
                         result = this._loadCache.get( id );
@@ -491,13 +466,21 @@ module Scriptor {
 
         protected _watcher : fs.FSWatcher;
 
-        protected _reference : Reference = void 0;
-
         get watched() : boolean {
             return this._watcher !== void 0;
         }
 
-        constructor( filename? : string, parent : Module.IModule = this_module ) {
+        constructor( filename? : string, parent? : Module.IModule ) {
+            if( parent === void 0 ) {
+                if( <any>filename instanceof Module.Module ) {
+                    parent = <any>filename;
+                    filename = null;
+
+                } else {
+                    parent = this_module;
+                }
+            }
+
             super( parent );
 
             //Explicit comparisons to appease JSHint
@@ -512,12 +495,14 @@ module Scriptor {
 
             this._script.define = Common.bind( this.define, this );
 
-            //bind all these to this because calling them inside the script might do something weird.
-            //probably not, but still
-            this._script.reference = this.reference.bind( this );
-            this._script.reference_apply = this.reference_apply.bind( this );
-            this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
+
+            this._script.on = this._script.addListener = this._script.once = ( event : string,
+                                                                               cb : Function ) : any => {
+                assert.equal( event, 'unload', 'modules can only listen for the unload event' );
+
+                return this.once( event, cb );
+            };
         }
 
         //Should ALWAYS be called within a _callWrapper
@@ -556,19 +541,12 @@ module Scriptor {
             }
         }
 
-        public call_once( ...args : any[] ) : Reference {
-            return this.apply_once( args );
+        public reference( ...args : any[] ) : Reference {
+            return this.reference_apply( args );
         }
 
-        public apply_once( args : any[] ) : Reference {
-            if( this._reference !== void 0 ) {
-                return this._reference;
-
-            } else {
-                this._reference = new Reference( this, args );
-
-                return this._reference;
-            }
+        public reference_apply( args : any[] ) : Reference {
+            return new Reference( this, args );
         }
 
         public load( filename : string, watch : boolean = true ) : Script {
@@ -650,18 +628,6 @@ module Scriptor {
             }
 
             return false;
-        }
-
-        public clearReference() : boolean {
-            var was_referenced : boolean = this._reference !== void 0;
-
-            if( was_referenced ) {
-                this._reference.close();
-            }
-
-            delete this._reference;
-
-            return was_referenced;
         }
     }
 
@@ -786,25 +752,6 @@ module Scriptor {
     export class ScriptAdapter extends Script {
         constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
-        }
-
-        //Again just taking advantage of TypeScript's variable arguments
-        public reference( filename : string, ...args : any[] ) : any {
-            return this.reference_apply( filename, args );
-        }
-
-        //This is kind of funny it's so simple
-        public reference_apply( filename : string, args : any[] ) : any {
-            //include is used instead of this.manager.apply because include takes into account
-            //relative includes/references
-            return this.include( filename, false ).apply( args );
-        }
-
-        //Basically, whatever arguments you give this the first time it's called is all you get
-        public reference_once( filename : string, ...args : any[] ) : Reference {
-            var real_filename : string = path.resolve( this.baseUrl, filename );
-
-            return this.manager.add( real_filename ).apply_once( args );
         }
 
         public include( filename : string, load : boolean = false ) : ScriptAdapter {
@@ -973,7 +920,7 @@ module Scriptor {
                 this._script.removeListener( 'change', this._onChange );
 
                 delete this._value;
-                this._script.clearReference();
+                delete this._args;
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         }
@@ -1267,16 +1214,12 @@ module Scriptor {
             return this.add( filename ).apply( args );
         }
 
-        public once( filename : string, ...args : any[] ) : Reference {
-            return this.apply_once( filename, args );
+        public reference( filename : string, ...args : any[] ) : Reference {
+            return this.reference_apply( filename, args );
         }
 
-        public call_once( filename : string, ...args : any[] ) : Reference {
-            return this.apply_once( filename, args );
-        }
-
-        public apply_once( filename : string, args : any[] ) : Reference {
-            return this.add( filename ).apply_once( args );
+        public reference_apply( filename : string, args : any[] ) : Reference {
+            return this.add( filename ).reference( args );
         }
 
         public get( filename : string ) : ScriptAdapter {

@@ -1,9 +1,10 @@
 {
   "name": "scriptor",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process.",
   "main": "index.js",
   "keywords": [
+    "async",
     "script",
     "server",
     "lazy",
@@ -12,7 +13,8 @@
     "dynamic",
     "updatable",
     "config",
-    "transform"
+    "transform",
+    "promises"
   ],
   "author": "Aaron Trent <novacrazy@gmail.com>",
   "license": "MIT",
@@ -30,13 +32,13 @@
     "grunt-ts": "^2.0.0",
     "grunt-typescript": "^0.3.8",
     "mocha": "^1.21.5",
+    "touch": "0.0.3",
     "typescript": "^1.4.1"
   },
   "scripts": {
-    "test": "mocha test"
+    "test": "mocha -C -b test"
   },
-  "dependencies": {},
-  "optionalDependencies": {
+  "dependencies": {
     "bluebird": "^2.7.1"
   }
 }

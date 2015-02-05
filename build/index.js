@@ -159,6 +159,7 @@ var Scriptor;
         } );
         ScriptBase.prototype.unload = function() {
             var was_loaded = this.loaded;
+            this.emit( 'unload' );
             this._script.loaded = false;
             this._script.exports = {};
             return was_loaded;
@@ -191,18 +192,6 @@ var Scriptor;
             else {
                 this._script.filename = null;
             }
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        ScriptBase.prototype.reference = function(filename) {
-            return null;
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        ScriptBase.prototype.reference_apply = function(filename, args) {
-            return null;
-        };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
-        ScriptBase.prototype.reference_once = function(filename) {
-            return null;
         };
         //Returns null unless using the Manager, which creates a special derived class that overrides this
         ScriptBase.prototype.include = function(filename) {
@@ -298,7 +287,24 @@ var Scriptor;
                 if( id.indexOf( '!' ) !== -1 ) {
                     //modules to be loaded through an AMD loader transform
                     var parts = id.split( '!', 2 );
-                    var plugin = this.require( parts[0] );
+                    var plugin_id = parts[0];
+                    var plugin;
+                    if( plugin_id === 'include' ) {
+                        plugin = {
+                            load: function(id, require, _onLoad, config) {
+                                var script = _this.include( id );
+                                if( script !== null && script !== void 0 ) {
+                                    _onLoad( script );
+                                }
+                                else {
+                                    _onLoad( new Script( id, _this._script ) );
+                                }
+                            }
+                        };
+                    }
+                    else {
+                        plugin = this.require( parts[0] );
+                    }
                     assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
                     id = parts[1];
                     if( plugin.normalize ) {
@@ -352,35 +358,6 @@ var Scriptor;
                     }
                     else if( id === 'imports' ) {
                         result = Object.freeze( this.imports );
-                    }
-                    else if( id === '_script' ) {
-                        result = {
-                            load: function(id, require, onLoad, config) {
-                                var script = _this.include( id );
-                                if( script !== null && script !== void 0 ) {
-                                    onLoad( script );
-                                }
-                                else {
-                                    onLoad( new Script( id, _this._script ) );
-                                }
-                            }
-                        };
-                    }
-                    else if( id === '_once' ) {
-                        result = {
-                            load: function(id, require, onLoad, config) {
-                                var reference = _this.reference_once( id );
-                                if( reference !== null && reference !== void 0 ) {
-                                    onLoad( reference );
-                                }
-                                else {
-                                    onLoad.error( {
-                                        requireType: 'nodefine',
-                                        message:     'Cannot reference module outside of a manager'
-                                    } );
-                                }
-                            }
-                        };
                     }
                     else if( this._loadCache.has( id ) ) {
                         result = this._loadCache.get( id );
@@ -447,10 +424,15 @@ var Scriptor;
         __extends( Script, _super );
         function Script(filename, parent) {
             if( parent === void 0 ) {
-                parent = Scriptor.this_module;
+                if( filename instanceof Module.Module ) {
+                    parent = filename;
+                    filename = null;
+                }
+                else {
+                    parent = Scriptor.this_module;
+                }
             }
             _super.call( this, parent );
-            this._reference = void 0;
             //Explicit comparisons to appease JSHint
             if( filename !== void 0 && filename !== null ) {
                 this.load( filename );
@@ -465,15 +447,15 @@ var Scriptor;
             configurable: true
         } );
         Script.prototype.do_setup = function() {
+            var _this = this;
             //Shallow freeze so the script can't add/remove imports, but it can modify them
             this._script.imports = Object.freeze( this.imports );
             this._script.define = Common.bind( this.define, this );
-            //bind all these to this because calling them inside the script might do something weird.
-            //probably not, but still
-            this._script.reference = this.reference.bind( this );
-            this._script.reference_apply = this.reference_apply.bind( this );
-            this._script.reference_once = this.reference_once.bind( this );
             this._script.include = this.include.bind( this );
+            this._script.on = this._script.addListener = this._script.once = function(event, cb) {
+                assert.equal( event, 'unload', 'modules can only listen for the unload event' );
+                return _this.once( event, cb );
+            };
         };
         //Should ALWAYS be called within a _callWrapper
         Script.prototype.do_load = function() {
@@ -506,21 +488,15 @@ var Scriptor;
                 return main;
             }
         };
-        Script.prototype.call_once = function() {
+        Script.prototype.reference = function() {
             var args = [];
             for( var _i = 0; _i < arguments.length; _i++ ) {
                 args[_i - 0] = arguments[_i];
             }
-            return this.apply_once( args );
+            return this.reference_apply( args );
         };
-        Script.prototype.apply_once = function(args) {
-            if( this._reference !== void 0 ) {
-                return this._reference;
-            }
-            else {
-                this._reference = new Reference( this, args );
-                return this._reference;
-            }
+        Script.prototype.reference_apply = function(args) {
+            return new Reference( this, args );
         };
         Script.prototype.load = function(filename, watch) {
             if( watch === void 0 ) {
@@ -587,14 +563,6 @@ var Scriptor;
                 return delete this._watcher;
             }
             return false;
-        };
-        Script.prototype.clearReference = function() {
-            var was_referenced = this._reference !== void 0;
-            if( was_referenced ) {
-                this._reference.close();
-            }
-            delete this._reference;
-            return was_referenced;
         };
         return Script;
     })( AMDScript );
@@ -709,29 +677,6 @@ var Scriptor;
             this.manager = manager;
         }
 
-        //Again just taking advantage of TypeScript's variable arguments
-        ScriptAdapter.prototype.reference = function(filename) {
-            var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
-            }
-            return this.reference_apply( filename, args );
-        };
-        //This is kind of funny it's so simple
-        ScriptAdapter.prototype.reference_apply = function(filename, args) {
-            //include is used instead of this.manager.apply because include takes into account
-            //relative includes/references
-            return this.include( filename, false ).apply( args );
-        };
-        //Basically, whatever arguments you give this the first time it's called is all you get
-        ScriptAdapter.prototype.reference_once = function(filename) {
-            var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
-            }
-            var real_filename = path.resolve( this.baseUrl, filename );
-            return this.manager.add( real_filename ).apply_once( args );
-        };
         ScriptAdapter.prototype.include = function(filename, load) {
             if( load === void 0 ) {
                 load = false;
@@ -879,7 +824,7 @@ var Scriptor;
             if( !this.closed ) {
                 this._script.removeListener( 'change', this._onChange );
                 delete this._value;
-                this._script.clearReference();
+                delete this._args;
                 delete this._script; //Doesn't really delete it, just removes it from this
             }
         };
@@ -1173,22 +1118,15 @@ var Scriptor;
         Manager.prototype.apply = function(filename, args) {
             return this.add( filename ).apply( args );
         };
-        Manager.prototype.once = function(filename) {
+        Manager.prototype.reference = function(filename) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            return this.apply_once( filename, args );
+            return this.reference_apply( filename, args );
         };
-        Manager.prototype.call_once = function(filename) {
-            var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
-            }
-            return this.apply_once( filename, args );
-        };
-        Manager.prototype.apply_once = function(filename, args) {
-            return this.add( filename ).apply_once( args );
+        Manager.prototype.reference_apply = function(filename, args) {
+            return this.add( filename ).reference( args );
         };
         Manager.prototype.get = function(filename) {
             filename = path.resolve( this.cwd, filename );
