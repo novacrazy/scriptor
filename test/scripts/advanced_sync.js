@@ -9,5 +9,5 @@ define( 'meaning of life', ['./sync_plugin.js!'], function(result) {
 define( ['meaning of life'], function(value) {
     return function() {
         return value;
-    }
+    };
 } );

@@ -299,13 +299,13 @@ describe( 'Scriptor with custom extensions', function() {
     it( 'should have exported the main function', function() {
         var script_exports = script.exports();
 
-        assert.deepEqual( script_exports, {} )
+        assert.deepEqual( script_exports, {} );
     } );
 
     it( 'should execute the main function', function() {
         var result = script.call();
 
-        assert.deepEqual( result, {} )
+        assert.deepEqual( result, {} );
     } );
 } );
 
