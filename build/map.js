@@ -41,7 +41,7 @@ var MapAdapter;
             configurable: true
         } );
         ObjectMap.prototype.clear = function() {
-            this._map = {};
+            this._map = Object.create( null );
         };
         ObjectMap.prototype.delete = function(key) {
             return delete this._map[key];

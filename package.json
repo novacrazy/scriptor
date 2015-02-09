@@ -1,6 +1,6 @@
 {
   "name": "scriptor",
-  "version": "2.0.0-beta.4",
+  "version": "2.0.0-beta.5",
   "description": "Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process.",
   "main": "index.js",
   "keywords": [

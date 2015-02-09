@@ -71,7 +71,8 @@ var Scriptor;
         }
         if( enable ) {
             Scriptor.extensions['.js'] = function(module, filename) {
-                return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
+                return readFile( filename,
+                    'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( function(content) {
                     module._compile( content, filename );
                 } );
             };
@@ -250,12 +251,22 @@ var Scriptor;
     var AMDScript = (function(_super) {
         __extends( AMDScript, _super );
         function AMDScript(parent) {
-            var _this = this;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
-            //These all have to be done here as closures
-            this.require['toUrl'] = function(filepath) {
+            this._init();
+        }
+
+        AMDScript.prototype._init = function() {
+            var _this = this;
+            var require = function() {
+                var args = [];
+                for( var _i = 0; _i < arguments.length; _i++ ) {
+                    args[_i - 0] = arguments[_i];
+                }
+                return _this._require.apply( _this, args );
+            };
+            require['toUrl'] = function(filepath) {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = _this.filename;
@@ -271,23 +282,33 @@ var Scriptor;
             var normalize = function(id) {
                 return id.charAt( 0 ) === '.' ? path.resolve( _this.baseUrl, id ) : id;
             };
-            this.require['defined'] = function(id) {
+            require['defined'] = function(id) {
                 return _this._loadCache.has( normalize( id ) );
             };
-            this.require['specified'] = function(id) {
+            require['specified'] = function(id) {
                 return _this._defineCache.has( normalize( id ) );
             };
-            this.require['undef'] = function(id) {
+            require['undef'] = function(id) {
                 id = normalize( id );
-                _this._defineCache.delete( id );
                 _this._loadCache.delete( id );
+                _this._defineCache.delete( id );
+                return _this;
             };
-            this.require['onError'] = function onError(err) {
+            //This is not an anonymous so stack traces make a bit more sense
+            require['onError'] = function onErrorDefault(err) {
                 throw err;
             };
-            this.define['require'] = Common.bind( this.require, this );
-        }
-
+            this.require = require;
+            var define = function() {
+                var args = [];
+                for( var _i = 0; _i < arguments.length; _i++ ) {
+                    args[_i - 0] = arguments[_i];
+                }
+                return _this._define.apply( _this, args );
+            };
+            define['require'] = require;
+            this.define = define;
+        };
         Object.defineProperty( AMDScript.prototype, "pending", {
             get:          function() {
                 return this._resolver !== void 0 && this._resolver.isPending();
@@ -301,7 +322,7 @@ var Scriptor;
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
             if( typeof factory === 'function' ) {
-                return this.require( deps ).then( function(resolvedDeps) {
+                return this._require( deps ).then( function(resolvedDeps) {
                     return factory.apply( _this._script.exports, resolvedDeps );
                 } );
             }
@@ -318,7 +339,7 @@ var Scriptor;
             }
         };
         //Implementation, and holy crap is it huge
-        AMDScript.prototype.require = function(id, cb, errcb) {
+        AMDScript.prototype._require = function(id, cb, errcb) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
             var result;
@@ -326,7 +347,7 @@ var Scriptor;
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids = id;
                 result = Promise.map( ids, function(id) {
-                    return _this.require( id );
+                    return _this._require( id );
                 } );
             }
             else {
@@ -353,7 +374,7 @@ var Scriptor;
                     else if( plugin_id === 'promisify' ) {
                         plugin_resolver = Promise.resolve( {
                             load: function(id, require, _onLoad, config) {
-                                _this.require( id ).then( function(obj) {
+                                _this._require( id ).then( function(obj) {
                                     if( typeof obj === 'function' ) {
                                         return Promise.promisify( obj );
                                     }
@@ -369,7 +390,7 @@ var Scriptor;
                         } );
                     }
                     else {
-                        plugin_resolver = this.require( parts[0] );
+                        plugin_resolver = this._require( parts[0] );
                     }
                     result = plugin_resolver.then( function(plugin) {
                         assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
@@ -398,7 +419,7 @@ var Scriptor;
                                     reject( Common.normalizeError( id, 'scripterror', err ) );
                                 };
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                                plugin.load( id, Common.bind( _this.require, _this ), onLoad, {} );
+                                plugin.load( id, _this.require, onLoad, {} );
                             }
                         } );
                     } );
@@ -410,7 +431,7 @@ var Scriptor;
                     var script = this.include( id );
                     if( script === null || script === void 0 ) {
                         //If no manager is available, use a normal require
-                        result = this.require( id );
+                        result = this._require( id );
                     }
                     else {
                         result = script.exports();
@@ -418,7 +439,7 @@ var Scriptor;
                 }
                 else {
                     if( id === 'require' ) {
-                        result = Common.bind( this.require, this );
+                        result = this.require;
                     }
                     else if( id === 'exports' ) {
                         result = this._script.exports;
@@ -447,7 +468,7 @@ var Scriptor;
                         result = new Promise( function(resolve, reject) {
                             try {
                                 //Normal module loading akin to the real 'require' function
-                                resolve( Module.Module._load( id, _this._script ) );
+                                resolve( _this._script.require( id ) );
                             }
                             catch( err ) {
                                 reject( Common.normalizeError( id, 'nodefine', err ) );
@@ -471,8 +492,7 @@ var Scriptor;
             }
             return result;
         };
-        //implementation
-        AMDScript.prototype.define = function() {
+        AMDScript.prototype._define = function() {
             var _this = this;
             var define_args = Common.parseDefine.apply( null, arguments );
             var id = define_args[0];
@@ -553,7 +573,7 @@ var Scriptor;
             //Use custom extension if available
             if( Scriptor.extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                return Scriptor.extensions[ext]( this._script, this.filename ).then( function() {
+                return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function() {
                     _this._script.loaded = true;
                     _this.emit( 'loaded', _this.loaded );
                 } );

@@ -261,3 +261,112 @@ describe( 'Another simple MD5 script with AMD exporting', function() {
         assert.strictEqual( result, common.md5( message ) );
     } );
 } );
+
+describe( 'Scriptor with custom extensions', function() {
+
+    var script, name = './test/scripts/inject_test.js';
+
+    Scriptor.enableCustomExtensions();
+
+    it( 'should have installed custom extension functions', function() {
+        assert.strictEqual( typeof Scriptor.extensions['.js'], 'function' );
+    } );
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy execution)', function() {
+        script.exports();
+
+        assert( script.loaded );
+    } );
+
+    it( 'should have exported the main function', function() {
+        var script_exports = script.exports();
+
+        assert.deepEqual( script_exports, {} )
+    } );
+
+    it( 'should execute the main function', function() {
+        var result = script.call();
+
+        assert.deepEqual( result, {} )
+    } );
+} );
+
+describe( 'Advanced Script with synchronous plugin', function() {
+    var script, name = './test/scripts/advanced_sync.js';
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy execution)', function() {
+        script.exports();
+
+        assert( script.loaded );
+    } );
+
+    it( 'should have exported the main function', function() {
+        var script_exports = script.exports();
+
+        assert.strictEqual( typeof script_exports, 'function' );
+    } );
+
+    it( 'should execute the main function', function() {
+        var result = script.call();
+
+        assert.strictEqual( result, 42 );
+    } );
+
+    describe( 'Script utility functions', function() {
+        it( 'should be able to use AMD functions embedded in require and define', function(done) {
+            assert.strictEqual( script.define.require, script.require );
+
+            assert.strictEqual( typeof script.require.onError, 'function' );
+            assert.strictEqual( typeof script.require.undef, 'function' );
+            assert.strictEqual( typeof script.require.specified, 'function' );
+            assert.strictEqual( typeof script.require.defined, 'function' );
+
+            script.require.undef( 'meaning of life' );
+
+            script.require( 'meaning of life', function() {
+                assert( false, "undef should have removed this id" );
+                done();
+
+            }, function(err) {
+                assert( err instanceof Error, "error given should be a standard Error object" );
+                done();
+            } );
+        } );
+    } );
+} );

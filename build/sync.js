@@ -51,6 +51,28 @@ var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
     Scriptor.default_dependencies = Common.default_dependencies;
+    Scriptor.extensions = {};
+    function enableCustomExtensions(enable) {
+        if( enable === void 0 ) {
+            enable = true;
+        }
+        if( enable ) {
+            Scriptor.extensions['.js'] = function(module, filename) {
+                var content = fs.readFileSync( filename, 'utf8' );
+                module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
+            };
+        }
+        else {
+            delete Scriptor.extensions['.js'];
+        }
+    }
+
+    Scriptor.enableCustomExtensions = enableCustomExtensions;
+    function disableCustomExtensions() {
+        enableCustomExtensions( false );
+    }
+
+    Scriptor.disableCustomExtensions = disableCustomExtensions;
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
     //well, mixed in. So ScriptBase just handles the most basic Script functions
@@ -98,63 +120,63 @@ var Scriptor;
             //pass
         };
         Object.defineProperty( ScriptBase.prototype, "id", {
-            get:        function() {
+            get:          function() {
                 return this._script.id;
             },
-            set:        function(value) {
+            set:          function(value) {
                 this._script.id = value;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "children", {
-            get:        function() {
+            get:          function() {
                 return this._script.children;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "parent", {
-            get:        function() {
+            get:          function() {
                 return this._script.parent;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "loaded", {
-            get:        function() {
+            get:          function() {
                 return this._script.loaded;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "filename", {
             //Only allow getting the filename, setting should be done through .load
-            get:        function() {
+            get:          function() {
                 return this._script.filename;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "baseUrl", {
             //Based on the RequireJS 'standard' for relative locations
             //For SourceScripts, just set the filename to something relative
-            get:        function() {
+            get:          function() {
                 return path.dirname( this.filename );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( ScriptBase.prototype, "maxRecursion", {
-            get:        function() {
+            get:          function() {
                 return this._maxRecursion;
             },
-            set:        function(value) {
+            set:          function(value) {
                 //JSHint doesn't like bitwise operators
                 this._maxRecursion = Math.floor( value );
                 assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         ScriptBase.prototype.unload = function() {
@@ -203,12 +225,22 @@ var Scriptor;
     var AMDScript = (function(_super) {
         __extends( AMDScript, _super );
         function AMDScript(parent) {
-            var _this = this;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
-            //These all have to be done here as closures
-            this.require['toUrl'] = function(filepath) {
+            this._init();
+        }
+
+        AMDScript.prototype._init = function() {
+            var _this = this;
+            var require = function() {
+                var args = [];
+                for( var _i = 0; _i < arguments.length; _i++ ) {
+                    args[_i - 0] = arguments[_i];
+                }
+                return _this._require.apply( _this, args );
+            };
+            require['toUrl'] = function(filepath) {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = _this.filename;
@@ -224,24 +256,35 @@ var Scriptor;
             var normalize = function(id) {
                 return id.charAt( 0 ) === '.' ? path.resolve( _this.baseUrl, id ) : id;
             };
-            this.require['defined'] = function(id) {
+            require['defined'] = function(id) {
                 return _this._loadCache.has( normalize( id ) );
             };
-            this.require['specified'] = function(id) {
+            require['specified'] = function(id) {
                 return _this._defineCache.has( normalize( id ) );
             };
-            this.require['undef'] = function(id) {
+            require['undef'] = function(id) {
                 id = normalize( id );
-                _this._defineCache.delete( id );
                 _this._loadCache.delete( id );
+                _this._defineCache.delete( id );
+                return _this;
             };
-            this.require['onError'] = function onError(err) {
+            //This is not an anonymous so stack traces make a bit more sense
+            require['onError'] = function onErrorDefault(err) {
                 throw err;
             };
-            this.define['require'] = Common.bind( this.require, this );
-        }
-
+            this.require = require;
+            var define = function() {
+                var args = [];
+                for( var _i = 0; _i < arguments.length; _i++ ) {
+                    args[_i - 0] = arguments[_i];
+                }
+                return _this._define.apply( _this, args );
+            };
+            define['require'] = require;
+            this.define = define;
+        };
         Object.defineProperty( AMDScript.prototype, "pending", {
+            //This always returns false for the synchronous build.
             get:          function() {
                 return false;
             },
@@ -253,18 +296,20 @@ var Scriptor;
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
             if( typeof factory === 'function' ) {
-                return factory.apply( this._script.exports, this.require( deps ) );
+                return factory.apply( this._script.exports, this._require( deps ) );
             }
             else {
                 return factory;
             }
         };
         //Implementation, and holy crap is it huge
-        AMDScript.prototype.require = function(id, cb, errcb) {
+        AMDScript.prototype._require = function(id, cb, errcb) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
+            var had_error = false;
             var onError = function(_id, type, err) {
                 err = Common.normalizeError( _id, type, err );
+                had_error = true;
                 if( typeof errcb === 'function' ) {
                     errcb( err );
                 }
@@ -278,7 +323,7 @@ var Scriptor;
                 var ids = id;
                 //Love this line
                 result = ids.map( function(_id) {
-                    return _this.require( _id );
+                    return _this._require( _id );
                 } );
             }
             else {
@@ -303,7 +348,7 @@ var Scriptor;
                         };
                     }
                     else {
-                        plugin = this.require( parts[0] );
+                        plugin = this._require( parts[0] );
                     }
                     assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
                     id = parts[1];
@@ -329,7 +374,7 @@ var Scriptor;
                         //For the sync build, set this to undefined just to make it known the result is out-of-order
                         this._loadCache.set( id, void 0 );
                         //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
+                        plugin.load( id, this.require, onLoad, {} );
                     }
                     result = this._loadCache.get( id );
                 }
@@ -340,7 +385,7 @@ var Scriptor;
                     var script = this.include( id );
                     if( script === null || script === void 0 ) {
                         //If no manager is available, use a normal require
-                        result = this.require( id );
+                        result = this._require( id );
                     }
                     else {
                         result = script.exports();
@@ -348,7 +393,7 @@ var Scriptor;
                 }
                 else {
                     if( id === 'require' ) {
-                        result = Common.bind( this.require, this );
+                        result = this.require;
                     }
                     else if( id === 'exports' ) {
                         result = this._script.exports;
@@ -370,8 +415,8 @@ var Scriptor;
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
                         result = (function() {
                             try {
-                                //Normal module loading akin to the real 'require' function
-                                return Module.Module._load( id, _this._script );
+                                //Since _script.require isn't overwritten, we can access it directly for normal stuff
+                                return _this._script.require( id );
                             }
                             catch( err ) {
                                 onError( id, 'nodefine', err );
@@ -380,7 +425,8 @@ var Scriptor;
                     }
                 }
             }
-            if( typeof cb === 'function' ) {
+            //Do NOT call the callback if an error occurred. The errcb will be called independently.
+            if( typeof cb === 'function' && !had_error ) {
                 if( Array.isArray( result ) ) {
                     cb.apply( null, result );
                 }
@@ -389,11 +435,12 @@ var Scriptor;
                 }
             }
             else {
+                //If there was an error, this will be undefined, so it's the same as not returning anything
                 return result;
             }
         };
         //implementation
-        AMDScript.prototype.define = function() {
+        AMDScript.prototype._define = function() {
             var define_args = Common.parseDefine.apply( null, arguments );
             var id = define_args[0];
             if( id !== void 0 ) {
@@ -440,10 +487,10 @@ var Scriptor;
         }
 
         Object.defineProperty( Script.prototype, "watched", {
-            get:        function() {
+            get:          function() {
                 return this._watcher !== void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Script.prototype.do_setup = function() {
@@ -461,7 +508,15 @@ var Scriptor;
         Script.prototype.do_load = function() {
             this.unload();
             this.do_setup();
-            this._script.load( this._script.filename );
+            var ext = path.extname( this.filename ) || '.js';
+            if( Scriptor.extensions.hasOwnProperty( ext ) ) {
+                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                Scriptor.extensions[ext]( this._script, this.filename );
+                this._script.loaded = true;
+            }
+            else {
+                this._script.load( this._script.filename );
+            }
             this.emit( 'loaded', this.loaded );
         };
         Script.prototype.exports = function() {
@@ -580,31 +635,31 @@ var Scriptor;
         }
 
         Object.defineProperty( SourceScript.prototype, "filename", {
-            get:        function() {
+            get:          function() {
                 return this._script.filename;
             },
-            set:        function(value) {
+            set:          function(value) {
                 this._script.filename = value;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( SourceScript.prototype, "baseUrl", {
-            get:        function() {
+            get:          function() {
                 return path.dirname( this.filename );
             },
-            set:        function(value) {
+            set:          function(value) {
                 value = path.dirname( value );
                 this.filename = value + path.basename( this.filename );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( SourceScript.prototype, "watched", {
-            get:        function() {
+            get:          function() {
                 return this._onChange === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         SourceScript.prototype.source = function() {
@@ -616,11 +671,7 @@ var Scriptor;
             else {
                 src = this._source;
             }
-            //strip BOM
-            if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                src = src.slice( 1 );
-            }
-            return src;
+            return Common.stripBOM( src );
         };
         SourceScript.prototype.do_compile = function() {
             if( !this.loaded ) {
@@ -767,17 +818,17 @@ var Scriptor;
             return this._value;
         };
         Object.defineProperty( Reference.prototype, "ran", {
-            get:        function() {
+            get:          function() {
                 return this._ran;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( Reference.prototype, "closed", {
-            get:        function() {
+            get:          function() {
                 return this._script === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Reference.resolve = function(value) {
@@ -859,17 +910,17 @@ var Scriptor;
             return this._value;
         };
         Object.defineProperty( TransformReference.prototype, "ran", {
-            get:        function() {
+            get:          function() {
                 return this._ran;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( TransformReference.prototype, "closed", {
-            get:        function() {
+            get:          function() {
                 return this._ref === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         TransformReference.prototype.join = function(ref, transform) {
@@ -939,17 +990,17 @@ var Scriptor;
             return this._value;
         };
         Object.defineProperty( JoinedTransformReference.prototype, "ran", {
-            get:        function() {
+            get:          function() {
                 return this._ran;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( JoinedTransformReference.prototype, "closed", {
-            get:        function() {
+            get:          function() {
                 return this._left === void 0 || this._right === void 0;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         JoinedTransformReference.prototype.join = function(ref, transform) {
@@ -1043,13 +1094,13 @@ var Scriptor;
         }
 
         Object.defineProperty( Manager.prototype, "cwd", {
-            get:        function() {
+            get:          function() {
                 return this._cwd;
             },
-            set:        function(value) {
+            set:          function(value) {
                 this.chdir( value );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Manager.prototype.chdir = function(value) {
@@ -1057,17 +1108,17 @@ var Scriptor;
             return this._cwd;
         };
         Object.defineProperty( Manager.prototype, "parent", {
-            get:        function() {
+            get:          function() {
                 return this._parent;
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
-            get:        function() {
+            get:          function() {
                 return Object.freeze( this._scripts );
             },
-            enumerable: true,
+            enumerable:   true,
             configurable: true
         } );
         //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched

@@ -12,7 +12,7 @@ module MapAdapter {
         }
 
         public clear() : void {
-            this._map = {};
+            this._map = Object.create( null );
         }
 
         public delete( key : string ) : boolean {

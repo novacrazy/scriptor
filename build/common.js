@@ -114,6 +114,14 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.stripBOM = stripBOM;
+    ScriptorCommon.AMD_Header =
+    "if(typeof define !== 'function') {" + "\n\tvar define;" + "\n\tif(typeof module.define === 'function') {"
+    + "\n\t\tdefine = module.define;" + "\n\t} else {" + "\n\t\tdefine = require('amdefine');" + "\n\t}" + "\n}\n";
+    function injectAMD(content) {
+        return ScriptorCommon.AMD_Header + content;
+    }
+
+    ScriptorCommon.injectAMD = injectAMD;
     function clone(obj) {
         var newObj = {};
         for( var it in obj ) {

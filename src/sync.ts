@@ -17,6 +17,24 @@ module Scriptor {
 
     export var default_dependencies : string[] = Common.default_dependencies;
 
+    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => void} = {};
+
+    export function enableCustomExtensions( enable : boolean = true ) {
+        if( enable ) {
+            extensions['.js'] = ( module : Module.IModule, filename : string ) => {
+                var content = fs.readFileSync( filename, 'utf8' );
+                module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
+            };
+
+        } else {
+            delete extensions['.js'];
+        }
+    }
+
+    export function disableCustomExtensions() {
+        enableCustomExtensions( false );
+    }
+
     /**** BEGIN SECTION SCRIPT ****/
 
     export interface IScriptBase extends Module.IModulePublic {
@@ -26,19 +44,22 @@ module Scriptor {
         include( filename : string, load? : boolean ) : Script;
     }
 
+    export interface IDefineFunction {
+        ( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : void;
+        ( id : string, deps : string[], factory : {[key : string] : any} ) : void;
+        ( deps : string[], factory : ( ...deps : any[] ) => any ) : void;
+        ( deps : string[], factory : {[key : string] : any} ) : void;
+        ( factory : ( ...deps : any[] ) => any ) : void;
+        ( factory : {[key : string] : any} ) : void;
+    }
+
     export interface IAMDScriptBase {
         require( path : string ) : any;
         //overloads that can't be here because it would conflict with Module.IModule declarations
         //require( id : string[], cb? : ( deps : any[] ) => any, ecb? : (err : any) => any ) : any[];
         //require( id : string, cb? : ( deps : any ) => any, ecb? : (err : any) => any ) : any;
 
-        //overloads
-        define( id : string, deps : string[], factory : ( ...deps : any[] ) => any );
-        define( id : string, deps : string[], factory : {[key : string] : any} );
-        define( deps : string[], factory : ( ...deps : any[] ) => any );
-        define( deps : string[], factory : {[key : string] : any} );
-        define( factory : ( ...deps : any[] ) => any );
-        define( factory : {[key : string] : any} );
+        define : IDefineFunction;
     }
 
     export interface IScriptModule extends IScriptBase, Module.IModule, IAMDScriptBase, events.EventEmitter {
@@ -191,12 +212,15 @@ module Scriptor {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
 
-        constructor( parent : Module.IModule ) {
-            super( parent );
+        public require : ( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) => any;
+        public define : IDefineFunction;
 
-            //These all have to be done here as closures
+        private _init() {
+            var require = ( ...args : any[] ) => {
+                return this._require.apply( this, args );
+            };
 
-            this.require['toUrl'] = ( filepath : string ) => {
+            require['toUrl'] = ( filepath : string ) => {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = this.filename;
@@ -215,28 +239,46 @@ module Scriptor {
                 return id.charAt( 0 ) === '.' ? path.resolve( this.baseUrl, id ) : id;
             };
 
-            this.require['defined'] = ( id : string ) => {
+            require['defined'] = ( id : string ) => {
                 return this._loadCache.has( normalize( id ) );
             };
 
-            this.require['specified'] = ( id : string ) => {
+            require['specified'] = ( id : string ) => {
                 return this._defineCache.has( normalize( id ) );
             };
 
-            this.require['undef'] = ( id : string ) => {
+            require['undef'] = ( id : string ) => {
                 id = normalize( id );
 
-                this._defineCache.delete( id );
                 this._loadCache.delete( id );
+                this._defineCache.delete( id );
+
+                return this;
             };
 
-            this.require['onError'] = function onError( err : any ) {
+            //This is not an anonymous so stack traces make a bit more sense
+            require['onError'] = function onErrorDefault( err : any ) {
                 throw err; //default error
             };
 
-            this.define['require'] = Common.bind( this.require, this );
+            this.require = require;
+
+            var define = ( ...args : any[] ) => {
+                return this._define.apply( this, args );
+            };
+
+            define['require'] = require;
+
+            this.define = define;
         }
 
+        constructor( parent : Module.IModule ) {
+            super( parent );
+
+            this._init();
+        }
+
+        //This always returns false for the synchronous build.
         get pending() : boolean {
             return false;
         }
@@ -249,7 +291,7 @@ module Scriptor {
             }
 
             if( typeof factory === 'function' ) {
-                return factory.apply( this._script.exports, this.require( deps ) );
+                return factory.apply( this._script.exports, this._require( deps ) );
 
             } else {
                 return factory;
@@ -257,16 +299,20 @@ module Scriptor {
         }
 
         //Overloads, which can differ from Module.IModule
-        public require( path : string ) : any;
-        public require( id : string[], cb? : ( deps : any[] ) => any, ecb? : ( err : any ) => any ) : any[];
-        public require( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : any;
+        protected _require( path : string ) : any;
+        protected _require( id : string[], cb? : ( deps : any[] ) => any, ecb? : ( err : any ) => any ) : any[];
+        protected _require( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : any;
 
         //Implementation, and holy crap is it huge
-        public require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
+        protected _require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
             var normalize = path.resolve.bind( null, this.baseUrl );
+
+            var had_error : boolean = false;
 
             var onError = ( _id : any, type : string, err : any ) => {
                 err = Common.normalizeError( _id, type, err );
+
+                had_error = true;
 
                 if( typeof errcb === 'function' ) {
                     errcb( err );
@@ -283,7 +329,7 @@ module Scriptor {
                 var ids : string[] = <any>id;
 
                 //Love this line
-                result = ids.map( _id => this.require( _id ) );
+                result = ids.map( _id => this._require( _id ) );
 
             } else {
                 assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
@@ -313,7 +359,7 @@ module Scriptor {
                         }
 
                     } else {
-                        plugin = this.require( parts[0] );
+                        plugin = this._require( parts[0] );
                     }
 
                     assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
@@ -349,7 +395,7 @@ module Scriptor {
                         this._loadCache.set( id, void 0 );
 
                         //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, Common.bind( this.require, this ), onLoad, {} );
+                        plugin.load( id, this.require, onLoad, {} );
                     }
 
                     result = this._loadCache.get( id );
@@ -363,7 +409,7 @@ module Scriptor {
 
                     if( script === null || script === void 0 ) {
                         //If no manager is available, use a normal require
-                        result = this.require( id );
+                        result = this._require( id );
 
                     } else {
                         result = script.exports();
@@ -372,7 +418,7 @@ module Scriptor {
                 } else {
 
                     if( id === 'require' ) {
-                        result = Common.bind( this.require, this );
+                        result = this.require;
 
                     } else if( id === 'exports' ) {
                         result = this._script.exports;
@@ -395,8 +441,8 @@ module Scriptor {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
                         result = (() => {
                             try {
-                                //Normal module loading akin to the real 'require' function
-                                return Module.Module._load( id, this._script );
+                                //Since _script.require isn't overwritten, we can access it directly for normal stuff
+                                return this._script.require( id );
 
                             } catch( err ) {
                                 onError( id, 'nodefine', err );
@@ -406,7 +452,8 @@ module Scriptor {
                 }
             }
 
-            if( typeof cb === 'function' ) {
+            //Do NOT call the callback if an error occurred. The errcb will be called independently.
+            if( typeof cb === 'function' && !had_error ) {
                 if( Array.isArray( result ) ) {
                     cb.apply( null, result );
 
@@ -415,20 +462,13 @@ module Scriptor {
                 }
 
             } else {
+                //If there was an error, this will be undefined, so it's the same as not returning anything
                 return result;
             }
         }
 
-        //overloads
-        public define( id : string, deps : string[], factory : ( ...deps : any[] ) => any );
-        public define( id : string, deps : string[], factory : {[key : string] : any} );
-        public define( deps : string[], factory : ( ...deps : any[] ) => any );
-        public define( deps : string[], factory : {[key : string] : any} );
-        public define( factory : ( ...deps : any[] ) => any );
-        public define( factory : {[key : string] : any} );
-
         //implementation
-        public define( /*...*/ ) : any {
+        protected _define( /*...*/ ) : any {
             var define_args : any[] = Common.parseDefine.apply( null, arguments );
 
             var id : string = define_args[0];
@@ -511,7 +551,18 @@ module Scriptor {
 
             this.do_setup();
 
-            this._script.load( this._script.filename );
+            var ext = path.extname( this.filename ) || '.js';
+
+            if( extensions.hasOwnProperty( ext ) ) {
+                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+
+                extensions[ext]( this._script, this.filename );
+
+                this._script.loaded = true;
+
+            } else {
+                this._script.load( this._script.filename );
+            }
 
             this.emit( 'loaded', this.loaded );
         }
@@ -670,12 +721,7 @@ module Scriptor {
                 src = this._source;
             }
 
-            //strip BOM
-            if( src.charCodeAt( 0 ) === 0xFEFF ) {
-                src = src.slice( 1 );
-            }
-
-            return src;
+            return Common.stripBOM( src );
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {

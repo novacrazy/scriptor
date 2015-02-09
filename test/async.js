@@ -10,7 +10,6 @@ var fs = require( 'fs' );
 var Promise = require( 'bluebird' );
 var touch = require( 'touch' );
 
-
 var common = require( './scripts/common' );
 
 process.on( 'uncaughtexception', console.error );
@@ -20,6 +19,8 @@ var Scriptor = require( './../async' );
 it( 'Scriptor should export bluebird Promise', function() {
     assert.strictEqual( Scriptor.Promise, Promise );
 } );
+
+Scriptor.Promise.longStackTraces();
 
 describe( 'new Manager()', function() {
     var manager;
@@ -272,6 +273,107 @@ describe( 'Another simple MD5 script with AMD exporting', function() {
     } );
 } );
 
-describe( '', function() {
+describe( 'Scriptor with custom extensions', function() {
 
+    var script, name = './test/scripts/inject_test.js';
+
+    Scriptor.enableCustomExtensions();
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy evaluation)', function(done) {
+        script.exports().then( function() {
+            assert( script.loaded );
+        } ).then( done );
+    } );
+
+    it( 'should have exported the main function', function(done) {
+        script.exports().then( function(script_exports) {
+            assert.deepEqual( script_exports, {} );
+        } ).then( done );
+    } );
+
+    it( 'should execute the main function', function(done) {
+        script.call().then( function(result) {
+            assert.deepEqual( result, {} );
+        } ).then( done );
+    } );
+} );
+
+describe( 'Advanced Script with asynchronous plugin', function() {
+    var script, name = './test/scripts/advanced_async.js';
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy evaluation)', function(done) {
+        script.exports().then( function() {
+            assert( script.loaded );
+        } ).then( done );
+    } );
+
+    it( 'should have exported the main function', function(done) {
+        script.exports().then( function(script_exports) {
+            assert.strictEqual( typeof script_exports, 'function' );
+        } ).then( done );
+    } );
+
+    it( 'should execute the main function', function(done) {
+        script.call().then( function(result) {
+            assert.strictEqual( result, 42 );
+        } ).then( done );
+    } );
+
+    describe( 'Script utility functions', function() {
+        it( 'should be able to use AMD functions embedded in require and define', function(done) {
+            assert.strictEqual( script.define.require, script.require );
+
+            assert.strictEqual( typeof script.require.onError, 'function' );
+            assert.strictEqual( typeof script.require.undef, 'function' );
+            assert.strictEqual( typeof script.require.specified, 'function' );
+            assert.strictEqual( typeof script.require.defined, 'function' );
+
+            script.require.undef( 'meaning of life' );
+
+            script.require( 'meaning of life', function() {
+                assert( false, "undef should have removed this id" );
+                done();
+
+            }, function(err) {
+                assert( err instanceof Error, "error given should be a standard Error object" );
+                done();
+            } );
+        } );
+    } );
 } );
