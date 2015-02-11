@@ -14,6 +14,10 @@ function diff_ms(start) {
     return ms.toFixed( 3 ) + 'ms';
 }
 
+//Process status codes
+var EXIT_SUCCESS = 0,
+    EXIT_FAILURE = 1;
+
 options
     .version( package_json.version )
     .usage( '[options] files...' )
@@ -33,6 +37,7 @@ options
     .option( '-s, --silent', 'Do not echo anything' );
 
 module.exports = function(argv) {
+    //Start the timer before anything else (except top level stuff, but eh)
     var program_start = process.hrtime();
 
     options.parse( argv );
@@ -58,9 +63,9 @@ module.exports = function(argv) {
 
     var logger = new ScriptorCLILogger.Logger( log_level );
 
-    var onError = function onError(error) {
+    var onError = function(error) {
         logger.error( error.stack || error );
-        process.exit( 1 );
+        process.exit( EXIT_FAILURE );
     };
 
     var scripts = options.args;
@@ -109,7 +114,7 @@ module.exports = function(argv) {
 
         var manager = new Scriptor.Manager();
 
-        if( options.dir && typeof options.dir === 'string' ) {
+        if( typeof options.dir === 'string' ) {
             manager.chdir( options.dir );
         }
 
@@ -123,7 +128,7 @@ module.exports = function(argv) {
 
                 if( concurrency > maxRecursion ) {
                     console.error( 'Concurrency set higher than max_recursion.\n\tScriptor will report false positives for exceeded recursion limits.' );
-                    process.exit( 1 );
+                    process.exit( EXIT_FAILURE );
                 }
 
             } else {
@@ -151,7 +156,7 @@ module.exports = function(argv) {
 
         if( options.async ) {
             logger.info( 'Asynchronous execution selected' );
-            var res, mapper = function(script) {
+            var mapper = function(script) {
                 var num = place++;
 
                 logger.verbose( 'Running script #%d, %s.', num, script );
@@ -165,9 +170,8 @@ module.exports = function(argv) {
                     process.stdout.cork();
                 }
 
-                return instance.call().then( function(result) {
+                return instance.call().then( function() {
                     logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
-                    return result;
                 } );
             };
 
@@ -178,7 +182,7 @@ module.exports = function(argv) {
             } ).catch( onError ).then( function() {
                 logger.log( 'All scripts successfully executed in %s', diff_ms( program_start ) );
                 if( options.close ) {
-                    process.exit( 0 );
+                    process.exit( EXIT_SUCCESS );
                 }
             } );
 
@@ -211,7 +215,7 @@ module.exports = function(argv) {
             logger.log( 'All scripts successfully executed in %s', diff_ms( program_start ) );
 
             if( options.close ) {
-                process.exit( 0 );
+                process.exit( EXIT_SUCCESS );
             }
         }
 
