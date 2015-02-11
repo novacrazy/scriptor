@@ -22,18 +22,19 @@ options
     .version( package_json.version )
     .usage( '[options] files...' )
     .option( '-d, --dir <path>', 'Directory to run Scriptor in' )
-    .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
     .option( '-a, --async', 'Run scripts asynchronously' )
-    .option( '-q, --close', 'End the process when all scripts finish' )
     .option( '-c, --concurrency <n>',
     'Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)' )
+    .option( '-q, --close', 'End the process when all scripts finish' )
     .option( '-l, --long_stack_traces', 'Display long stack trace for asynchronous errors' )
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if async)' )
     .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
     .option( '--max_recursion <n>', 'Set the maximum recursion depth of scripts (default: ' +
                                     ScriptorCommon.default_max_recursion + ')' )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
+    .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
     .option( '--cork', 'Cork stdout before calling scripts' )
+    .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
     .option( '-s, --silent', 'Do not echo anything' );
 
 module.exports = function(argv) {
@@ -115,7 +116,7 @@ module.exports = function(argv) {
             manager.chdir( options.dir );
         }
 
-        var maxRecursion, concurrency;
+        var maxRecursion, concurrency, watch;
 
         if( options.max_recursion ) {
             maxRecursion = parseInt( options.max_recursion );
@@ -149,19 +150,21 @@ module.exports = function(argv) {
             }
         }
 
+        if( options.watch && !options.close ) {
+            watch = true;
+        }
+
         var script_start = process.hrtime();
 
         var place = 0;
 
+        var run_script;
+
         if( options.async ) {
             logger.info( 'Asynchronous execution selected' );
-            var mapper = function(script) {
-                var num = place++;
 
-                logger.verbose( 'Running script #%d, %s.', num, script );
+            run_script = function(instance, script, num) {
                 var start = process.hrtime();
-
-                var instance = manager.add( script, false );
 
                 instance.maxRecursion = maxRecursion;
 
@@ -172,6 +175,25 @@ module.exports = function(argv) {
                 return instance.call().then( function() {
                     logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
                 } );
+            };
+
+            var mapper = function(script) {
+                var num = place++;
+
+                logger.verbose( 'Running script #%d, %s.', num, script );
+
+                var instance = manager.add( script, false );
+
+                if( watch ) {
+                    instance.watch( true );
+
+                    instance.on( 'change', function() {
+                        logger.verbose( 'Re-running script #%d, %s', num, script );
+                        run_script( instance, script, num );
+                    } );
+                }
+
+                return run_script( instance, script, num );
             };
 
             logger.info( 'Concurrency set at %s', concurrency );
@@ -187,24 +209,38 @@ module.exports = function(argv) {
 
         } else {
             logger.info( 'Synchronous execution selected.' );
+            run_script = function(instance, script, num) {
+                var start = process.hrtime();
+
+                instance.maxRecursion = maxRecursion;
+
+                if( log_level === ScriptorCLILogger.LogLevel.LOG_SILENT || options.cork ) {
+                    process.stdout.cork();
+                }
+
+                instance.call();
+
+                logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
+            };
+
             scripts.forEach( function(script) {
                 var num = place++;
 
                 logger.verbose( 'Running script #%d, %s.', num, script );
-                var start = process.hrtime();
 
                 try {
                     var instance = manager.add( script, false );
 
-                    instance.maxRecursion = maxRecursion;
+                    if( watch ) {
+                        instance.watch( true );
 
-                    if( log_level === ScriptorCLILogger.LogLevel.LOG_SILENT || options.cork ) {
-                        process.stdout.cork();
+                        instance.on( 'change', function() {
+                            logger.verbose( 'Re-running script #%d, %s.', num, script );
+                            run_script( instance, script, num );
+                        } );
                     }
 
-                    instance.call();
-
-                    logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
+                    run_script( instance, script, num );
 
                 } catch( error ) {
                     onError( error );

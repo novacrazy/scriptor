@@ -58,10 +58,6 @@ describe( 'new Manager()', function() {
                 assert( manager._scripts instanceof Object );
             }
         } );
-
-        it( 'should freeze script map', function() {
-            assert( Object.isFrozen( manager.scripts ) );
-        } );
     } );
 } );
 

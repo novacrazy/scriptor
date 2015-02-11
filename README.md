@@ -43,24 +43,25 @@ Or for the command line interface:
 ```
 $scriptor --help
 
-  Usage: scriptor [options] files...
+   Usage: scriptor [options] files...
 
-  Options:
+   Options:
 
-    -h, --help               output usage information
-    -V, --version            output the version number
-    -d, --dir <path>         Directory to run Scriptor in
-    -e, --ext                Disable use of custom extensions with AMD injection
-    -a, --async              Run scripts asynchronously
-    -q, --close              End the process when all scripts finish
-    -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
-    -l, --long_stack_traces  Display long stack trace for asynchronous errors
-    -r, --repeat <n>         Run script n times (in parallel if async)
-    -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
-    --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
-    -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
-    --cork                   Cork stdout before calling scripts
-    -s, --silent             Do not echo anything
+     -h, --help               output usage information
+     -V, --version            output the version number
+     -d, --dir <path>         Directory to run Scriptor in
+     -a, --async              Run scripts asynchronously
+     -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
+     -q, --close              End the process when all scripts finish
+     -l, --long_stack_traces  Display long stack trace for asynchronous errors
+     -r, --repeat <n>         Run script n times (in parallel if async)
+     -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
+     --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
+     -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
+     -w, --watch              Watch scripts for changes and re-run them when changed
+     --cork                   Cork stdout before calling scripts
+     -e, --ext                Disable use of custom extensions with AMD injection
+     -s, --silent             Do not echo anything
 ```
 
 # Scriptor Features

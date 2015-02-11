@@ -693,13 +693,13 @@ module Scriptor {
             return this;
         }
 
-        public watch() : boolean {
+        public watch( persistent : boolean = false ) : boolean {
             if( !this.watched ) {
                 var watcher : fs.FSWatcher;
 
                 try {
                     watcher = this._watcher = fs.watch( this.filename, {
-                        persistent: false
+                        persistent: persistent
                     } );
 
                 } catch( err ) {
@@ -722,14 +722,18 @@ module Scriptor {
                         if( event === 'change' && this.loaded ) {
                             this.unload();
 
+                            this.emit( 'change', event, filename );
+
                         } else if( event === 'rename' && filename !== this.filename ) {
+                            var old_filename = this._script.filename;
+
                             //A simple rename doesn't change file content, so just change the filename
                             //and leave the script loaded
                             this._script.filename = filename;
+
+                            this.emit( 'rename', old_filename, filename );
                         }
                     }
-
-                    this.emit( 'change', event, filename );
                 } );
 
                 watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
@@ -877,6 +881,14 @@ module Scriptor {
     export class ScriptAdapter extends Script {
         constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
+
+            //When a script is renamed, it should be reassigned in the manager
+            //Otherwise, when it's accessed at the new location, the manager just creates a new script
+            this.on( 'rename', ( event, oldname, newname ) => {
+                console.log( oldname, newname );
+                manager.scripts.set( newname, manager.scripts.get( oldname ) );
+                manager.scripts.delete( oldname );
+            } );
         }
 
         public include( filename : string, load : boolean = false ) : ScriptAdapter {
@@ -1302,8 +1314,8 @@ module Scriptor {
             return this._parent;
         }
 
-        get scripts() : ScriptAdapter[] {
-            return Object.freeze( this._scripts );
+        get scripts() : Map<string, ScriptAdapter> {
+            return this._scripts;
         }
 
         constructor( grandParent? : Module.IModule ) {

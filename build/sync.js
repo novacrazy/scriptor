@@ -571,13 +571,16 @@ var Scriptor;
             this.emit( 'change', 'change', this.filename );
             return this;
         };
-        Script.prototype.watch = function() {
+        Script.prototype.watch = function(persistent) {
             var _this = this;
+            if( persistent === void 0 ) {
+                persistent = false;
+            }
             if( !this.watched ) {
                 var watcher;
                 try {
                     watcher = this._watcher = fs.watch( this.filename, {
-                        persistent: false
+                        persistent: persistent
                     } );
                 }
                 catch( err ) {
@@ -596,14 +599,16 @@ var Scriptor;
                         filename = path.resolve( _this.baseUrl, filename );
                         if( event === 'change' && _this.loaded ) {
                             _this.unload();
+                            _this.emit( 'change', event, filename );
                         }
                         else if( event === 'rename' && filename !== _this.filename ) {
+                            var old_filename = _this._script.filename;
                             //A simple rename doesn't change file content, so just change the filename
                             //and leave the script loaded
                             _this._script.filename = filename;
+                            _this.emit( 'rename', old_filename, filename );
                         }
                     }
-                    _this.emit( 'change', event, filename );
                 } );
                 watcher.on( 'error', function(error) {
                     //In the event of an error, unload and unwatch
@@ -730,6 +735,13 @@ var Scriptor;
         function ScriptAdapter(manager, filename, parent) {
             _super.call( this, filename, parent );
             this.manager = manager;
+            //When a script is renamed, it should be reassigned in the manager
+            //Otherwise, when it's accessed at the new location, the manager just creates a new script
+            this.on( 'rename', function(event, oldname, newname) {
+                console.log( oldname, newname );
+                manager.scripts.set( newname, manager.scripts.get( oldname ) );
+                manager.scripts.delete( oldname );
+            } );
         }
 
         ScriptAdapter.prototype.include = function(filename, load) {
@@ -1120,7 +1132,7 @@ var Scriptor;
         } );
         Object.defineProperty( Manager.prototype, "scripts", {
             get:          function() {
-                return Object.freeze( this._scripts );
+                return this._scripts;
             },
             enumerable:   true,
             configurable: true
