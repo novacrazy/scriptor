@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 'use strict';
 
 process.title = 'Scriptor';
@@ -36,132 +38,163 @@ options
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-s, --silent', 'Do not echo anything' );
 
-module.exports = function(argv) {
-    //Start the timer before anything else (except top level stuff, but eh)
-    var program_start = process.hrtime();
+options.parse( process.argv );
 
-    options.parse( argv );
+var log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
 
-    var log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
+if( options.silent ) {
+    log_level = ScriptorCLILogger.LogLevel.LOG_SILENT;
 
-    if( options.silent ) {
-        log_level = ScriptorCLILogger.LogLevel.LOG_SILENT;
+    process.stdout.cork();
 
-        process.stdout.cork();
+} else if( options.verbose ) {
+    if( typeof options.verbose === 'boolean' ) {
+        log_level = ScriptorCLILogger.LogLevel.LOG_VERBOSE;
+    } else {
+        log_level = parseInt( options.verbose );
 
-    } else if( options.verbose ) {
-        if( typeof options.verbose === 'boolean' ) {
-            log_level = ScriptorCLILogger.LogLevel.LOG_VERBOSE;
-        } else {
-            log_level = parseInt( options.verbose );
+        if( isNaN( log_level ) ) {
+            log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
+        }
+    }
+}
 
-            if( isNaN( log_level ) ) {
-                log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
+var logger = new ScriptorCLILogger.Logger( log_level );
+
+var onError = function(error) {
+    logger.error( error.stack || error );
+    process.exit( EXIT_FAILURE );
+};
+
+var scripts = options.args;
+
+if( options.unique ) {
+    logger.info( 'Only executing unique scripts' );
+    var uniqueScripts = [];
+
+    scripts.forEach( function(script) {
+        if( uniqueScripts.indexOf( script ) === -1 ) {
+            uniqueScripts.push( script );
+        }
+    } );
+
+    scripts = uniqueScripts;
+}
+
+if( options.repeat ) {
+    var count = parseInt( options.repeat );
+
+    if( !isNaN( count ) && count > 1 ) {
+        logger.info( 'Repeating script execution %d times', count );
+
+        var newScripts = [];
+
+        for( var i = 0; i < count; i++ ) {
+            newScripts = newScripts.concat( scripts );
+        }
+
+        scripts = newScripts;
+    }
+}
+
+if( scripts.length > 0 ) {
+    var Scriptor = require( './../' + (options.async ? 'async.js' : 'sync.js') );
+
+    if( !options.ext ) {
+        logger.info( 'Custom extensions enabled.' );
+        Scriptor.enableCustomExtensions();
+    }
+
+    if( options.async && options.long_stack_traces ) {
+        Scriptor.Promise.longStackTraces();
+        logger.info( 'Long Stack Traces enabled' );
+    }
+
+    var manager = new Scriptor.Manager();
+
+    if( typeof options.dir === 'string' ) {
+        manager.chdir( options.dir );
+    }
+
+    var maxRecursion, concurrency;
+
+    if( options.max_recursion ) {
+        maxRecursion = parseInt( options.max_recursion );
+
+        if( options.concurrency ) {
+            concurrency = parseInt( options.concurrency );
+
+            if( concurrency > maxRecursion ) {
+                console.error( 'Concurrency set higher than max_recursion.\n\tScriptor will report false positives for exceeded recursion limits.' );
+                process.exit( EXIT_FAILURE );
             }
+
+        } else {
+            concurrency = maxRecursion + 1;
+        }
+
+    } else {
+        if( options.concurrency ) {
+            concurrency = parseInt( options.concurrency );
+
+            maxRecursion = concurrency - 1;
+
+            if( maxRecursion > ScriptorCommon.default_max_recursion ) {
+                logger.warn( 'Increasing max_recursion to %d to handle increased concurrency', maxRecursion );
+            }
+
+        } else {
+            maxRecursion = Scriptor.default_max_recursion;
+
+            concurrency = maxRecursion + 1;
         }
     }
 
-    var logger = new ScriptorCLILogger.Logger( log_level );
+    var script_start = process.hrtime();
 
-    var onError = function(error) {
-        logger.error( error.stack || error );
-        process.exit( EXIT_FAILURE );
-    };
+    var place = 0;
 
-    var scripts = options.args;
+    if( options.async ) {
+        logger.info( 'Asynchronous execution selected' );
+        var mapper = function(script) {
+            var num = place++;
 
-    if( options.unique ) {
-        logger.info( 'Only executing unique scripts' );
-        var uniqueScripts = [];
+            logger.verbose( 'Running script #%d, %s.', num, script );
+            var start = process.hrtime();
 
-        scripts.forEach( function(script) {
-            if( uniqueScripts.indexOf( script ) === -1 ) {
-                uniqueScripts.push( script );
+            var instance = manager.add( script, false );
+
+            instance.maxRecursion = maxRecursion;
+
+            if( log_level === ScriptorCLILogger.LogLevel.LOG_SILENT || options.cork ) {
+                process.stdout.cork();
+            }
+
+            return instance.call().then( function() {
+                logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
+            } );
+        };
+
+        logger.info( 'Concurrency set at %s', concurrency );
+        Scriptor.Promise.map( scripts, mapper, {
+            //options.concurrency is a string by default
+            concurrency: concurrency
+        } ).catch( onError ).then( function() {
+            logger.log( 'All scripts successfully executed in %s', diff_ms( script_start ) );
+            if( options.close ) {
+                process.exit( EXIT_SUCCESS );
             }
         } );
 
-        scripts = uniqueScripts;
-    }
+    } else {
+        logger.info( 'Synchronous execution selected.' );
+        scripts.forEach( function(script) {
+            var num = place++;
 
-    if( options.repeat ) {
-        var count = parseInt( options.repeat );
+            logger.verbose( 'Running script #%d, %s.', num, script );
+            var start = process.hrtime();
 
-        if( !isNaN( count ) && count > 1 ) {
-            logger.info( 'Repeating script execution %d times', count );
-
-            var newScripts = [];
-
-            for( var i = 0; i < count; i++ ) {
-                newScripts = newScripts.concat( scripts );
-            }
-
-            scripts = newScripts;
-        }
-    }
-
-    if( scripts.length > 0 ) {
-        var Scriptor = require( './../' + (options.async ? 'async.js' : 'sync.js') );
-
-        if( !options.ext ) {
-            logger.info( 'Custom extensions enabled.' );
-            Scriptor.enableCustomExtensions();
-        }
-
-        if( options.async && options.long_stack_traces ) {
-            Scriptor.Promise.longStackTraces();
-            logger.info( 'Long Stack Traces enabled' );
-        }
-
-        var manager = new Scriptor.Manager();
-
-        if( typeof options.dir === 'string' ) {
-            manager.chdir( options.dir );
-        }
-
-        var maxRecursion, concurrency;
-
-        if( options.max_recursion ) {
-            maxRecursion = parseInt( options.max_recursion );
-
-            if( options.concurrency ) {
-                concurrency = parseInt( options.concurrency );
-
-                if( concurrency > maxRecursion ) {
-                    console.error( 'Concurrency set higher than max_recursion.\n\tScriptor will report false positives for exceeded recursion limits.' );
-                    process.exit( EXIT_FAILURE );
-                }
-
-            } else {
-                concurrency = maxRecursion + 1;
-            }
-
-        } else {
-            if( options.concurrency ) {
-                concurrency = parseInt( options.concurrency );
-
-                maxRecursion = concurrency - 1;
-
-                if( maxRecursion > ScriptorCommon.default_max_recursion ) {
-                    logger.warn( 'Increasing max_recursion to %d to handle increased concurrency', maxRecursion );
-                }
-
-            } else {
-                maxRecursion = Scriptor.default_max_recursion;
-
-                concurrency = maxRecursion + 1;
-            }
-        }
-
-        var place = 0;
-
-        if( options.async ) {
-            logger.info( 'Asynchronous execution selected' );
-            var mapper = function(script) {
-                var num = place++;
-
-                logger.verbose( 'Running script #%d, %s.', num, script );
-                var start = process.hrtime();
-
+            try {
                 var instance = manager.add( script, false );
 
                 instance.maxRecursion = maxRecursion;
@@ -170,56 +203,23 @@ module.exports = function(argv) {
                     process.stdout.cork();
                 }
 
-                return instance.call().then( function() {
-                    logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
-                } );
-            };
+                instance.call();
 
-            logger.info( 'Concurrency set at %s', concurrency );
-            Scriptor.Promise.map( scripts, mapper, {
-                //options.concurrency is a string by default
-                concurrency: concurrency
-            } ).catch( onError ).then( function() {
-                logger.log( 'All scripts successfully executed in %s', diff_ms( program_start ) );
-                if( options.close ) {
-                    process.exit( EXIT_SUCCESS );
-                }
-            } );
+                logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
 
-        } else {
-            logger.info( 'Synchronous execution selected.' );
-            scripts.forEach( function(script) {
-                var num = place++;
-
-                logger.verbose( 'Running script #%d, %s.', num, script );
-                var start = process.hrtime();
-
-                try {
-                    var instance = manager.add( script, false );
-
-                    instance.maxRecursion = maxRecursion;
-
-                    if( log_level === ScriptorCLILogger.LogLevel.LOG_SILENT || options.cork ) {
-                        process.stdout.cork();
-                    }
-
-                    instance.call();
-
-                    logger.verbose( 'Finished script #%d, %s in %s.', num, script, diff_ms( start ) );
-
-                } catch( error ) {
-                    onError( error );
-                }
-            } );
-
-            logger.log( 'All scripts successfully executed in %s', diff_ms( program_start ) );
-
-            if( options.close ) {
-                process.exit( EXIT_SUCCESS );
+            } catch( error ) {
+                onError( error );
             }
-        }
+        } );
 
-    } else {
-        options.help();
+        logger.log( 'All scripts successfully executed in %s', diff_ms( script_start ) );
+
+        if( options.close ) {
+            process.exit( EXIT_SUCCESS );
+        }
     }
-};
+
+} else {
+    options.help();
+}
+

@@ -1,6 +1,6 @@
 {
   "name": "scriptor",
-  "version": "2.0.0-beta.6",
+  "version": "2.0.0-beta.7",
   "description": "Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process.",
   "main": "index.js",
   "keywords": [
@@ -18,7 +18,7 @@
     "promises"
   ],
   "bin": {
-    "scriptor": "bin/scriptor"
+    "scriptor": "bin/scriptor.js"
   },
   "author": "Aaron Trent <novacrazy@gmail.com>",
   "license": "MIT",
