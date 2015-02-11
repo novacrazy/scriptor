@@ -1,6 +1,7 @@
 //grunt-start
 /// <reference path="Module.ts" />
 /// <reference path="async.ts" />
+/// <reference path="cli_logger.ts" />
 /// <reference path="common.ts" />
 /// <reference path="map.ts" />
 /// <reference path="sync.ts" />

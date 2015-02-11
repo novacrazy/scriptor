@@ -117,6 +117,8 @@ module ScriptorCommon {
         return newObj;
     }
 
+    export var default_max_recursion : number = 9;
+
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     export var default_dependencies : string[] = ['require', 'exports', 'module', 'imports'];
 }

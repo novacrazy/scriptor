@@ -1,12 +1,13 @@
 {
   "name": "scriptor",
-  "version": "2.0.0-beta.5",
+  "version": "2.0.0-beta.6",
   "description": "Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process.",
   "main": "index.js",
   "keywords": [
     "async",
+    "amd",
+
     "script",
-    "server",
     "lazy",
     "evaluation",
     "module",
@@ -16,6 +17,9 @@
     "transform",
     "promises"
   ],
+  "bin": {
+    "scriptor": "bin/scriptor"
+  },
   "author": "Aaron Trent <novacrazy@gmail.com>",
   "license": "MIT",
   "repository": {
@@ -39,6 +43,7 @@
     "test": "mocha -C -b test"
   },
   "dependencies": {
-    "bluebird": "^2.7.1"
+    "bluebird": "^2.9.8",
+    "commander": "^2.6.0"
   }
 }

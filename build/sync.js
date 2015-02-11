@@ -40,6 +40,7 @@ var __extends = this.__extends || function(d, b) {
         d.prototype = new __();
     };
 var fs = require( 'fs' );
+var util = require( 'util' );
 var assert = require( 'assert' );
 var url = require( 'url' );
 var path = require( 'path' );
@@ -51,6 +52,7 @@ var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
     Scriptor.default_dependencies = Common.default_dependencies;
+    Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.extensions = {};
     function enableCustomExtensions(enable) {
         if( enable === void 0 ) {
@@ -81,7 +83,7 @@ var Scriptor;
         function ScriptBase(parent) {
             _super.call( this );
             this._recursion = 0;
-            this._maxRecursion = 1;
+            this._maxRecursion = Scriptor.default_max_recursion;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
         }
@@ -97,7 +99,8 @@ var Scriptor;
             }
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( 'Script recursion limit reached at ' + this._recursion );
+                throw new RangeError( util.format( 'Script recursion limit reached at %d for script %s',
+                    this._recursion, this.filename ) );
             }
             try {
                 //This is placed in the try-block so the release is mirrored in the finally block
@@ -388,6 +391,7 @@ var Scriptor;
                         result = this._require( id );
                     }
                     else {
+                        script.maxRecursion = this.maxRecursion;
                         result = script.exports();
                     }
                 }
@@ -1132,7 +1136,8 @@ var Scriptor;
             filename = path.resolve( this.cwd, filename );
             var script = this._scripts.get( filename );
             if( script === void 0 ) {
-                script = new ScriptAdapter( this, filename, this._parent );
+                script = new ScriptAdapter( this, null, this._parent );
+                script.load( filename, watch );
                 this._scripts.set( filename, script );
             }
             //Even if the script is added, this allows it to be watched, though not unwatched.

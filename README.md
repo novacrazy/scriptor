@@ -13,6 +13,8 @@ A script is defined as a file which can be 'required' via CommonJS `require` fun
 
 Additionally, Scriptor includes a Manager class that helps to coordinate many scripts and even allow them to cross-reference each other to form more complex multi-script applications.
 
+As of Version 2.0, Scriptor now has a command line interface capable of running Scriptor AMD scripts either synchronously or asynchronously. It can effectively replace `node` in the case of AMD scripts. By default, it uses the custom extension handler to inject the define function and load files.
+
 # Purpose
 The initial purpose of Scriptor was to create a system for writing simple scripts that generate web pages. It has since become a standalone library.
 
@@ -30,11 +32,36 @@ The initial purpose of Scriptor was to create a system for writing simple script
 * [License](#license)
 
 # Quick Start
-`npm install scriptor`
+`npm install scriptor` or `npm install -g scriptor`
 
 Then:
 
 `var Scriptor = require('scriptor');`
+
+Or for the command line interface:
+
+```
+$scriptor --help
+
+  Usage: scriptor [options] files...
+
+  Options:
+
+    -h, --help               output usage information
+    -V, --version            output the version number
+    -d, --dir <path>         Directory to run Scriptor in
+    -e, --ext                Disable use of custom extensions with AMD injection
+    -a, --async              Run scripts asynchronously
+    -q, --close              End the process when all scripts finish
+    -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
+    -l, --long_stack_traces  Display long stack trace for asynchronous errors
+    -r, --repeat <n>         Run script n times (in parallel if async)
+    -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
+    --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
+    -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
+    --cork                   Cork stdout before calling scripts
+    -s, --silent             Do not echo anything
+```
 
 # Scriptor Features
 

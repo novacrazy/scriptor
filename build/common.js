@@ -133,6 +133,7 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.clone = clone;
+    ScriptorCommon.default_max_recursion = 9;
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
 })( ScriptorCommon || (ScriptorCommon = {}) );

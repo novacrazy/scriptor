@@ -3,6 +3,7 @@
  */
 
 import fs = require('fs');
+import util = require('util');
 import assert = require('assert');
 import url = require('url');
 import path = require('path');
@@ -33,6 +34,8 @@ module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
     export var default_dependencies : string[] = Common.default_dependencies;
+
+    export var default_max_recursion : number = Common.default_max_recursion;
 
     export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<any>} = {};
 
@@ -103,7 +106,7 @@ module Scriptor {
     export class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
-        protected _maxRecursion : number = 1;
+        protected _maxRecursion : number = default_max_recursion;
 
         public imports : {[key : string] : any} = {};
 
@@ -119,7 +122,7 @@ module Scriptor {
 
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
-                return Promise.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion ) );
+                return Promise.reject( new RangeError( util.format( 'Script recursion limit reached at %d for script %s', this._recursion, this.filename ) ) );
 
             } else {
                 return new Promise( ( resolve, reject ) => {
@@ -453,6 +456,8 @@ module Scriptor {
                         result = this._require( id );
 
                     } else {
+                        script.maxRecursion = this.maxRecursion;
+
                         result = script.exports();
                     }
 
@@ -1315,7 +1320,9 @@ module Scriptor {
             var script : ScriptAdapter = this._scripts.get( filename );
 
             if( script === void 0 ) {
-                script = new ScriptAdapter( this, filename, this._parent );
+                script = new ScriptAdapter( this, null, this._parent );
+
+                script.load( filename, watch );
 
                 this._scripts.set( filename, script );
             }
