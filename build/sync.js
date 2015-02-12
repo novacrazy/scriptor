@@ -408,6 +408,9 @@ var Scriptor;
                     else if( id === 'imports' ) {
                         result = Object.freeze( this.imports );
                     }
+                    else if( id === 'Scriptor' ) {
+                        return Scriptor;
+                    }
                     else if( this._loadCache.has( id ) ) {
                         result = this._loadCache.get( id );
                     }

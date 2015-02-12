@@ -457,6 +457,9 @@ var Scriptor;
                     else if( id === 'Promise' ) {
                         return Promise;
                     }
+                    else if( id === 'Scriptor' ) {
+                        return Scriptor;
+                    }
                     else if( this._loadCache.has( id ) ) {
                         result = this._loadCache.get( id );
                     }

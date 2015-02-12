@@ -40,16 +40,20 @@ options
 module.exports = function(argv) {
     options.parse( argv );
 
+    //The default log_level is LOG_NORMAL
     var log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
 
+    //If silent mode is enabled, it overrides verbose mode
     if( options.silent ) {
         log_level = ScriptorCLILogger.LogLevel.LOG_SILENT;
 
         process.stdout.cork();
 
     } else if( options.verbose ) {
+        //If using the -v shorthand, it is essentially --verbose 2
         if( typeof options.verbose === 'boolean' ) {
             log_level = ScriptorCLILogger.LogLevel.LOG_VERBOSE;
+
         } else {
             log_level = parseInt( options.verbose );
 
@@ -59,8 +63,10 @@ module.exports = function(argv) {
         }
     }
 
+    //Create the logger
     var logger = new ScriptorCLILogger.Logger( log_level );
 
+    //Unhandled errors are printed and the process is killed
     var onError = function(error) {
         logger.error( error.stack || error );
         process.exit( EXIT_FAILURE );
@@ -118,6 +124,8 @@ module.exports = function(argv) {
 
         var maxRecursion, concurrency, watch;
 
+        //Basically, if both max_recursion and concurrency are set, they have to play along
+        //Otherwise, each will increase or whatever to not crash the application
         if( options.max_recursion ) {
             maxRecursion = parseInt( options.max_recursion );
 
@@ -150,6 +158,7 @@ module.exports = function(argv) {
             }
         }
 
+        //Close overrides watch, so if it is set to close, don't even both watching the scripts
         if( options.watch && !options.close ) {
             watch = true;
         }
@@ -197,11 +206,10 @@ module.exports = function(argv) {
             };
 
             logger.info( 'Concurrency set at %s', concurrency );
-            Scriptor.Promise.map( scripts, mapper, {
-                //options.concurrency is a string by default
-                concurrency: concurrency
-            } ).catch( onError ).then( function() {
+
+            Scriptor.Promise.map( scripts, mapper, {concurrency: concurrency} ).catch( onError ).then( function() {
                 logger.log( 'All scripts successfully executed in %s', diff_ms( script_start ) );
+
                 if( options.close ) {
                     process.exit( EXIT_SUCCESS );
                 }
@@ -209,6 +217,7 @@ module.exports = function(argv) {
 
         } else {
             logger.info( 'Synchronous execution selected.' );
+
             run_script = function(instance, script, num) {
                 var start = process.hrtime();
 
