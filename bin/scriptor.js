@@ -6,7 +6,7 @@ var options = require( 'commander' );
 var package_json = require( './../package.json' );
 
 var ScriptorCommon = require( './../build/common.js' );
-var ScriptorCLILogger = require( './../build/cli_logger.js' );
+var ScriptorCLI = require( './../build/cli.js' );
 
 function diff_ms(start) {
     var diff = process.hrtime( start );
@@ -41,28 +41,28 @@ module.exports = function(argv) {
     options.parse( argv );
 
     //The default log_level is LOG_NORMAL
-    var log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
+    var log_level = ScriptorCLI.LogLevel.LOG_NORMAL;
 
     //If silent mode is enabled, it overrides verbose mode
     if( options.silent ) {
-        log_level = ScriptorCLILogger.LogLevel.LOG_SILENT;
+        log_level = ScriptorCLI.LogLevel.LOG_SILENT;
 
     } else if( options.verbose ) {
         //If using the -v shorthand, it is essentially --verbose 2
         if( typeof options.verbose === 'boolean' ) {
-            log_level = ScriptorCLILogger.LogLevel.LOG_VERBOSE;
+            log_level = ScriptorCLI.LogLevel.LOG_VERBOSE;
 
         } else {
             log_level = parseInt( options.verbose );
 
             if( isNaN( log_level ) ) {
-                log_level = ScriptorCLILogger.LogLevel.LOG_NORMAL;
+                log_level = ScriptorCLI.LogLevel.LOG_NORMAL;
             }
         }
     }
 
     //Create the logger
-    var logger = new ScriptorCLILogger.Logger( log_level );
+    var logger = new ScriptorCLI.Logger( log_level );
 
     //Unhandled errors are printed and the process is killed
     var onError = function(error) {
@@ -175,7 +175,7 @@ module.exports = function(argv) {
 
                 instance.maxRecursion = maxRecursion;
 
-                if( log_level === ScriptorCLILogger.LogLevel.LOG_SILENT || options.cork ) {
+                if( log_level === ScriptorCLI.LogLevel.LOG_SILENT || options.cork ) {
                     process.stdout.cork();
                 }
 
@@ -221,7 +221,7 @@ module.exports = function(argv) {
 
                 instance.maxRecursion = maxRecursion;
 
-                if( log_level === ScriptorCLILogger.LogLevel.LOG_SILENT || options.cork ) {
+                if( log_level === ScriptorCLI.LogLevel.LOG_SILENT || options.cork ) {
                     process.stdout.cork();
                 }
 

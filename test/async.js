@@ -373,3 +373,43 @@ describe( 'Advanced Script with asynchronous plugin', function() {
         } );
     } );
 } );
+
+describe( 'ES6 Scripts with co', function() {
+    var script, name = './test/scripts/es6_test.js';
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy evaluation)', function(done) {
+        script.exports().then( function() {
+            assert( script.loaded );
+        } ).then( done );
+    } );
+
+    it( 'should have exported the result', function(done) {
+        script.exports().then( function(script_exports) {
+            assert.strictEqual( typeof script_exports, 'string' );
+        } ).then( done );
+    } );
+
+    it( 'should return the result even though it is not a function to call', function(done) {
+        script.call().then( function(result) {
+            assert.strictEqual( result, '' );
+        } ).then( done );
+    } );
+} );

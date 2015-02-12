@@ -49,18 +49,9 @@ var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
+var AsyncHelpers = require( './async_helpers' );
+var Co = require( './co' );
 var readFile = Promise.promisify( fs.readFile );
-function isThenable(obj) {
-    return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
-}
-function tryPromise(value) {
-    if( isThenable( value ) ) {
-        return value;
-    }
-    else {
-        return Promise.resolve( value );
-    }
-}
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -326,12 +317,12 @@ var Scriptor;
             }
             if( typeof factory === 'function' ) {
                 return this._require( deps ).then( function(resolvedDeps) {
-                    return factory.apply( _this._script.exports, resolvedDeps );
+                    return Co.co.call( _this._script.exports, factory, resolvedDeps );
                 } );
             }
             else {
                 //On the off chance the function factory is a promise, run it through again if need be
-                return tryPromise( factory ).then( function(resolvedFactory) {
+                return AsyncHelpers.tryPromise( factory ).then( function(resolvedFactory) {
                     if( typeof factory === 'function' ) {
                         return _this._runFactory( id, deps, resolvedFactory );
                     }
@@ -484,7 +475,7 @@ var Scriptor;
                     }
                 }
             }
-            if( !isThenable( result ) ) {
+            if( !AsyncHelpers.isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
             if( typeof cb === 'function' ) {
@@ -580,7 +571,8 @@ var Scriptor;
             //Use custom extension if available
             if( Scriptor.extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function() {
+                return AsyncHelpers.tryPromise( Scriptor.extensions[ext]( this._script,
+                    this.filename ) ).then( function() {
                     _this._script.loaded = true;
                     _this.emit( 'loaded', _this.loaded );
                 } );
@@ -821,7 +813,6 @@ var Scriptor;
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
             this.on( 'rename', function(event, oldname, newname) {
-                console.log( oldname, newname );
                 manager.scripts.set( newname, manager.scripts.get( oldname ) );
                 manager.scripts.delete( oldname );
             } );
@@ -1154,7 +1145,7 @@ var Scriptor;
         function ResolvedReference(value) {
             var _this = this;
             _super.call( this );
-            this._resolver = tryPromise( value ).then( function(result) {
+            this._resolver = AsyncHelpers.tryPromise( value ).then( function(result) {
                 if( typeof result === 'object' ) {
                     _this._value = Object.freeze( result );
                 }

@@ -5,7 +5,7 @@
 import util = require('util');
 import events = require('events');
 
-module ScriptorCLILogger {
+module ScriptorCLI {
 
     export enum LogLevel {
         LOG_ERROR = -2,
@@ -83,4 +83,4 @@ module ScriptorCLILogger {
     }
 }
 
-export = ScriptorCLILogger;
+export = ScriptorCLI;

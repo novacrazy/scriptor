@@ -15,20 +15,10 @@ import MapAdapter = require('./map');
 
 import Promise = require('bluebird');
 
+import AsyncHelpers = require('./async_helpers');
+import Co = require('./co');
+
 var readFile = Promise.promisify( fs.readFile );
-
-function isThenable( obj : any ) : boolean {
-    return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
-}
-
-function tryPromise( value : any ) {
-    if( isThenable( value ) ) {
-        return value;
-
-    } else {
-        return Promise.resolve( value );
-    }
-}
 
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
@@ -322,12 +312,12 @@ module Scriptor {
 
             if( typeof factory === 'function' ) {
                 return this._require( deps ).then( ( resolvedDeps : any[] ) => {
-                    return factory.apply( this._script.exports, resolvedDeps );
+                    return Co.co.call( this._script.exports, factory, resolvedDeps );
                 } );
 
             } else {
                 //On the off chance the function factory is a promise, run it through again if need be
-                return tryPromise( factory ).then( ( resolvedFactory ) => {
+                return AsyncHelpers.tryPromise( factory ).then( ( resolvedFactory ) => {
                     if( typeof factory === 'function' ) {
                         return this._runFactory( id, deps, resolvedFactory );
 
@@ -509,7 +499,7 @@ module Scriptor {
                 }
             }
 
-            if( !isThenable( result ) ) {
+            if( !AsyncHelpers.isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
 
@@ -625,7 +615,7 @@ module Scriptor {
             if( extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                return tryPromise( extensions[ext]( this._script, this.filename ) ).then( () => {
+                return AsyncHelpers.tryPromise( extensions[ext]( this._script, this.filename ) ).then( () => {
                     this._script.loaded = true;
 
                     this.emit( 'loaded', this.loaded );
@@ -888,7 +878,6 @@ module Scriptor {
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
             this.on( 'rename', ( event, oldname, newname ) => {
-                console.log( oldname, newname );
                 manager.scripts.set( newname, manager.scripts.get( oldname ) );
                 manager.scripts.delete( oldname );
             } );
@@ -1232,7 +1221,7 @@ module Scriptor {
         constructor( value : any ) {
             super();
 
-            this._resolver = tryPromise( value ).then( ( result ) => {
+            this._resolver = AsyncHelpers.tryPromise( value ).then( ( result ) => {
                 if( typeof result === 'object' ) {
                     this._value = Object.freeze( result );
 
