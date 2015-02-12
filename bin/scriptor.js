@@ -47,8 +47,6 @@ module.exports = function(argv) {
     if( options.silent ) {
         log_level = ScriptorCLILogger.LogLevel.LOG_SILENT;
 
-        process.stdout.cork();
-
     } else if( options.verbose ) {
         //If using the -v shorthand, it is essentially --verbose 2
         if( typeof options.verbose === 'boolean' ) {
