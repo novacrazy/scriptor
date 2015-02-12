@@ -13,7 +13,7 @@ import AsyncHelpers = require('./async_helpers');
 
 var slice = Array.prototype.slice;
 
-module ScriptorES6_Compat {
+module ScriptorCo {
 
     export function wrap( fn : Function ) {
         return function() {
@@ -166,4 +166,4 @@ module ScriptorES6_Compat {
 
 }
 
-export = ScriptorES6_Compat;
+export = ScriptorCo;
