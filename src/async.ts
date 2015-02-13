@@ -15,10 +15,32 @@ import MapAdapter = require('./map');
 
 import Promise = require('bluebird');
 
-import AsyncHelpers = require('./async_helpers');
-import Co = require('./co');
+var co : any = require( 'co' );
 
 var readFile = Promise.promisify( fs.readFile );
+
+function isThenable( obj : any ) : boolean {
+    return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
+}
+
+function tryPromise( value : any ) {
+    if( isThenable( value ) ) {
+        return value;
+
+    } else {
+        return Promise.resolve( value );
+    }
+}
+
+//Taken from tj/co
+function isGeneratorFunction( obj ) {
+    var constructor = obj.constructor;
+    var proto = constructor.prototype;
+    var name = constructor.displayName || constructor.name;
+    var nameLooksRight = 'GeneratorFunction' == name;
+    var methodsLooksRight = 'function' == typeof proto.next && 'function' == typeof proto.throw;
+    return nameLooksRight || methodsLooksRight;
+}
 
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
@@ -311,13 +333,17 @@ module Scriptor {
             }
 
             if( typeof factory === 'function' ) {
+                if( isGeneratorFunction( factory ) ) {
+                    factory = co.wrap( factory );
+                }
+
                 return this._require( deps ).then( ( resolvedDeps : any[] ) => {
-                    return Co.co.call( this._script.exports, factory, resolvedDeps );
+                    return factory.apply( this._script.exports, resolvedDeps );
                 } );
 
             } else {
                 //On the off chance the function factory is a promise, run it through again if need be
-                return AsyncHelpers.tryPromise( factory ).then( ( resolvedFactory ) => {
+                return tryPromise( factory ).then( ( resolvedFactory ) => {
                     if( typeof factory === 'function' ) {
                         return this._runFactory( id, deps, resolvedFactory );
 
@@ -499,7 +525,7 @@ module Scriptor {
                 }
             }
 
-            if( !AsyncHelpers.isThenable( result ) ) {
+            if( !isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
 
@@ -615,7 +641,7 @@ module Scriptor {
             if( extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                return AsyncHelpers.tryPromise( extensions[ext]( this._script, this.filename ) ).then( () => {
+                return tryPromise( extensions[ext]( this._script, this.filename ) ).then( () => {
                     this._script.loaded = true;
 
                     this.emit( 'loaded', this.loaded );
@@ -1221,7 +1247,7 @@ module Scriptor {
         constructor( value : any ) {
             super();
 
-            this._resolver = AsyncHelpers.tryPromise( value ).then( ( result ) => {
+            this._resolver = tryPromise( value ).then( ( result ) => {
                 if( typeof result === 'object' ) {
                     this._value = Object.freeze( result );
 

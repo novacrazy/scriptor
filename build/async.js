@@ -49,9 +49,28 @@ var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
-var AsyncHelpers = require( './async_helpers' );
-var Co = require( './co' );
+var co = require( 'co' );
 var readFile = Promise.promisify( fs.readFile );
+function isThenable(obj) {
+    return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
+}
+function tryPromise(value) {
+    if( isThenable( value ) ) {
+        return value;
+    }
+    else {
+        return Promise.resolve( value );
+    }
+}
+//Taken from tj/co
+function isGeneratorFunction(obj) {
+    var constructor = obj.constructor;
+    var proto = constructor.prototype;
+    var name = constructor.displayName || constructor.name;
+    var nameLooksRight = 'GeneratorFunction' == name;
+    var methodsLooksRight = 'function' == typeof proto.next && 'function' == typeof proto.throw;
+    return nameLooksRight || methodsLooksRight;
+}
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -316,13 +335,16 @@ var Scriptor;
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
             if( typeof factory === 'function' ) {
+                if( isGeneratorFunction( factory ) ) {
+                    factory = co.wrap( factory );
+                }
                 return this._require( deps ).then( function(resolvedDeps) {
-                    return Co.co.call( _this._script.exports, factory, resolvedDeps );
+                    return factory.apply( _this._script.exports, resolvedDeps );
                 } );
             }
             else {
                 //On the off chance the function factory is a promise, run it through again if need be
-                return AsyncHelpers.tryPromise( factory ).then( function(resolvedFactory) {
+                return tryPromise( factory ).then( function(resolvedFactory) {
                     if( typeof factory === 'function' ) {
                         return _this._runFactory( id, deps, resolvedFactory );
                     }
@@ -475,7 +497,7 @@ var Scriptor;
                     }
                 }
             }
-            if( !AsyncHelpers.isThenable( result ) ) {
+            if( !isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
             if( typeof cb === 'function' ) {
@@ -571,8 +593,7 @@ var Scriptor;
             //Use custom extension if available
             if( Scriptor.extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                return AsyncHelpers.tryPromise( Scriptor.extensions[ext]( this._script,
-                    this.filename ) ).then( function() {
+                return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function() {
                     _this._script.loaded = true;
                     _this.emit( 'loaded', _this.loaded );
                 } );
@@ -1145,7 +1166,7 @@ var Scriptor;
         function ResolvedReference(value) {
             var _this = this;
             _super.call( this );
-            this._resolver = AsyncHelpers.tryPromise( value ).then( function(result) {
+            this._resolver = tryPromise( value ).then( function(result) {
                 if( typeof result === 'object' ) {
                     _this._value = Object.freeze( result );
                 }
