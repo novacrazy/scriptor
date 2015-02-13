@@ -66,8 +66,8 @@ function tryPromise(value) {
 function isGeneratorFunction(obj) {
     var proto = obj.constructor.prototype;
     var name = obj.constructor.displayName || obj.constructor.name;
-    var nameLooksRight = 'GeneratorFunction' == name;
-    var methodsLooksRight = 'function' == typeof proto.next && 'function' == typeof proto.throw;
+    var nameLooksRight = 'GeneratorFunction' === name;
+    var methodsLooksRight = 'function' === typeof proto.next && 'function' === typeof proto.throw;
     return nameLooksRight || methodsLooksRight;
 }
 var Scriptor;
