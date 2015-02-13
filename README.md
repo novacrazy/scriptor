@@ -1,3 +1,5 @@
+# NOTE: Documentation is in progress for version 2.0, for version 1.x documentation see [HERE](https://github.com/novacrazy/scriptor/blob/8e95250dfc5d8a6987d9522c30759ad857a2e475/README.md)
+
 Scriptor
 ========
 
