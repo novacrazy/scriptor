@@ -63,12 +63,20 @@ function tryPromise(value) {
     }
 }
 //Taken from tj/co
+function isGenerator(obj) {
+    return 'function' === typeof obj.next && 'function' === typeof obj.throw;
+}
+//Taken from tj/co pr#198
 function isGeneratorFunction(obj) {
-    var proto = obj.constructor.prototype;
-    var name = obj.constructor.displayName || obj.constructor.name;
-    var nameLooksRight = 'GeneratorFunction' === name;
-    var methodsLooksRight = 'function' === typeof proto.next && 'function' === typeof proto.throw;
-    return nameLooksRight || methodsLooksRight;
+    if( !obj.constructor ) {
+        return false;
+    }
+    else if( 'GeneratorFunction' === obj.constructor.name || 'GeneratorFunction' === obj.constructor.displayName ) {
+        return true;
+    }
+    else {
+        return isGenerator( obj.constructor.prototype );
+    }
 }
 var Scriptor;
 (function(Scriptor) {

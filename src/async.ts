@@ -33,12 +33,20 @@ function tryPromise( value : any ) {
 }
 
 //Taken from tj/co
-function isGeneratorFunction( obj ) {
-    var proto = obj.constructor.prototype;
-    var name = obj.constructor.displayName || obj.constructor.name;
-    var nameLooksRight = 'GeneratorFunction' === name;
-    var methodsLooksRight = 'function' === typeof proto.next && 'function' === typeof proto.throw;
-    return nameLooksRight || methodsLooksRight;
+function isGenerator( obj : any ) {
+    return 'function' === typeof obj.next && 'function' === typeof obj.throw;
+}
+
+//Taken from tj/co pr#198
+function isGeneratorFunction( obj : any ) {
+    if( !obj.constructor ) {
+        return false;
+    } else if( 'GeneratorFunction' === obj.constructor.name ||
+               'GeneratorFunction' === obj.constructor.displayName ) {
+        return true;
+    } else {
+        return isGenerator( obj.constructor.prototype );
+    }
 }
 
 module Scriptor {
