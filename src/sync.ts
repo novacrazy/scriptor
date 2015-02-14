@@ -72,7 +72,7 @@ module Scriptor {
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
     //well, mixed in. So ScriptBase just handles the most basic Script functions
-    export class ScriptBase extends events.EventEmitter {
+    class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
         protected _maxRecursion : number = default_max_recursion;
@@ -211,7 +211,7 @@ module Scriptor {
         }
     }
 
-    export class AMDScript extends ScriptBase implements IAMDScriptBase {
+    class AMDScript extends ScriptBase implements IAMDScriptBase {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
 
@@ -807,7 +807,7 @@ module Scriptor {
         }
     }
 
-    export class ScriptAdapter extends Script {
+    class ScriptAdapter extends Script {
         constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
 
@@ -881,7 +881,7 @@ module Scriptor {
         close( recursive? );
     }
 
-    export class ReferenceBase extends events.EventEmitter {
+    class ReferenceBase extends events.EventEmitter {
         protected _onChange : ( event : string, filename : string ) => any;
         protected _value : any = void 0;
         protected _ran : boolean = false;
@@ -992,7 +992,7 @@ module Scriptor {
         }
     }
 
-    export class TransformReference extends ReferenceBase implements IReference {
+    class TransformReference extends ReferenceBase implements IReference {
         constructor( private _ref : IReference, private _transform : ITransformFunction ) {
             super();
 
@@ -1061,7 +1061,7 @@ module Scriptor {
         }
     }
 
-    export class JoinedTransformReference extends ReferenceBase implements IReference {
+    class JoinedTransformReference extends ReferenceBase implements IReference {
         constructor( private _left : IReference, private _right : IReference,
                      private _transform : ITransformFunction = identity ) {
             super();
@@ -1142,7 +1142,7 @@ module Scriptor {
         }
     }
 
-    export class ResolvedReference extends ReferenceBase implements IReference {
+    class ResolvedReference extends ReferenceBase implements IReference {
         constructor( value : any ) {
             super();
 

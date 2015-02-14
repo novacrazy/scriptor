@@ -224,7 +224,6 @@ var Scriptor;
         };
         return ScriptBase;
     })( events.EventEmitter );
-    Scriptor.ScriptBase = ScriptBase;
     var AMDScript = (function(_super) {
         __extends( AMDScript, _super );
         function AMDScript(parent) {
@@ -473,7 +472,6 @@ var Scriptor;
         };
         return AMDScript;
     })( ScriptBase );
-    Scriptor.AMDScript = AMDScript;
     var Script = (function(_super) {
         __extends( Script, _super );
         function Script(filename, parent) {
@@ -765,7 +763,7 @@ var Scriptor;
         };
         return ScriptAdapter;
     })( Script );
-    Scriptor.ScriptAdapter = ScriptAdapter;
+
     function load(filename, watch) {
         if( watch === void 0 ) {
             watch = true;
@@ -803,7 +801,6 @@ var Scriptor;
 
         return ReferenceBase;
     })( events.EventEmitter );
-    Scriptor.ReferenceBase = ReferenceBase;
     var Reference = (function(_super) {
         __extends( Reference, _super );
         function Reference(_script, _args) {
@@ -969,7 +966,6 @@ var Scriptor;
         };
         return TransformReference;
     })( ReferenceBase );
-    Scriptor.TransformReference = TransformReference;
     var JoinedTransformReference = (function(_super) {
         __extends( JoinedTransformReference, _super );
         function JoinedTransformReference(_left, _right, _transform) {
@@ -1052,7 +1048,6 @@ var Scriptor;
         };
         return JoinedTransformReference;
     })( ReferenceBase );
-    Scriptor.JoinedTransformReference = JoinedTransformReference;
     var ResolvedReference = (function(_super) {
         __extends( ResolvedReference, _super );
         function ResolvedReference(value) {
@@ -1103,7 +1098,6 @@ var Scriptor;
         };
         return ResolvedReference;
     })( ReferenceBase );
-    Scriptor.ResolvedReference = ResolvedReference;
     /**** BEGIN SECTION MANAGER ****/
     var Manager = (function() {
         function Manager(grandParent) {
