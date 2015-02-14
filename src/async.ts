@@ -23,7 +23,7 @@ function isThenable( obj : any ) : boolean {
     return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
 }
 
-function tryPromise( value : any ) {
+function tryPromise( value : any ) : Promise<any> {
     if( isThenable( value ) ) {
         return value;
 
@@ -33,12 +33,12 @@ function tryPromise( value : any ) {
 }
 
 //Taken from tj/co
-function isGenerator( obj : any ) {
+function isGenerator( obj : any ) : boolean {
     return 'function' === typeof obj.next && 'function' === typeof obj.throw;
 }
 
 //Taken from tj/co pr#198
-function isGeneratorFunction( obj : any ) {
+function isGeneratorFunction( obj : any ) : boolean {
     if( !obj.constructor ) {
         return false;
     } else if( 'GeneratorFunction' === obj.constructor.name ||
@@ -412,7 +412,7 @@ module Scriptor {
                                         return Promise.promisify( obj );
 
                                     } else if( typeof obj === 'object' ) {
-                                        var newObj = Common.clone( obj );
+                                        var newObj = Common.shallowCloneObject( obj );
                                         return Promise.promisifyAll( newObj );
 
                                     } else {

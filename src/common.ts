@@ -92,21 +92,17 @@ module ScriptorCommon {
         return content;
     }
 
-    export var AMD_Header = "if(typeof define !== 'function') {" +
-                            "\n\tvar define;" +
-                            "\n\tif(typeof module.define === 'function') {" +
-                            "\n\t\tdefine = module.define;" +
-                            "\n\t} else {" +
-                            "\n\t\tdefine = require('amdefine');" +
-                            "\n\t}" +
+    export var AMD_Header = "if(typeof define !== 'function' " +
+                            "&& typeof module.define === 'function') {" +
+                            "\n\tvar define = module.define;" +
                             "\n}\n";
 
     export function injectAMD( content : string ) {
         return AMD_Header + content;
     }
 
-    export function clone( obj : any ) {
-        var newObj = {};
+    export function shallowCloneObject( obj : any ) {
+        var newObj = Object.create( null );
 
         for( var it in obj ) {
             if( obj.hasOwnProperty( it ) ) {

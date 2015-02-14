@@ -402,7 +402,7 @@ var Scriptor;
                                         return Promise.promisify( obj );
                                     }
                                     else if( typeof obj === 'object' ) {
-                                        var newObj = Common.clone( obj );
+                                        var newObj = Common.shallowCloneObject( obj );
                                         return Promise.promisifyAll( newObj );
                                     }
                                     else {

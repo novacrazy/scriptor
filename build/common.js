@@ -115,15 +115,15 @@ var ScriptorCommon;
 
     ScriptorCommon.stripBOM = stripBOM;
     ScriptorCommon.AMD_Header =
-    "if(typeof define !== 'function') {" + "\n\tvar define;" + "\n\tif(typeof module.define === 'function') {"
-    + "\n\t\tdefine = module.define;" + "\n\t} else {" + "\n\t\tdefine = require('amdefine');" + "\n\t}" + "\n}\n";
+    "if(typeof define !== 'function' " + "&& typeof module.define === 'function') {" + "\n\tvar define = module.define;"
+    + "\n}\n";
     function injectAMD(content) {
         return ScriptorCommon.AMD_Header + content;
     }
 
     ScriptorCommon.injectAMD = injectAMD;
-    function clone(obj) {
-        var newObj = {};
+    function shallowCloneObject(obj) {
+        var newObj = Object.create( null );
         for( var it in obj ) {
             if( obj.hasOwnProperty( it ) ) {
                 newObj[it] = obj[it];
@@ -132,7 +132,7 @@ var ScriptorCommon;
         return newObj;
     }
 
-    ScriptorCommon.clone = clone;
+    ScriptorCommon.shallowCloneObject = shallowCloneObject;
     ScriptorCommon.default_max_recursion = 9;
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
