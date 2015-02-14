@@ -14,7 +14,8 @@
     "updatable",
     "config",
     "transform",
-    "promises"
+    "promises",
+    "coroutine"
   ],
   "bin": {
     "scriptor": "bin/scriptor"
@@ -42,7 +43,7 @@
     "test": "mocha -C -b test"
   },
   "dependencies": {
-    "bluebird": "^2.9.8",
+    "bluebird": "^2.9.9",
     "co": "^4.3.1",
     "commander": "^2.6.0"
   }
