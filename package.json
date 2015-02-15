@@ -37,6 +37,7 @@
     "grunt-typescript": "^0.3.8",
     "mocha": "^1.21.5",
     "touch": "0.0.3",
+    "treeify": "^1.0.1",
     "typescript": "^1.4.1"
   },
   "scripts": {
@@ -44,7 +45,7 @@
   },
   "dependencies": {
     "bluebird": "^2.9.9",
-    "co": "^4.3.1",
+    "co": "^4.4.0",
     "commander": "^2.6.0"
   }
 }
