@@ -974,7 +974,7 @@ module Scriptor {
         }
 
         public left() : IReference {
-            return this;
+            return null;
         }
 
         public right() : IReference {
@@ -1040,7 +1040,7 @@ module Scriptor {
         }
 
         public left() : IReference {
-            return this;
+            return this._ref;
         }
 
         public right() : IReference {
@@ -1177,7 +1177,7 @@ module Scriptor {
         }
 
         public left() : IReference {
-            return this;
+            return null;
         }
 
         public right() : IReference {

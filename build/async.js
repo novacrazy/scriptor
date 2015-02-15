@@ -984,7 +984,7 @@ var Scriptor;
             return Reference.transform( this, transform );
         };
         Reference.prototype.left = function() {
-            return this;
+            return null;
         };
         Reference.prototype.right = function() {
             return null;
@@ -1055,7 +1055,7 @@ var Scriptor;
             return Reference.transform( this, transform );
         };
         TransformReference.prototype.left = function() {
-            return this;
+            return this._ref;
         };
         TransformReference.prototype.right = function() {
             return null;
@@ -1210,7 +1210,7 @@ var Scriptor;
             return Reference.transform( this, transform );
         };
         ResolvedReference.prototype.left = function() {
-            return this;
+            return null;
         };
         ResolvedReference.prototype.right = function() {
             return null;
