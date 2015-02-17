@@ -142,6 +142,10 @@ module Scriptor {
             return this._script.filename;
         }
 
+        get manager() : Manager {
+            return null;
+        }
+
         //Based on the RequireJS 'standard' for relative locations
         //For SourceScripts, just set the filename to something relative
         get baseUrl() : string {
@@ -407,17 +411,18 @@ module Scriptor {
                     //relative modules
                     id = normalize( id );
 
-                    //If possible, take advantage of a manager
-                    var script = this.include( id );
+                    if( this.manager !== null && this.manager !== void 0 ) {
+                        //Resolve to the correct path even there isn't an extension
+                        id = Module.Module._resolveFilename( id, this.parent );
 
-                    if( script === null || script === void 0 ) {
-                        //If no manager is available, use a normal require
-                        result = this._require( id );
+                        var script : Script = this.include( id );
 
-                    } else {
                         script.maxRecursion = this.maxRecursion;
 
                         result = script.exports();
+
+                    } else {
+                        result = this._require( id );
                     }
 
                 } else {
@@ -808,16 +813,20 @@ module Scriptor {
     }
 
     class ScriptAdapter extends Script {
-        constructor( public manager : Manager, filename : string, parent : Module.IModule ) {
+        constructor( private _manager : Manager, filename : string, parent : Module.IModule ) {
             super( filename, parent );
 
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
             this.on( 'rename', ( event, oldname, newname ) => {
                 console.log( oldname, newname );
-                manager.scripts.set( newname, manager.scripts.get( oldname ) );
-                manager.scripts.delete( oldname );
+                _manager.scripts.set( newname, _manager.scripts.get( oldname ) );
+                _manager.scripts.delete( oldname );
             } );
+        }
+
+        get manager() : Manager {
+            return this._manager;
         }
 
         public include( filename : string, load : boolean = false ) : ScriptAdapter {
@@ -826,7 +835,7 @@ module Scriptor {
 
             //Since add doesn't do anything to already existing scripts, but does return a script,
             //it can take care of the lookup or adding at the same time. Two birds with one lookup.
-            var script : ScriptAdapter = this.manager.add( real_filename );
+            var script : ScriptAdapter = this._manager.add( real_filename );
 
             //Since include can be used independently of reference, make sure it's loaded before returning
             //Otherwise, the returned script is in an incomplete state

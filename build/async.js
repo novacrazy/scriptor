@@ -81,6 +81,7 @@ function isGeneratorFunction(obj) {
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
+    var promisifyCache = MapAdapter.createMap();
     Scriptor.default_dependencies = Common.default_dependencies;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.extensions = {};
@@ -198,6 +199,13 @@ var Scriptor;
             //Only allow getting the filename, setting should be done through .load
             get:          function() {
                 return this._script.filename;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "manager", {
+            get:          function() {
+                return null;
             },
             enumerable:   true,
             configurable: true
@@ -396,18 +404,28 @@ var Scriptor;
                     else if( plugin_id === 'promisify' ) {
                         plugin_resolver = Promise.resolve( {
                             load: function(id, require, _onLoad, config) {
-                                _this._require( id ).then( function(obj) {
-                                    if( typeof obj === 'function' ) {
-                                        return Promise.promisify( obj );
-                                    }
-                                    else if( typeof obj === 'object' ) {
-                                        var newObj = Common.shallowCloneObject( obj );
-                                        return Promise.promisifyAll( newObj );
-                                    }
-                                    else {
-                                        return null;
-                                    }
-                                } ).then( _onLoad );
+                                var resolver;
+                                if( promisifyCache.has( id ) ) {
+                                    resolver = Promise.resolve( promisifyCache.get( id ) );
+                                }
+                                else {
+                                    resolver = _this._require( id ).then( function(obj) {
+                                        if( typeof obj === 'function' ) {
+                                            return Promise.promisify( obj );
+                                        }
+                                        else if( typeof obj === 'object' ) {
+                                            var newObj = Common.shallowCloneObject( obj );
+                                            return Promise.promisifyAll( newObj );
+                                        }
+                                        else {
+                                            return null;
+                                        }
+                                    } ).then( function(obj) {
+                                        promisifyCache.set( id, obj );
+                                        return obj;
+                                    } );
+                                }
+                                resolver.then( _onLoad );
                             }
                         } );
                     }
@@ -449,15 +467,15 @@ var Scriptor;
                 else if( id.charAt( 0 ) === '.' ) {
                     //relative modules
                     id = normalize( id );
-                    //If possible, take advantage of a manager
-                    var script = this.include( id );
-                    if( script === null || script === void 0 ) {
-                        //If no manager is available, use a normal require
-                        result = this._require( id );
-                    }
-                    else {
+                    if( this.manager !== null && this.manager !== void 0 ) {
+                        //Resolve to the correct path even there isn't an extension
+                        id = Module.Module._resolveFilename( id, this.parent );
+                        var script = this.include( id );
                         script.maxRecursion = this.maxRecursion;
                         result = script.exports();
+                    }
+                    else {
+                        result = this._require( id );
                     }
                 }
                 else {
@@ -833,17 +851,24 @@ var Scriptor;
     Scriptor.SourceScript = SourceScript;
     var ScriptAdapter = (function(_super) {
         __extends( ScriptAdapter, _super );
-        function ScriptAdapter(manager, filename, parent) {
+        function ScriptAdapter(_manager, filename, parent) {
             _super.call( this, filename, parent );
-            this.manager = manager;
+            this._manager = _manager;
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
             this.on( 'rename', function(event, oldname, newname) {
-                manager.scripts.set( newname, manager.scripts.get( oldname ) );
-                manager.scripts.delete( oldname );
+                _manager.scripts.set( newname, _manager.scripts.get( oldname ) );
+                _manager.scripts.delete( oldname );
             } );
         }
 
+        Object.defineProperty( ScriptAdapter.prototype, "manager", {
+            get:          function() {
+                return this._manager;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         ScriptAdapter.prototype.include = function(filename, load) {
             if( load === void 0 ) {
                 load = false;
@@ -852,7 +877,7 @@ var Scriptor;
             var real_filename = path.resolve( this.baseUrl, filename );
             //Since add doesn't do anything to already existing scripts, but does return a script,
             //it can take care of the lookup or adding at the same time. Two birds with one lookup.
-            var script = this.manager.add( real_filename );
+            var script = this._manager.add( real_filename );
             //Since include can be used independently of reference, make sure it's loaded before returning
             //Otherwise, the returned script is in an incomplete state
             if( load && !script.loaded ) {

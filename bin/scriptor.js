@@ -1,8 +1,10 @@
-'use strict';
+"use strict";
 
 process.title = 'Scriptor';
 
 var options = require( 'commander' );
+var Module = require( 'module' );
+var glob = require( 'glob' );
 var package_json = require( './../package.json' );
 
 var ScriptorCommon = require( './../build/common.js' );
@@ -35,10 +37,17 @@ options
     .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
-    .option( '-s, --silent', 'Do not echo anything' );
+    .option( '-s, --silent', 'Do not echo anything' )
+    .option( '--no_glob', 'Do not match glob patterns' )
+    .option( '--use_strict', 'Enforce strict mode' );
 
 module.exports = function(argv) {
     options.parse( argv );
+
+    if( options.use_strict ) {
+        Module.wrapper[0] += '"use strict";';
+        Object.freeze( Module.wrap );
+    }
 
     //The default log_level is LOG_NORMAL
     var log_level = ScriptorCLI.LogLevel.LOG_NORMAL;
@@ -70,7 +79,24 @@ module.exports = function(argv) {
         process.exit( EXIT_FAILURE );
     };
 
-    var scripts = options.args;
+    var scripts;
+
+    if( !options.no_glob ) {
+        scripts = [];
+
+        for( var it in options.args ) {
+            if( options.args.hasOwnProperty( it ) ) {
+                if( glob.hasMagic( options.args[it] ) ) {
+                    scripts = scripts.concat( glob.sync( options.args[it] ) );
+                } else {
+                    scripts.push( options.args[it] );
+                }
+            }
+        }
+
+    } else {
+        scripts = options.args;
+    }
 
     if( options.unique ) {
         logger.info( 'Only executing unique scripts' );
