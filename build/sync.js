@@ -290,6 +290,9 @@ var Scriptor;
                 return _this._define.apply( _this, args );
             };
             define['require'] = require;
+            define['amd'] = {
+                jQuery: false
+            };
             this.define = define;
         };
         Object.defineProperty( AMDScript.prototype, "pending", {
