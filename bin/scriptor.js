@@ -31,6 +31,7 @@ options
     .option( '-l, --long_stack_traces', 'Display long stack trace for asynchronous errors' )
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if async)' )
     .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
+    .option( '--use_strict', 'Enforce strict mode' )
     .option( '--max_recursion <n>', 'Set the maximum recursion depth of scripts (default: ' +
                                     ScriptorCommon.default_max_recursion + ')' )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
@@ -38,8 +39,7 @@ options
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
     .option( '-s, --silent', 'Do not echo anything' )
-    .option( '--no_glob', 'Do not match glob patterns' )
-    .option( '--use_strict', 'Enforce strict mode' );
+    .option( '--no_glob', 'Do not match glob patterns' );
 
 module.exports = function(argv) {
     options.parse( argv );
