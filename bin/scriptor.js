@@ -39,6 +39,7 @@ options
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
     .option( '-s, --silent', 'Do not echo anything' )
+    .option( '--no_signal', 'Do not intercept process signals' )
     .option( '--no_glob', 'Do not match glob patterns' );
 
 module.exports = function(argv) {
@@ -187,11 +188,27 @@ module.exports = function(argv) {
             watch = true;
         }
 
-        var script_start = process.hrtime();
+        var run_script,
+            script_start = process.hrtime(),
+            place = 0,
+            instances = [];
 
-        var place = 0;
+        if( !options.no_signal ) {
+            var onClose = function() {
+                for( var it in instances ) {
+                    if( instances.hasOwnProperty( it ) ) {
+                        instances[it].unload();
+                    }
+                }
 
-        var run_script;
+                //Close on the next tick so close events can propagate.
+                //Exit code for Ctrl-C signals is 130 according to http://www.tldp.org/LDP/abs/html/exitcodes.html
+                process.nextTick( process.exit.bind( null, 130 ) );
+            };
+
+            process.on( 'SIGINT', onClose );
+            process.on( 'SIGTERM', onClose );
+        }
 
         if( options.async ) {
             logger.info( 'Asynchronous execution selected' );
@@ -216,6 +233,8 @@ module.exports = function(argv) {
                 logger.verbose( 'Running script #%d, %s.', num, script );
 
                 var instance = manager.add( script, false );
+
+                instances.push( instance );
 
                 if( watch ) {
                     instance.watch( true );
@@ -263,6 +282,8 @@ module.exports = function(argv) {
 
                 try {
                     var instance = manager.add( script, false );
+
+                    instances.push( instance );
 
                     if( watch ) {
                         instance.watch( true );
