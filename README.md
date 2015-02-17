@@ -43,7 +43,7 @@ Then:
 Or for the command line interface:
 
 ```
-$scriptor --help
+$scriptor
 
    Usage: scriptor [options] files...
 
@@ -58,12 +58,15 @@ $scriptor --help
      -l, --long_stack_traces  Display long stack trace for asynchronous errors
      -r, --repeat <n>         Run script n times (in parallel if async)
      -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
+     --use_strict             Enforce strict mode
      --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
      -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
      -w, --watch              Watch scripts for changes and re-run them when changed
      --cork                   Cork stdout before calling scripts
      -e, --ext                Disable use of custom extensions with AMD injection
      -s, --silent             Do not echo anything
+     --no_signal              Do not intercept process signals
+     --no_glob                Do not match glob patterns
 ```
 
 # Scriptor Features
