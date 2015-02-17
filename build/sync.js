@@ -48,6 +48,7 @@ var events = require( 'events' );
 var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
+var requireCache = MapAdapter.createMap();
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -88,6 +89,13 @@ var Scriptor;
             this._script = (new Module.Module( null, parent ));
         }
 
+        Object.defineProperty( ScriptBase.prototype, "watched", {
+            get:          function() {
+                return this._watcher !== void 0;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         //Wrap it before you tap it.
         //No, but really, it's important to protect against errors in a generic way
         ScriptBase.prototype._callWrapper = function(func, this_arg, args) {
@@ -390,19 +398,23 @@ var Scriptor;
                     }
                     result = this._loadCache.get( id );
                 }
-                else if( id.charAt( 0 ) === '.' ) {
-                    //relative modules
-                    id = normalize( id );
+                else if( id.charAt( 0 ) === '.' || Common.isAbsolutePath( id ) ) {
+                    //Exploit Scriptor as much as possible for relative and absolute paths
+                    id = Module.Module._resolveFilename( normalize( id ), this.parent );
+                    var script;
                     if( this.manager !== null && this.manager !== void 0 ) {
-                        //Resolve to the correct path even there isn't an extension
-                        id = Module.Module._resolveFilename( id, this.parent );
-                        var script = this.include( id );
-                        script.maxRecursion = this.maxRecursion;
-                        result = script.exports();
+                        script = this.include( id );
+                    }
+                    else if( requireCache.has( id ) ) {
+                        script = requireCache.get( id );
                     }
                     else {
-                        result = this._require( id );
+                        script = new Script( null, this._script );
+                        script.load( id, this.watched );
+                        requireCache.set( id, script );
                     }
+                    script.maxRecursion = this.maxRecursion;
+                    result = script.exports();
                 }
                 else {
                     if( id === 'require' ) {
@@ -485,7 +497,7 @@ var Scriptor;
     var Script = (function(_super) {
         __extends( Script, _super );
         function Script(filename, parent) {
-            if( parent === void 0 ) {
+            if( parent === void 0 || parent === null ) {
                 if( filename instanceof Module.Module ) {
                     parent = filename;
                     filename = null;
@@ -501,13 +513,6 @@ var Scriptor;
             }
         }
 
-        Object.defineProperty( Script.prototype, "watched", {
-            get:          function() {
-                return this._watcher !== void 0;
-            },
-            enumerable:   true,
-            configurable: true
-        } );
         Script.prototype.do_setup = function() {
             var _this = this;
             //Shallow freeze so the script can't add/remove imports, but it can modify them
@@ -521,6 +526,7 @@ var Scriptor;
         };
         //Should ALWAYS be called within a _callWrapper
         Script.prototype.do_load = function() {
+            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
             this.unload();
             this.do_setup();
             var ext = path.extname( this.filename ) || '.js';

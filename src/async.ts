@@ -49,10 +49,11 @@ function isGeneratorFunction( obj : any ) : boolean {
     }
 }
 
+var promisifyCache : Map<string, any> = MapAdapter.createMap<any>();
+var requireCache : Map<string, Scriptor.Script> = MapAdapter.createMap<Scriptor.Script>();
+
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
-
-    var promisifyCache : Map<string, any> = MapAdapter.createMap<any>();
 
     export var default_dependencies : string[] = Common.default_dependencies;
 
@@ -128,6 +129,12 @@ module Scriptor {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
         protected _maxRecursion : number = default_max_recursion;
+
+        protected _watcher : fs.FSWatcher;
+
+        get watched() : boolean {
+            return this._watcher !== void 0;
+        }
 
         public imports : {[key : string] : any} = {};
 
@@ -490,23 +497,30 @@ module Scriptor {
                         } );
                     } );
 
-                } else if( id.charAt( 0 ) === '.' ) {
-                    //relative modules
-                    id = normalize( id );
+                } else if( id.charAt( 0 ) === '.' || Common.isAbsolutePath( id ) ) {
+                    //Exploit Scriptor as much as possible for relative and absolute paths
+
+                    id = Module.Module._resolveFilename( normalize( id ), this.parent );
+
+                    var script : Script;
 
                     if( this.manager !== null && this.manager !== void 0 ) {
-                        //Resolve to the correct path even there isn't an extension
-                        id = Module.Module._resolveFilename( id, this.parent );
+                        script = this.include( id );
 
-                        var script : Script = this.include( id );
-
-                        script.maxRecursion = this.maxRecursion;
-
-                        result = script.exports();
+                    } else if( requireCache.has( id ) ) {
+                        script = requireCache.get( id );
 
                     } else {
-                        result = this._require( id );
+                        script = new Script( null, this._script );
+
+                        script.load( id, this.watched );
+
+                        requireCache.set( id, script );
                     }
+
+                    script.maxRecursion = this.maxRecursion;
+
+                    result = script.exports();
 
                 } else {
                     if( id === 'require' ) {
@@ -620,17 +634,12 @@ module Scriptor {
 
     export class Script extends AMDScript implements IScriptBase {
 
-        protected _watcher : fs.FSWatcher;
-
-        get watched() : boolean {
-            return this._watcher !== void 0;
-        }
-
         constructor( filename? : string, parent? : Module.IModule ) {
-            if( parent === void 0 ) {
+            if( parent === void 0 || parent === null ) {
                 if( <any>filename instanceof Module.Module ) {
                     parent = <any>filename;
                     filename = null;
+
                 } else {
                     parent = this_module;
                 }
@@ -662,6 +671,8 @@ module Scriptor {
 
         //Should ALWAYS be called within a _callWrapper
         protected do_load() : Promise<any> {
+            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
+
             this.unload();
 
             this.do_setup();

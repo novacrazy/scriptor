@@ -3,8 +3,20 @@
  */
 
 import Module = require('./Module');
+import path = require('path');
 
 module ScriptorCommon {
+
+    export function isAbsolutePath( filepath : string ) : boolean {
+        if( path.isAbsolute !== void 0 || path.isAbsolute !== null ) {
+            return path.isAbsolute( filepath );
+
+        } else {
+            //just a little cheat for older node versions
+            return path.normalize( filepath ) === path.resolve( filepath );
+        }
+    }
+
     //Helper function to bind a function to an object AND retain any attached values
     //Also bounds a variable number of arguments to the function, which is neat.
     //The 'to' arguments is in ...args
