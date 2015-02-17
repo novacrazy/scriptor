@@ -7,6 +7,8 @@ var Module = require( 'module' );
 var glob = require( 'glob' );
 var package_json = require( './../package.json' );
 
+var constants = process.binding( 'constants' );
+
 var ScriptorCommon = require( './../build/common.js' );
 var ScriptorCLI = require( './../build/cli.js' );
 
@@ -194,20 +196,27 @@ module.exports = function(argv) {
             instances = [];
 
         if( !options.no_signal ) {
-            var onClose = function() {
-                for( var it in instances ) {
-                    if( instances.hasOwnProperty( it ) ) {
-                        instances[it].unload();
-                    }
-                }
+            var closed = false;
 
-                //Close on the next tick so close events can propagate.
-                //Exit code for Ctrl-C signals is 130 according to http://www.tldp.org/LDP/abs/html/exitcodes.html
-                process.nextTick( process.exit.bind( null, 130 ) );
+            var onClose = function(signal) {
+                if( !closed ) {
+
+                    for( var it in instances ) {
+                        if( instances.hasOwnProperty( it ) ) {
+                            instances[it].unload();
+                        }
+                    }
+
+                    //Close on the next tick so close events can propagate.
+                    //Exit code for Ctrl-C signals is 128 + sig according to http://www.tldp.org/LDP/abs/html/exitcodes.html
+                    process.nextTick( process.exit.bind( null, 128 + signal ) );
+
+                    closed = true;
+                }
             };
 
-            process.on( 'SIGINT', onClose );
-            process.on( 'SIGTERM', onClose );
+            process.on( 'SIGINT', onClose.bind( null, constants.SIGINT ) );
+            process.on( 'SIGTERM', onClose.bind( null, constants.SIGTERM ) );
         }
 
         if( options.async ) {
