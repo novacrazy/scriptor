@@ -321,6 +321,10 @@ module Scriptor {
 
             define['require'] = require;
 
+            define['amd'] = {
+                jQuery: false
+            };
+
             this.define = define;
         }
 
