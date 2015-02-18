@@ -50,7 +50,7 @@ function isGeneratorFunction( obj : any ) : boolean {
 }
 
 var promisifyCache : Map<string, any> = MapAdapter.createMap<any>();
-var requireCache : Map<string, Scriptor.Script> = MapAdapter.createMap<Scriptor.Script>();
+var scriptCache : Map<string, Scriptor.Script> = MapAdapter.createMap<Scriptor.Script>();
 
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
@@ -252,6 +252,8 @@ module Scriptor {
         public close( permanent : boolean = true ) {
             this.unload();
             this.unwatch();
+
+            this.emit( 'close', permanent );
 
             if( permanent ) {
 
@@ -507,15 +509,8 @@ module Scriptor {
                     if( this.manager !== null && this.manager !== void 0 ) {
                         script = this.include( id );
 
-                    } else if( requireCache.has( id ) ) {
-                        script = requireCache.get( id );
-
                     } else {
-                        script = new Script( null, this._script );
-
-                        script.load( id, this.watched );
-
-                        requireCache.set( id, script );
+                        script = Scriptor.load( id, this.watched, this._script );
                     }
 
                     script.maxRecursion = this.maxRecursion;
@@ -973,18 +968,28 @@ module Scriptor {
         }
     }
 
-    export function load( filename : string, watch : boolean = true ) {
-        var script : Script = new Script( filename );
+    export function load( filename : string, watch : boolean = true, parent? : Module.IModule ) {
+        var script : Script;
 
-        if( watch ) {
-            script.watch();
+        if( scriptCache.has( filename ) ) {
+            script = scriptCache.get( filename );
+
+        } else {
+            script = new Script( null, parent );
+
+            script.load( filename, watch );
+
+            //Remove the reference to the script upon close, even if it isn't permenant
+            script.once( 'close', () => {
+                scriptCache.delete( filename );
+            } );
         }
 
         return script;
     }
 
-    export function compile( src : any, watch : boolean = true ) {
-        var script : SourceScript = new SourceScript( src );
+    export function compile( src : any, watch : boolean = true, parent? : Module.IModule ) {
+        var script : SourceScript = new SourceScript( src, parent );
 
         if( watch ) {
             script.watch();

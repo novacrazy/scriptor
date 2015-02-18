@@ -79,7 +79,7 @@ function isGeneratorFunction(obj) {
     }
 }
 var promisifyCache = MapAdapter.createMap();
-var requireCache = MapAdapter.createMap();
+var scriptCache = MapAdapter.createMap();
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -267,6 +267,7 @@ var Scriptor;
             }
             this.unload();
             this.unwatch();
+            this.emit( 'close', permanent );
             if( permanent ) {
                 //Remove _script from parent
                 Common.removeFromParent( this._script );
@@ -482,13 +483,8 @@ var Scriptor;
                     if( this.manager !== null && this.manager !== void 0 ) {
                         script = this.include( id );
                     }
-                    else if( requireCache.has( id ) ) {
-                        script = requireCache.get( id );
-                    }
                     else {
-                        script = new Script( null, this._script );
-                        script.load( id, this.watched );
-                        requireCache.set( id, script );
+                        script = Scriptor.load( id, this.watched, this._script );
                     }
                     script.maxRecursion = this.maxRecursion;
                     result = script.exports();
@@ -897,23 +893,31 @@ var Scriptor;
         return ScriptAdapter;
     })( Script );
 
-    function load(filename, watch) {
+    function load(filename, watch, parent) {
         if( watch === void 0 ) {
             watch = true;
         }
-        var script = new Script( filename );
-        if( watch ) {
-            script.watch();
+        var script;
+        if( scriptCache.has( filename ) ) {
+            script = scriptCache.get( filename );
+        }
+        else {
+            script = new Script( null, parent );
+            script.load( filename, watch );
+            //Remove the reference to the script upon close, even if it isn't permenant
+            script.once( 'close', function() {
+                scriptCache.delete( filename );
+            } );
         }
         return script;
     }
 
     Scriptor.load = load;
-    function compile(src, watch) {
+    function compile(src, watch, parent) {
         if( watch === void 0 ) {
             watch = true;
         }
-        var script = new SourceScript( src );
+        var script = new SourceScript( src, parent );
         if( watch ) {
             script.watch();
         }
