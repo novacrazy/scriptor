@@ -46,7 +46,7 @@ options
     .option( '--no_glob', 'Do not match glob patterns' );
 
 module.exports = function(argv) {
-    options.parse( argv );
+    process.options = options.parse( argv );
 
     if( options.use_strict ) {
         Module.wrapper[0] += '"use strict";';
