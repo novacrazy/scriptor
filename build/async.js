@@ -86,6 +86,7 @@ var Scriptor;
     Scriptor.default_dependencies = Common.default_dependencies;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.extensions = {};
+    Scriptor.extensions_enabled = false;
     function enableCustomExtensions(enable) {
         if( enable === void 0 ) {
             enable = true;
@@ -113,6 +114,7 @@ var Scriptor;
             delete Scriptor.extensions['.js'];
             delete Scriptor.extensions['.json'];
         }
+        Scriptor.extensions_enabled = enable;
     }
 
     Scriptor.enableCustomExtensions = enableCustomExtensions;
@@ -129,6 +131,8 @@ var Scriptor;
         function ScriptBase(parent) {
             _super.call( this );
             this._recursion = 0;
+            this._propagateChanges = false;
+            this._hasPropagated = false;
             this._maxRecursion = Scriptor.default_max_recursion;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
@@ -239,6 +243,18 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        ScriptBase.prototype.propagateChanges = function(enable) {
+            if( enable === void 0 ) {
+                enable = true;
+            }
+            var wasPropagating = this._propagateChanges;
+            this._propagateChanges = enable;
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._hasPropagated = true;
+            }
+            return wasPropagating;
+        };
         ScriptBase.prototype.unload = function() {
             var was_loaded = this.loaded;
             this.emit( 'unload' );
@@ -486,6 +502,19 @@ var Scriptor;
                     else {
                         script = Scriptor.load( id, this.watched, this._script );
                     }
+                    //Once this script is unloaded, it'll require all these again the next time it's called, so it'll
+                    //re-apply this listener
+                    if( this._propagateChanges ) {
+                        script.propagateChanges();
+                        script.once( 'change', function() {
+                            if( !_this._hasPropagated ) {
+                                _this.unload();
+                                _this.emit( 'change', _this.filename );
+                                _this._hasPropagated = true;
+                            }
+                        } );
+                        this._hasPropagated = false;
+                    }
                     script.maxRecursion = this.maxRecursion;
                     result = script.exports();
                 }
@@ -619,7 +648,7 @@ var Scriptor;
             this.do_setup();
             var ext = path.extname( this.filename ) || '.js';
             //Use custom extension if available
-            if( Scriptor.extensions.hasOwnProperty( ext ) ) {
+            if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
                 return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function() {
                     _this._script.loaded = true;

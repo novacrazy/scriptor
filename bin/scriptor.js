@@ -30,6 +30,8 @@ options
     .option( '-c, --concurrency <n>',
     'Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)' )
     .option( '-q, --close', 'End the process when all scripts finish' )
+    .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
+    .option( '-p, --propagate', 'Propagate changes upwards when watching scripts' )
     .option( '-l, --long_stack_traces', 'Display long stack trace for asynchronous errors' )
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if async)' )
     .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
@@ -37,7 +39,6 @@ options
     .option( '--max_recursion <n>', 'Set the maximum recursion depth of scripts (default: ' +
                                     ScriptorCommon.default_max_recursion + ')' )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
-    .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
     .option( '-s, --silent', 'Do not echo anything' )
@@ -248,6 +249,10 @@ module.exports = function(argv) {
                 if( watch ) {
                     instance.watch( true );
 
+                    if( options.propagate ) {
+                        instance.propagateChanges();
+                    }
+
                     instance.on( 'change', function() {
                         logger.verbose( 'Re-running script #%d, %s', num, script );
                         run_script( instance, script, num );
@@ -296,6 +301,10 @@ module.exports = function(argv) {
 
                     if( watch ) {
                         instance.watch( true );
+
+                        if( options.propagate ) {
+                            instance.propagateChanges();
+                        }
 
                         instance.on( 'change', function() {
                             logger.verbose( 'Re-running script #%d, %s.', num, script );

@@ -61,6 +61,8 @@ module Scriptor {
 
     export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<any>} = {};
 
+    export var extensions_enabled : boolean = false;
+
     export function enableCustomExtensions( enable : boolean = true ) {
         if( enable ) {
             extensions['.js'] = ( module : Module.IModule, filename : string ) => {
@@ -85,6 +87,8 @@ module Scriptor {
             delete extensions['.js'];
             delete extensions['.json'];
         }
+
+        extensions_enabled = enable;
     }
 
     export function disableCustomExtension() {
@@ -128,6 +132,8 @@ module Scriptor {
     class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
+        protected _propagateChanges : boolean = false;
+        protected _hasPropagated : boolean = false;
         protected _maxRecursion : number = default_max_recursion;
 
         protected _watcher : fs.FSWatcher;
@@ -218,6 +224,19 @@ module Scriptor {
 
         get maxRecursion() : number {
             return this._maxRecursion;
+        }
+
+        public propagateChanges( enable : boolean = true ) : boolean {
+            var wasPropagating : boolean = this._propagateChanges;
+
+            this._propagateChanges = enable;
+
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._hasPropagated = true;
+            }
+
+            return wasPropagating;
         }
 
         public unload() : boolean {
@@ -494,7 +513,6 @@ module Scriptor {
 
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
                                 plugin.load( id, this.require, onLoad, {} );
-
                             }
                         } );
                     } );
@@ -511,6 +529,22 @@ module Scriptor {
 
                     } else {
                         script = Scriptor.load( id, this.watched, this._script );
+                    }
+
+                    //Once this script is unloaded, it'll require all these again the next time it's called, so it'll
+                    //re-apply this listener
+                    if( this._propagateChanges ) {
+                        script.propagateChanges();
+
+                        script.once( 'change', () => {
+                            if( !this._hasPropagated ) {
+                                this.unload();
+                                this.emit( 'change', this.filename );
+                                this._hasPropagated = true;
+                            }
+                        } );
+
+                        this._hasPropagated = false;
                     }
 
                     script.maxRecursion = this.maxRecursion;
@@ -675,7 +709,7 @@ module Scriptor {
             var ext = path.extname( this.filename ) || '.js';
 
             //Use custom extension if available
-            if( extensions.hasOwnProperty( ext ) ) {
+            if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
                 return tryPromise( extensions[ext]( this._script, this.filename ) ).then( () => {
