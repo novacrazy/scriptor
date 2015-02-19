@@ -64,8 +64,8 @@ $scriptor
      --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
      -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
      --cork                   Cork stdout before calling scripts
-     -e, --ext                Disable use of custom extensions with AMD injection
      -s, --silent             Do not echo anything
+     --no_ext                 Disable use of custom extensions with AMD injection
      --no_signal              Do not intercept process signals
      --no_glob                Do not match glob patterns
 ```

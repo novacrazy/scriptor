@@ -40,8 +40,8 @@ options
                                     ScriptorCommon.default_max_recursion + ')' )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
     .option( '--cork', 'Cork stdout before calling scripts' )
-    .option( '-e, --ext', 'Disable use of custom extensions with AMD injection' )
     .option( '-s, --silent', 'Do not echo anything' )
+    .option( '--no_ext', 'Disable use of custom extensions with AMD injection' )
     .option( '--no_signal', 'Do not intercept process signals' )
     .option( '--no_glob', 'Do not match glob patterns' );
 
@@ -134,7 +134,7 @@ module.exports = function(argv) {
     if( scripts.length > 0 ) {
         var Scriptor = require( './../' + (options.async ? 'async.js' : 'sync.js') );
 
-        if( !options.ext ) {
+        if( !options.no_ext ) {
             logger.info( 'Custom extensions enabled.' );
             Scriptor.enableCustomExtensions();
         }
