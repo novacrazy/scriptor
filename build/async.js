@@ -659,6 +659,11 @@ var Scriptor;
                 } );
             }
             else {
+                if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                    this.emit( 'warning',
+                        util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                            this.filename ) );
+                }
                 this._script.load( this._script.filename );
                 this.emit( 'loaded', this.loaded );
             }
@@ -1364,6 +1369,8 @@ var Scriptor;
                 if( this._propagateChanges ) {
                     script.propagateChanges();
                 }
+                script.on( 'warning', function(message) {
+                } );
                 script.load( filename, watch );
                 this._scripts.set( filename, script );
             }

@@ -626,6 +626,10 @@ module Scriptor {
                 this._script.loaded = true;
 
             } else {
+                if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                    this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                }
+
                 this._script.load( this._script.filename );
             }
 
