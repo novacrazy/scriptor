@@ -86,8 +86,6 @@ var Scriptor;
         function ScriptBase(parent) {
             _super.call( this );
             this._recursion = 0;
-            this._propagateChanges = false;
-            this._hasPropagated = false;
             this._maxRecursion = Scriptor.default_max_recursion;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
@@ -201,18 +199,6 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        ScriptBase.prototype.propagateChanges = function(enable) {
-            if( enable === void 0 ) {
-                enable = true;
-            }
-            var wasPropagating = this._propagateChanges;
-            this._propagateChanges = enable;
-            if( wasPropagating && !enable ) {
-                //immediately disable propagation by pretending it's already been propagated
-                this._hasPropagated = true;
-            }
-            return wasPropagating;
-        };
         ScriptBase.prototype.unload = function() {
             var was_loaded = this.loaded;
             this.emit( 'unload' );
@@ -262,9 +248,24 @@ var Scriptor;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
+            this._propagateChanges = false;
+            this._hasPropagated = false;
+            this._addedPropagationHandler = false;
             this._init();
         }
 
+        AMDScript.prototype.propagateChanges = function(enable) {
+            if( enable === void 0 ) {
+                enable = true;
+            }
+            var wasPropagating = this._propagateChanges;
+            this._propagateChanges = enable;
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._hasPropagated = true;
+            }
+            return wasPropagating;
+        };
         AMDScript.prototype._init = function() {
             var _this = this;
             var require = function() {
@@ -425,17 +426,19 @@ var Scriptor;
                     else {
                         script = Scriptor.load( id, this.watched, this._script );
                     }
-                    //Once this script is unloaded, it'll require all these again the next time it's called, so it'll
-                    //re-apply this listener
-                    if( this._propagateChanges ) {
-                        script.propagateChanges();
-                        script.once( 'change', function() {
+                    if( this._propagateChanges && !this._addedPropagationHandler ) {
+                        var onPropagate = function() {
                             if( !_this._hasPropagated ) {
                                 _this.unload();
                                 _this.emit( 'change', _this.filename );
                                 _this._hasPropagated = true;
                             }
-                        } );
+                            script.removeListener( 'change', onPropagate );
+                            _this._addedPropagationHandler = false;
+                        };
+                        script.propagateChanges();
+                        script.on( 'change', onPropagate );
+                        this._addedPropagationHandler = true;
                         this._hasPropagated = false;
                     }
                     script.maxRecursion = this.maxRecursion;

@@ -81,8 +81,6 @@ module Scriptor {
     class ScriptBase extends events.EventEmitter {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
-        protected _propagateChanges : boolean = false;
-        protected _hasPropagated : boolean = false;
         protected _maxRecursion : number = default_max_recursion;
 
         protected _watcher : fs.FSWatcher;
@@ -177,19 +175,6 @@ module Scriptor {
             return this._maxRecursion;
         }
 
-        public propagateChanges( enable : boolean = true ) : boolean {
-            var wasPropagating : boolean = this._propagateChanges;
-
-            this._propagateChanges = enable;
-
-            if( wasPropagating && !enable ) {
-                //immediately disable propagation by pretending it's already been propagated
-                this._hasPropagated = true;
-            }
-
-            return wasPropagating;
-        }
-
         public unload() : boolean {
             var was_loaded : boolean = this.loaded;
 
@@ -247,6 +232,23 @@ module Scriptor {
     class AMDScript extends ScriptBase implements IAMDScriptBase {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
+
+        protected _propagateChanges : boolean = false;
+        protected _hasPropagated : boolean = false;
+        protected _addedPropagationHandler : boolean = false;
+
+        public propagateChanges( enable : boolean = true ) : boolean {
+            var wasPropagating : boolean = this._propagateChanges;
+
+            this._propagateChanges = enable;
+
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._hasPropagated = true;
+            }
+
+            return wasPropagating;
+        }
 
         public require : ( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) => any;
         public define : IDefineFunction;
@@ -454,19 +456,24 @@ module Scriptor {
                         script = Scriptor.load( id, this.watched, this._script );
                     }
 
-                    //Once this script is unloaded, it'll require all these again the next time it's called, so it'll
-                    //re-apply this listener
-                    if( this._propagateChanges ) {
-                        script.propagateChanges();
-
-                        script.once( 'change', () => {
+                    if( this._propagateChanges && !this._addedPropagationHandler ) {
+                        var onPropagate = () => {
                             if( !this._hasPropagated ) {
                                 this.unload();
                                 this.emit( 'change', this.filename );
                                 this._hasPropagated = true;
                             }
-                        } );
 
+                            script.removeListener( 'change', onPropagate );
+
+                            this._addedPropagationHandler = false;
+                        };
+
+                        script.propagateChanges();
+
+                        script.on( 'change', onPropagate );
+
+                        this._addedPropagationHandler = true;
                         this._hasPropagated = false;
                     }
 
