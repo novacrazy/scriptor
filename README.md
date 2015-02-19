@@ -55,13 +55,14 @@ $scriptor
      -a, --async              Run scripts asynchronously
      -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
      -q, --close              End the process when all scripts finish
+     -w, --watch              Watch scripts for changes and re-run them when changed
+     -p, --propagate          Propagate changes upwards when watching scripts
      -l, --long_stack_traces  Display long stack trace for asynchronous errors
      -r, --repeat <n>         Run script n times (in parallel if async)
      -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
      --use_strict             Enforce strict mode
      --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
      -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
-     -w, --watch              Watch scripts for changes and re-run them when changed
      --cork                   Cork stdout before calling scripts
      -e, --ext                Disable use of custom extensions with AMD injection
      -s, --silent             Do not echo anything
