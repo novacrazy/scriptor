@@ -150,6 +150,10 @@ module.exports = function(argv) {
             manager.chdir( options.dir );
         }
 
+        if( options.propagate ) {
+            manager.propagateChanges();
+        }
+
         var maxRecursion, concurrency, watch;
 
         //Basically, if both max_recursion and concurrency are set, they have to play along
@@ -249,10 +253,6 @@ module.exports = function(argv) {
                 if( watch ) {
                     instance.watch( true );
 
-                    if( options.propagate ) {
-                        instance.propagateChanges();
-                    }
-
                     instance.on( 'change', function() {
                         logger.verbose( 'Re-running script #%d, %s', num, script );
                         run_script( instance, script, num );
@@ -301,10 +301,6 @@ module.exports = function(argv) {
 
                     if( watch ) {
                         instance.watch( true );
-
-                        if( options.propagate ) {
-                            instance.propagateChanges();
-                        }
 
                         instance.on( 'change', function() {
                             logger.verbose( 'Re-running script #%d, %s.', num, script );

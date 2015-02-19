@@ -1162,6 +1162,7 @@ var Scriptor;
         function Manager(grandParent) {
             this._scripts = MapAdapter.createMap();
             this._cwd = process.cwd();
+            this._propagateChanges = false;
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
 
@@ -1193,6 +1194,25 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        Manager.prototype.propagateChanges = function(enable) {
+            if( enable === void 0 ) {
+                enable = true;
+            }
+            var wasPropagating = this._propagateChanges;
+            this._propagateChanges = enable;
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._scripts.forEach( function(script) {
+                    script.propagateChanges( false );
+                } );
+            }
+            else if( !wasPropagating && enable ) {
+                this._scripts.forEach( function(script) {
+                    script.propagateChanges();
+                } );
+            }
+            return wasPropagating;
+        };
         //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
         //but this functions as a way to add and/or get a script in one fell swoop.
         //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
@@ -1205,6 +1225,9 @@ var Scriptor;
             var script = this._scripts.get( filename );
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, null, this._parent );
+                if( this._propagateChanges ) {
+                    script.propagateChanges();
+                }
                 script.load( filename, watch );
                 this._scripts.set( filename, script );
             }

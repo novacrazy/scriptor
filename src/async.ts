@@ -1428,6 +1428,28 @@ module Scriptor {
             return this._scripts;
         }
 
+        private _propagateChanges : boolean = false;
+
+        public propagateChanges( enable : boolean = true ) : boolean {
+            var wasPropagating : boolean = this._propagateChanges;
+
+            this._propagateChanges = enable;
+
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._scripts.forEach( ( script : Script ) => {
+                    script.propagateChanges( false );
+                } );
+
+            } else if( !wasPropagating && enable ) {
+                this._scripts.forEach( ( script : Script ) => {
+                    script.propagateChanges();
+                } );
+            }
+
+            return wasPropagating;
+        }
+
         constructor( grandParent? : Module.IModule ) {
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
@@ -1443,6 +1465,10 @@ module Scriptor {
 
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, null, this._parent );
+
+                if( this._propagateChanges ) {
+                    script.propagateChanges();
+                }
 
                 script.load( filename, watch );
 
