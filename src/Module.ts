@@ -213,12 +213,6 @@ module Module {
         exports : any;
 
         /*
-         * Bound require function to this module.
-         *
-         * */
-        require( path : string ) : any;
-
-        /*
          * Reference to parent module, if any.
          *
          * */
@@ -232,7 +226,15 @@ module Module {
         children : IModule[];
     }
 
-    export interface IModule extends IModuleInternal, IModulePublic {
+    export interface IModuleRequire {
+        /*
+         * Bound require function to this module.
+         *
+         * */
+        require( path : string ) : any;
+    }
+
+    export interface IModule extends IModuleInternal, IModulePublic, IModuleRequire {
 
     }
 

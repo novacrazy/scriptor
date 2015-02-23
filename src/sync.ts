@@ -60,18 +60,37 @@ module Scriptor {
         ( deps : string[], factory : {[key : string] : any} ) : void;
         ( factory : ( ...deps : any[] ) => any ) : void;
         ( factory : {[key : string] : any} ) : void;
+
+        amd: {
+            jQuery: boolean;
+        };
+
+        require : IRequireFunction;
     }
 
-    export interface IAMDScriptBase {
-        require( path : string ) : any;
-        //overloads that can't be here because it would conflict with Module.IModule declarations
-        //require( id : string[], cb? : ( deps : any[] ) => any, ecb? : (err : any) => any ) : any[];
-        //require( id : string, cb? : ( deps : any ) => any, ecb? : (err : any) => any ) : any;
+    export interface IRequireFunction {
+        ( path : string ) : any;
+        ( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any;
+        ( id : string[], cb? : ( ...deps : any[] ) => any, ecb? : ( err : any ) => any ) : any[];
+        ( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : any;
+
+        toUrl( path : string ) : string;
+        specified( id : string ) : boolean;
+        defined( id : string ) : boolean;
+        undef( id : string ) : void;
+        onError( err : any ) : void;
 
         define : IDefineFunction;
     }
 
-    export interface IScriptModule extends IScriptBase, Module.IModule, IAMDScriptBase, events.EventEmitter {
+    export interface IAMDScriptBase {
+        require : IRequireFunction;
+        define : IDefineFunction;
+    }
+
+    export interface IScriptModule extends IScriptBase, IAMDScriptBase,
+                                           Module.IModulePublic, Module.IModuleInternal,
+                                           events.EventEmitter {
         //Empty, just merges the interfaces
     }
 
@@ -250,15 +269,14 @@ module Scriptor {
             return wasPropagating;
         }
 
-        public require : ( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) => any;
+        public require : IRequireFunction;
         public define : IDefineFunction;
 
         private _init() {
-            var require = ( ...args : any[] ) => {
-                return this._require.apply( this, args );
-            };
+            var require : IRequireFunction = this._require.bind( this );
+            var define : IDefineFunction = this._define.bind( this );
 
-            require['toUrl'] = ( filepath : string ) => {
+            require.toUrl = ( filepath : string ) => {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = this.filename;
@@ -277,15 +295,15 @@ module Scriptor {
                 return id.charAt( 0 ) === '.' ? path.resolve( this.baseUrl, id ) : id;
             };
 
-            require['defined'] = ( id : string ) => {
+            require.defined = ( id : string ) => {
                 return this._loadCache.has( normalize( id ) );
             };
 
-            require['specified'] = ( id : string ) => {
+            require.specified = ( id : string ) => {
                 return this._defineCache.has( normalize( id ) );
             };
 
-            require['undef'] = ( id : string ) => {
+            require.undef = ( id : string ) => {
                 id = normalize( id );
 
                 this._loadCache.delete( id );
@@ -295,22 +313,19 @@ module Scriptor {
             };
 
             //This is not an anonymous so stack traces make a bit more sense
-            require['onError'] = function onErrorDefault( err : any ) {
+            require.onError = function onErrorDefault( err : any ) {
                 throw err; //default error
             };
 
-            this.require = require;
+            define.require = require;
 
-            var define = ( ...args : any[] ) => {
-                return this._define.apply( this, args );
-            };
-
-            define['require'] = require;
-
-            define['amd'] = {
+            define.amd = {
                 jQuery: false
             };
 
+            require.define = define;
+
+            this.require = require;
             this.define = define;
         }
 

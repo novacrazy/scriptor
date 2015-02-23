@@ -312,14 +312,9 @@ var Scriptor;
         };
         AMDScript.prototype._init = function() {
             var _this = this;
-            var require = function() {
-                var args = [];
-                for( var _i = 0; _i < arguments.length; _i++ ) {
-                    args[_i - 0] = arguments[_i];
-                }
-                return _this._require.apply( _this, args );
-            };
-            require['toUrl'] = function(filepath) {
+            var require = this._require.bind( this );
+            var define = this._define.bind( this );
+            require.toUrl = function(filepath) {
                 //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = _this.filename;
@@ -335,34 +330,28 @@ var Scriptor;
             var normalize = function(id) {
                 return id.charAt( 0 ) === '.' ? path.resolve( _this.baseUrl, id ) : id;
             };
-            require['defined'] = function(id) {
+            require.defined = function(id) {
                 return _this._loadCache.has( normalize( id ) );
             };
-            require['specified'] = function(id) {
+            require.specified = function(id) {
                 return _this._defineCache.has( normalize( id ) );
             };
-            require['undef'] = function(id) {
+            require.undef = function(id) {
                 id = normalize( id );
                 _this._loadCache.delete( id );
                 _this._defineCache.delete( id );
                 return _this;
             };
             //This is not an anonymous so stack traces make a bit more sense
-            require['onError'] = function onErrorDefault(err) {
+            require.onError = function onErrorDefault(err) {
                 throw err;
             };
-            this.require = require;
-            var define = function() {
-                var args = [];
-                for( var _i = 0; _i < arguments.length; _i++ ) {
-                    args[_i - 0] = arguments[_i];
-                }
-                return _this._define.apply( _this, args );
-            };
-            define['require'] = require;
-            define['amd'] = {
+            define.require = require;
+            define.amd = {
                 jQuery: false
             };
+            require.define = define;
+            this.require = require;
             this.define = define;
         };
         Object.defineProperty( AMDScript.prototype, "pending", {
