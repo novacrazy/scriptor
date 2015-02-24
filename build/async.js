@@ -1296,18 +1296,11 @@ var Scriptor;
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
 
-        Object.defineProperty( Manager.prototype, "cwd", {
-            get:          function() {
-                return this._cwd;
-            },
-            set:          function(value) {
-                this.chdir( value );
-            },
-            enumerable:   true,
-            configurable: true
-        } );
+        Manager.prototype.cwd = function() {
+            return this._cwd;
+        };
         Manager.prototype.chdir = function(value) {
-            this._cwd = path.resolve( this.cwd, value );
+            this._cwd = path.resolve( this.cwd(), value );
             return this._cwd;
         };
         Object.defineProperty( Manager.prototype, "parent", {

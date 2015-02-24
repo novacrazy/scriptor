@@ -40,13 +40,13 @@ describe( 'new Manager()', function() {
     } );
 
     it( 'should set cwd to process.cwd', function() {
-        assert.strictEqual( manager.cwd, process.cwd() );
+        assert.strictEqual( manager.cwd(), process.cwd() );
     } );
 
     it( 'should allow changing cwd', function() {
         manager.chdir( './scripts' );
 
-        assert.strictEqual( manager.cwd, path.resolve( process.cwd(), './scripts' ) );
+        assert.strictEqual( manager.cwd(), path.resolve( process.cwd(), './scripts' ) );
     } );
 
     describe( 'manager behavior', function() {

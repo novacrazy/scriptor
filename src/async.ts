@@ -1422,16 +1422,12 @@ module Scriptor {
 
         private _cwd : string = process.cwd();
 
-        get cwd() : string {
+        public cwd() : string {
             return this._cwd;
         }
 
-        set cwd( value : string ) {
-            this.chdir( value );
-        }
-
         public chdir( value : string ) : string {
-            this._cwd = path.resolve( this.cwd, value );
+            this._cwd = path.resolve( this.cwd(), value );
 
             return this._cwd;
         }
