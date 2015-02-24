@@ -5,6 +5,7 @@ process.title = 'Scriptor';
 var options = require( 'commander' );
 var Module = require( 'module' );
 var glob = require( 'glob' );
+var path = require( 'path' );
 var package_json = require( './../package.json' );
 
 var constants = process.binding( 'constants' );
@@ -68,6 +69,7 @@ module.exports = function(argv) {
         } else {
             log_level = parseInt( options.verbose );
 
+            //Instead of throwing an error, just use the normal level
             if( isNaN( log_level ) ) {
                 log_level = ScriptorCLI.LogLevel.LOG_NORMAL;
             }
@@ -82,6 +84,8 @@ module.exports = function(argv) {
         logger.error( error.stack || error );
         process.exit( EXIT_FAILURE );
     };
+
+    process.on( 'uncaughtException', onError );
 
     var scripts;
 
@@ -131,6 +135,19 @@ module.exports = function(argv) {
         }
     }
 
+    //options.dir only says the directory scriptor will be run in,
+    //not the directory where it looks for files. So it will resolve files relative to the
+    //invocation location, but change process.cwd to the new location.
+    //Since the script files will be absolute now, now issues should arrive when using the manager.
+    if( typeof options.dir === 'string' ) {
+        scripts = scripts.map( function(script) {
+            return path.resolve( process.cwd(), script );
+        } );
+
+        process.chdir( options.dir );
+    }
+
+    //Only run anything if there are any scripts to run, otherwise show the help
     if( scripts.length > 0 ) {
         var Scriptor = require( './../' + (options.async ? 'async.js' : 'sync.js') );
 
@@ -144,11 +161,8 @@ module.exports = function(argv) {
             logger.info( 'Long Stack Traces enabled' );
         }
 
+        //New manager created, using process.cwd as the cwd
         var manager = new Scriptor.Manager();
-
-        if( typeof options.dir === 'string' ) {
-            manager.chdir( options.dir );
-        }
 
         if( options.propagate ) {
             manager.propagateChanges();
@@ -161,11 +175,19 @@ module.exports = function(argv) {
         if( options.max_recursion ) {
             maxRecursion = parseInt( options.max_recursion );
 
-            if( options.concurrency ) {
+            if( isNaN( maxRecursion ) ) {
+                logger.error( 'Not a Number value for option --max_recursion' );
+                process.exit( EXIT_FAILURE );
+
+            } else if( options.concurrency ) {
                 concurrency = parseInt( options.concurrency );
 
-                if( concurrency > maxRecursion ) {
-                    console.error( 'Concurrency set higher than max_recursion.\n\tScriptor will report false positives for exceeded recursion limits.' );
+                if( isNaN( concurrency ) ) {
+                    logger.error( 'Not a Number value for option -c, --concurrency' );
+                    process.exit( EXIT_FAILURE );
+
+                } else if( concurrency > maxRecursion ) {
+                    logger.error( 'Concurrency set higher than max_recursion.\n\tScriptor will report false positives for exceeded recursion limits.' );
                     process.exit( EXIT_FAILURE );
                 }
 
@@ -177,10 +199,16 @@ module.exports = function(argv) {
             if( options.concurrency ) {
                 concurrency = parseInt( options.concurrency );
 
-                maxRecursion = concurrency - 1;
+                if( isNaN( concurrency ) ) {
+                    logger.error( 'Not a Number value for option -c, --concurrency' );
+                    process.exit( EXIT_FAILURE );
 
-                if( maxRecursion > ScriptorCommon.default_max_recursion ) {
-                    logger.warn( 'Increasing max_recursion to %d to handle increased concurrency', maxRecursion );
+                } else {
+                    maxRecursion = concurrency - 1;
+
+                    if( maxRecursion > ScriptorCommon.default_max_recursion ) {
+                        logger.warn( 'Increasing max_recursion to %d to handle increased concurrency', maxRecursion );
+                    }
                 }
 
             } else {
