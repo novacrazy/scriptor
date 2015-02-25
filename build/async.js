@@ -924,6 +924,7 @@ var Scriptor;
             watch = true;
         }
         var script;
+        filename = path.resolve( filename );
         if( scriptCache.has( filename ) ) {
             script = scriptCache.get( filename );
         }

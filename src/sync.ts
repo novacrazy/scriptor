@@ -921,6 +921,8 @@ module Scriptor {
     export function load( filename : string, watch : boolean = true, parent? : Module.IModule ) {
         var script : Script;
 
+        filename = path.resolve( filename );
+
         if( scriptCache.has( filename ) ) {
             script = scriptCache.get( filename );
 
