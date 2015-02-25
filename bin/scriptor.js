@@ -86,6 +86,7 @@ module.exports = function(argv) {
     };
 
     process.on( 'uncaughtException', onError );
+    process.on( 'unhandledRejection', onError );
 
     var scripts;
 
