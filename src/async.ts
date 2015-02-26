@@ -917,7 +917,7 @@ module Scriptor {
                 srcPromise = Promise.resolve( this._source );
             }
 
-            return srcPromise.then( Common.stripBOM );
+            return srcPromise.then( extensions_enabled ? Common.injectAMDAndStripBOM : Common.stripBOM );
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {

@@ -109,8 +109,12 @@ module ScriptorCommon {
                             "\n\tvar define = module.define;" +
                             "\n}\n";
 
-    export function injectAMD( content : string ) {
+    export function injectAMD( content : string ) : string {
         return AMD_Header + content;
+    }
+
+    export function injectAMDAndStripBOM( content : string ) : string {
+        return injectAMD( stripBOM( content ) );
     }
 
     export function shallowCloneObject( obj : any ) {

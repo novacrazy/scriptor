@@ -828,7 +828,7 @@ var Scriptor;
             else {
                 srcPromise = Promise.resolve( this._source );
             }
-            return srcPromise.then( Common.stripBOM );
+            return srcPromise.then( Scriptor.extensions_enabled ? Common.injectAMDAndStripBOM : Common.stripBOM );
         };
         SourceScript.prototype.do_compile = function() {
             var _this = this;

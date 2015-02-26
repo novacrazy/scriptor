@@ -134,6 +134,11 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.injectAMD = injectAMD;
+    function injectAMDAndStripBOM(content) {
+        return injectAMD( stripBOM( content ) );
+    }
+
+    ScriptorCommon.injectAMDAndStripBOM = injectAMDAndStripBOM;
     function shallowCloneObject(obj) {
         var newObj = Object.create( null );
         for( var it in obj ) {

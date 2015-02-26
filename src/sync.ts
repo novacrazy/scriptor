@@ -809,7 +809,12 @@ module Scriptor {
                 src = this._source;
             }
 
-            return Common.stripBOM( src );
+            if( extensions_enabled ) {
+                return Common.injectAMDAndStripBOM( src );
+
+            } else {
+                return Common.stripBOM( src );
+            }
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {

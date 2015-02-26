@@ -719,7 +719,12 @@ var Scriptor;
             else {
                 src = this._source;
             }
-            return Common.stripBOM( src );
+            if( Scriptor.extensions_enabled ) {
+                return Common.injectAMDAndStripBOM( src );
+            }
+            else {
+                return Common.stripBOM( src );
+            }
         };
         SourceScript.prototype.do_compile = function() {
             if( !this.loaded ) {
