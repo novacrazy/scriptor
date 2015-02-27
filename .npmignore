@@ -38,5 +38,8 @@ reference*.*
 # Source files
 src
 
+# example files
+examples
+
 # test files
 test
