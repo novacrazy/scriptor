@@ -8,7 +8,7 @@ import path = require('path');
 module ScriptorCommon {
 
     export function isAbsolutePath( filepath : string ) : boolean {
-        if( path.isAbsolute !== void 0 || path.isAbsolute !== null ) {
+        if( typeof path.isAbsolute === 'function' ) {
             return path.isAbsolute( filepath );
 
         } else {
@@ -17,9 +17,12 @@ module ScriptorCommon {
         }
     }
 
+    export function isAbsoluteOrRelative( filepath : string ) : boolean {
+        return filepath.charAt( 0 ) === '.' || isAbsolutePath( filepath );
+    }
+
     //Helper function to bind a function to an object AND retain any attached values
     //Also bounds a variable number of arguments to the function, which is neat.
-    //The 'to' arguments is in ...args
     //The 'to' arguments is in ...args
     export function bind( func : Function, ...args : any[] ) {
         var res = Function.prototype.bind.apply( func, args );

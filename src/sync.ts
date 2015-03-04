@@ -14,12 +14,21 @@ import Module = require('./Module');
 import Common = require('./common');
 import MapAdapter = require('./map');
 
+var posix_path : any = path['posix'];
+
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
     export var default_dependencies : string[] = Common.default_dependencies;
 
     export var default_max_recursion : number = Common.default_max_recursion;
+
+    export var default_extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => void} = {
+        '.js': ( module : Module.IModule, filename : string ) => {
+            var content = fs.readFileSync( filename, 'utf8' );
+            module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
+        }
+    };
 
     export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => void} = {};
 
@@ -29,13 +38,13 @@ module Scriptor {
 
     export function installCustomExtensions( enable : boolean = true ) {
         if( enable ) {
-            extensions['.js'] = ( module : Module.IModule, filename : string ) => {
-                var content = fs.readFileSync( filename, 'utf8' );
-                module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
-            };
-
-        } else {
-            delete extensions['.js'];
+            for( var it in default_extensions ) {
+                if( default_extensions.hasOwnProperty( it ) ) {
+                    if( !extensions.hasOwnProperty( it ) ) {
+                        extensions[it] = default_extensions[it];
+                    }
+                }
+            }
         }
 
         extensions_enabled = enable;
@@ -69,7 +78,7 @@ module Scriptor {
         ( factory : {[key : string] : any} ) : void;
 
         amd: {
-            jQuery: boolean;
+            jQuery: boolean; //false
         };
 
         require : IRequireFunction;
@@ -270,11 +279,8 @@ module Scriptor {
             var require : IRequireFunction = this._require.bind( this );
             var define : IDefineFunction = this._define.bind( this );
 
-            require.toUrl = ( filepath : string ) => {
-                //Typescript decided it didn't like doing this part, so I did it myself
-                if( filepath === void 0 ) {
-                    filepath = this.filename;
-                }
+            require.toUrl = ( filepath : string = this.filename ) => {
+                assert.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
 
                 if( filepath.charAt( 0 ) === '.' ) {
                     //Use the url.resolve instead of path.resolve, even though they usually do the same thing
@@ -285,20 +291,16 @@ module Scriptor {
                 }
             };
 
-            var normalize = ( id : string ) => {
-                return id.charAt( 0 ) === '.' ? path.resolve( this.baseUrl, id ) : id;
-            };
-
             require.defined = ( id : string ) => {
-                return this._loadCache.has( normalize( id ) );
+                return this._loadCache.has( posix_path.normalize( id ) );
             };
 
             require.specified = ( id : string ) => {
-                return this._defineCache.has( normalize( id ) );
+                return this._defineCache.has( posix_path.normalize( id ) );
             };
 
             require.undef = ( id : string ) => {
-                id = normalize( id );
+                id = posix_path.normalize( id );
 
                 this._loadCache.delete( id );
                 this._defineCache.delete( id );
@@ -458,7 +460,7 @@ module Scriptor {
 
                     result = this._loadCache.get( id );
 
-                } else if( id.charAt( 0 ) === '.' || Common.isAbsolutePath( id ) ) {
+                } else if( Common.isAbsoluteOrRelative( id ) ) {
                     //Exploit Scriptor as much as possible for relative and absolute paths
 
                     id = Module.Module._resolveFilename( normalize( id ), this.parent );

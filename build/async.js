@@ -52,6 +52,7 @@ var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
 var co = require( 'co' );
 var readFile = Promise.promisify( fs.readFile );
+var posix_path = path['posix'];
 function isThenable(obj) {
     return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
 }
@@ -84,6 +85,25 @@ var Scriptor;
     Scriptor.this_module = module;
     Scriptor.default_dependencies = Common.default_dependencies;
     Scriptor.default_max_recursion = Common.default_max_recursion;
+    Scriptor.default_extensions = {
+        '.js':   function(module, filename) {
+            return readFile( filename,
+                'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( function(content) {
+                    module._compile( content, filename );
+                } );
+        },
+        '.json': function(module, filename) {
+            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
+                try {
+                    module.exports = JSON.parse( content );
+                }
+                catch( err ) {
+                    err.message = filename + ': ' + err.message;
+                    throw err;
+                }
+            } );
+        }
+    };
     Scriptor.extensions = {};
     Scriptor.extensions_enabled = false;
     Scriptor.promisifyCache = MapAdapter.createMap();
@@ -93,27 +113,13 @@ var Scriptor;
             enable = true;
         }
         if( enable ) {
-            Scriptor.extensions['.js'] = function(module, filename) {
-                return readFile( filename,
-                    'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( function(content) {
-                    module._compile( content, filename );
-                } );
-            };
-            Scriptor.extensions['.json'] = function(module, filename) {
-                return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
-                    try {
-                        module.exports = JSON.parse( content );
+            for( var it in Scriptor.default_extensions ) {
+                if( Scriptor.default_extensions.hasOwnProperty( it ) ) {
+                    if( !Scriptor.extensions.hasOwnProperty( it ) ) {
+                        Scriptor.extensions[it] = Scriptor.default_extensions[it];
                     }
-                    catch( err ) {
-                        err.message = filename + ': ' + err.message;
-                        throw err;
-                    }
-                } );
-            };
-        }
-        else {
-            delete Scriptor.extensions['.js'];
-            delete Scriptor.extensions['.json'];
+                }
+            }
         }
         Scriptor.extensions_enabled = enable;
     }
@@ -313,10 +319,10 @@ var Scriptor;
             var require = this._require.bind( this );
             var define = this._define.bind( this );
             require.toUrl = function(filepath) {
-                //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = _this.filename;
                 }
+                assert.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
                 if( filepath.charAt( 0 ) === '.' ) {
                     //Use the url.resolve instead of path.resolve, even though they usually do the same thing
                     return url.resolve( _this.baseUrl, filepath );
@@ -325,17 +331,14 @@ var Scriptor;
                     return filepath;
                 }
             };
-            var normalize = function(id) {
-                return id.charAt( 0 ) === '.' ? path.resolve( _this.baseUrl, id ) : id;
-            };
             require.defined = function(id) {
-                return _this._loadCache.has( normalize( id ) );
+                return _this._loadCache.has( posix_path.normalize( id ) );
             };
             require.specified = function(id) {
-                return _this._defineCache.has( normalize( id ) );
+                return _this._defineCache.has( posix_path.normalize( id ) );
             };
             require.undef = function(id) {
-                id = normalize( id );
+                id = posix_path.normalize( id );
                 _this._loadCache.delete( id );
                 _this._defineCache.delete( id );
                 return _this;
@@ -487,7 +490,7 @@ var Scriptor;
                         } );
                     } );
                 }
-                else if( id.charAt( 0 ) === '.' || Common.isAbsolutePath( id ) ) {
+                else if( Common.isAbsoluteOrRelative( id ) ) {
                     //Exploit Scriptor as much as possible for relative and absolute paths
                     id = Module.Module._resolveFilename( normalize( id ), this.parent );
                     var script;

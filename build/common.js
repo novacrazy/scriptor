@@ -30,7 +30,7 @@ var path = require( 'path' );
 var ScriptorCommon;
 (function(ScriptorCommon) {
     function isAbsolutePath(filepath) {
-        if( path.isAbsolute !== void 0 || path.isAbsolute !== null ) {
+        if( typeof path.isAbsolute === 'function' ) {
             return path.isAbsolute( filepath );
         }
         else {
@@ -40,9 +40,13 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.isAbsolutePath = isAbsolutePath;
+    function isAbsoluteOrRelative(filepath) {
+        return filepath.charAt( 0 ) === '.' || isAbsolutePath( filepath );
+    }
+
+    ScriptorCommon.isAbsoluteOrRelative = isAbsoluteOrRelative;
     //Helper function to bind a function to an object AND retain any attached values
     //Also bounds a variable number of arguments to the function, which is neat.
-    //The 'to' arguments is in ...args
     //The 'to' arguments is in ...args
     function bind(func) {
         var args = [];

@@ -49,11 +49,18 @@ var Base = require( './base' );
 var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
+var posix_path = path['posix'];
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
     Scriptor.default_dependencies = Common.default_dependencies;
     Scriptor.default_max_recursion = Common.default_max_recursion;
+    Scriptor.default_extensions = {
+        '.js': function(module, filename) {
+            var content = fs.readFileSync( filename, 'utf8' );
+            module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
+        }
+    };
     Scriptor.extensions = {};
     Scriptor.extensions_enabled = false;
     Scriptor.scriptCache = MapAdapter.createMap();
@@ -62,13 +69,13 @@ var Scriptor;
             enable = true;
         }
         if( enable ) {
-            Scriptor.extensions['.js'] = function(module, filename) {
-                var content = fs.readFileSync( filename, 'utf8' );
-                module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
-            };
-        }
-        else {
-            delete Scriptor.extensions['.js'];
+            for( var it in Scriptor.default_extensions ) {
+                if( Scriptor.default_extensions.hasOwnProperty( it ) ) {
+                    if( !Scriptor.extensions.hasOwnProperty( it ) ) {
+                        Scriptor.extensions[it] = Scriptor.default_extensions[it];
+                    }
+                }
+            }
         }
         Scriptor.extensions_enabled = enable;
     }
@@ -269,10 +276,10 @@ var Scriptor;
             var require = this._require.bind( this );
             var define = this._define.bind( this );
             require.toUrl = function(filepath) {
-                //Typescript decided it didn't like doing this part, so I did it myself
                 if( filepath === void 0 ) {
                     filepath = _this.filename;
                 }
+                assert.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
                 if( filepath.charAt( 0 ) === '.' ) {
                     //Use the url.resolve instead of path.resolve, even though they usually do the same thing
                     return url.resolve( _this.baseUrl, filepath );
@@ -281,17 +288,14 @@ var Scriptor;
                     return filepath;
                 }
             };
-            var normalize = function(id) {
-                return id.charAt( 0 ) === '.' ? path.resolve( _this.baseUrl, id ) : id;
-            };
             require.defined = function(id) {
-                return _this._loadCache.has( normalize( id ) );
+                return _this._loadCache.has( posix_path.normalize( id ) );
             };
             require.specified = function(id) {
-                return _this._defineCache.has( normalize( id ) );
+                return _this._defineCache.has( posix_path.normalize( id ) );
             };
             require.undef = function(id) {
-                id = normalize( id );
+                id = posix_path.normalize( id );
                 _this._loadCache.delete( id );
                 _this._defineCache.delete( id );
                 return _this;
@@ -410,7 +414,7 @@ var Scriptor;
                     }
                     result = this._loadCache.get( id );
                 }
-                else if( id.charAt( 0 ) === '.' || Common.isAbsolutePath( id ) ) {
+                else if( Common.isAbsoluteOrRelative( id ) ) {
                     //Exploit Scriptor as much as possible for relative and absolute paths
                     id = Module.Module._resolveFilename( normalize( id ), this.parent );
                     var script;
