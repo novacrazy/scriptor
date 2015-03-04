@@ -273,7 +273,7 @@ describe( 'Scriptor with custom extensions', function() {
 
     var script, name = './test/scripts/inject_test.js';
 
-    Scriptor.enableCustomExtensions();
+    Scriptor.installCustomExtensions();
 
     it( 'should create a new Script instance', function() {
         script = new Scriptor.Script( name, module );

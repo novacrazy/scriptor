@@ -262,7 +262,7 @@ describe( 'Scriptor with custom extensions', function() {
 
     var script, name = './test/scripts/inject_test.js';
 
-    Scriptor.enableCustomExtensions();
+    Scriptor.installCustomExtensions();
 
     it( 'should have installed custom extension functions', function() {
         assert.strictEqual( typeof Scriptor.extensions['.js'], 'function' );
