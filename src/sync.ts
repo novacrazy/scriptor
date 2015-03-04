@@ -9,11 +9,10 @@ import url = require('url');
 import path = require('path');
 import events = require('events');
 
+import Base = require('./base');
 import Module = require('./Module');
 import Common = require('./common');
 import MapAdapter = require('./map');
-
-var scriptCache : Map<string, Scriptor.Script> = MapAdapter.createMap<Scriptor.Script>();
 
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
@@ -26,7 +25,9 @@ module Scriptor {
 
     export var extensions_enabled : boolean = false;
 
-    export function enableCustomExtensions( enable : boolean = true ) {
+    export var scriptCache : Map<string, Scriptor.Script> = MapAdapter.createMap<Scriptor.Script>();
+
+    export function installCustomExtensions( enable : boolean = true ) {
         if( enable ) {
             extensions['.js'] = ( module : Module.IModule, filename : string ) => {
                 var content = fs.readFileSync( filename, 'utf8' );
@@ -41,7 +42,13 @@ module Scriptor {
     }
 
     export function disableCustomExtensions() {
-        enableCustomExtensions( false );
+        installCustomExtensions( false );
+    }
+
+    export function closeCachedScripts( permemant : boolean = true ) {
+        scriptCache.forEach( ( script : Script ) => {
+            script.close( permemant );
+        } );
     }
 
     /**** BEGIN SECTION SCRIPT ****/
@@ -79,6 +86,7 @@ module Scriptor {
         defined( id : string ) : boolean;
         undef( id : string ) : void;
         onError( err : any ) : void;
+        resolve( id : string ) : string;
 
         define : IDefineFunction;
     }
@@ -97,7 +105,7 @@ module Scriptor {
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
     //well, mixed in. So ScriptBase just handles the most basic Script functions
-    class ScriptBase extends events.EventEmitter {
+    class ScriptBase extends Base.EventPropagator {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
         protected _maxRecursion : number = default_max_recursion;
@@ -177,6 +185,10 @@ module Scriptor {
             return null;
         }
 
+        public isManaged() : boolean {
+            return this.manager !== null && this.manager !== void 0;
+        }
+
         //Based on the RequireJS 'standard' for relative locations
         //For SourceScripts, just set the filename to something relative
         get baseUrl() : string {
@@ -242,32 +254,14 @@ module Scriptor {
             }
         }
 
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
         public include( filename : string ) : Script {
-            return null;
+            throw new Error( 'Cannot include script "' + filename + '"from an unmanaged script' );
         }
     }
 
     class AMDScript extends ScriptBase implements IAMDScriptBase {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
-
-        protected _propagateChanges : boolean = false;
-        protected _hasPropagated : boolean = false;
-        protected _addedPropagationHandler : boolean = false;
-
-        public propagateChanges( enable : boolean = true ) : boolean {
-            var wasPropagating : boolean = this._propagateChanges;
-
-            this._propagateChanges = enable;
-
-            if( wasPropagating && !enable ) {
-                //immediately disable propagation by pretending it's already been propagated
-                this._hasPropagated = true;
-            }
-
-            return wasPropagating;
-        }
 
         public require : IRequireFunction;
         public define : IDefineFunction;
@@ -315,6 +309,12 @@ module Scriptor {
             //This is not an anonymous so stack traces make a bit more sense
             require.onError = function onErrorDefault( err : any ) {
                 throw err; //default error
+            };
+
+            //This is almost exactly like the normal require.resolve, but it's relative to this.baseUrl
+            require.resolve = ( id : string ) => {
+                var relative = path.resolve( this.baseUrl, id );
+                return Module.Module._resolveFilename( relative, this._script );
             };
 
             define.require = require;
@@ -403,27 +403,28 @@ module Scriptor {
 
                     if( plugin_id === 'include' ) {
                         plugin = {
-                            load: ( id, require, _onLoad, config ) => {
-                                var script = this.include( id );
+                            normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
+                                return defaultNormalize( id );
+                            },
+                            load:      ( id, require, _onLoad, config ) => {
+                                try {
+                                    _onLoad( this.include( id ) );
 
-                                if( script !== null && script !== void 0 ) {
-                                    _onLoad( script );
-
-                                } else {
-                                    _onLoad( new Script( id, this._script ) );
+                                } catch( err ) {
+                                    _onLoad.error( err );
                                 }
                             }
-                        }
+                        };
 
                     } else {
-                        plugin = this._require( parts[0] );
+                        plugin = this._require( plugin_id );
                     }
 
-                    assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
+                    assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin: ' + plugin_id );
 
                     id = parts[1];
 
-                    if( plugin.normalize ) {
+                    if( typeof plugin.normalize === 'function' ) {
                         id = plugin.normalize( id, normalize );
 
                     } else if( id.charAt( 0 ) === '.' ) {
@@ -464,35 +465,21 @@ module Scriptor {
 
                     var script : Script;
 
-                    if( this.manager !== null && this.manager !== void 0 ) {
+                    if( this.isManaged() ) {
                         script = this.include( id );
 
                     } else {
                         script = Scriptor.load( id, this.watched, this._script );
+
+                        this._addPropagationHandler( script, 'change', () => {
+                            this.unload();
+                            this.emit( 'change', this.filename );
+                        } );
+
+                        script.propagateEvents( this._propagateEvents );
+
+                        script.maxRecursion = this.maxRecursion;
                     }
-
-                    if( this._propagateChanges && !this._addedPropagationHandler ) {
-                        var onPropagate = () => {
-                            if( !this._hasPropagated ) {
-                                this.unload();
-                                this.emit( 'change', this.filename );
-                                this._hasPropagated = true;
-                            }
-
-                            script.removeListener( 'change', onPropagate );
-
-                            this._addedPropagationHandler = false;
-                        };
-
-                        script.propagateChanges();
-
-                        script.on( 'change', onPropagate );
-
-                        this._addedPropagationHandler = true;
-                        this._hasPropagated = false;
-                    }
-
-                    script.maxRecursion = this.maxRecursion;
 
                     result = script.exports();
 
@@ -895,7 +882,6 @@ module Scriptor {
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
             this.on( 'rename', ( event, oldname, newname ) => {
-                console.log( oldname, newname );
                 _manager.scripts.set( newname, _manager.scripts.get( oldname ) );
                 _manager.scripts.delete( oldname );
             } );
@@ -919,7 +905,21 @@ module Scriptor {
                 script.reload();
             }
 
+            this._addPropagationHandler( script, 'change', () => {
+                this.unload();
+                this.emit( 'change', this.filename );
+            } );
+
+            script.propagateEvents( this._propagateEvents );
+
+            script.maxRecursion = this.maxRecursion;
+
             return script;
+        }
+
+        public close( permanent? : boolean ) : boolean {
+            delete this._manager;
+            return super.close( permanent );
         }
     }
 
@@ -1319,7 +1319,7 @@ module Scriptor {
 
         private _propagateChanges : boolean = false;
 
-        public propagateChanges( enable : boolean = true ) : boolean {
+        public propagateEvents( enable : boolean = true ) : boolean {
             var wasPropagating : boolean = this._propagateChanges;
 
             this._propagateChanges = enable;
@@ -1327,12 +1327,12 @@ module Scriptor {
             if( wasPropagating && !enable ) {
                 //immediately disable propagation by pretending it's already been propagated
                 this._scripts.forEach( ( script : Script ) => {
-                    script.propagateChanges( false );
+                    script.propagateEvents( false );
                 } );
 
             } else if( !wasPropagating && enable ) {
                 this._scripts.forEach( ( script : Script ) => {
-                    script.propagateChanges();
+                    script.propagateEvents();
                 } );
             }
 
@@ -1356,7 +1356,7 @@ module Scriptor {
                 script = new ScriptAdapter( this, null, this._parent );
 
                 if( this._propagateChanges ) {
-                    script.propagateChanges();
+                    script.propagateEvents();
                 }
 
                 script.load( filename, watch );

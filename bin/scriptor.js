@@ -153,8 +153,8 @@ module.exports = function(argv) {
         var Scriptor = require( './../' + (options.async ? 'async.js' : 'sync.js') );
 
         if( !options.no_ext ) {
-            logger.info( 'Custom extensions enabled.' );
-            Scriptor.enableCustomExtensions();
+            logger.info( 'Custom extensions installed.' );
+            Scriptor.installCustomExtensions();
         }
 
         if( options.async && options.long_stack_traces ) {

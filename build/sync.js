@@ -45,10 +45,10 @@ var assert = require( 'assert' );
 var url = require( 'url' );
 var path = require( 'path' );
 var events = require( 'events' );
+var Base = require( './base' );
 var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
-var scriptCache = MapAdapter.createMap();
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -56,7 +56,8 @@ var Scriptor;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.extensions = {};
     Scriptor.extensions_enabled = false;
-    function enableCustomExtensions(enable) {
+    Scriptor.scriptCache = MapAdapter.createMap();
+    function installCustomExtensions(enable) {
         if( enable === void 0 ) {
             enable = true;
         }
@@ -72,12 +73,22 @@ var Scriptor;
         Scriptor.extensions_enabled = enable;
     }
 
-    Scriptor.enableCustomExtensions = enableCustomExtensions;
+    Scriptor.installCustomExtensions = installCustomExtensions;
     function disableCustomExtensions() {
-        enableCustomExtensions( false );
+        installCustomExtensions( false );
     }
 
     Scriptor.disableCustomExtensions = disableCustomExtensions;
+    function closeCachedScripts(permemant) {
+        if( permemant === void 0 ) {
+            permemant = true;
+        }
+        Scriptor.scriptCache.forEach( function(script) {
+            script.close( permemant );
+        } );
+    }
+
+    Scriptor.closeCachedScripts = closeCachedScripts;
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
     //well, mixed in. So ScriptBase just handles the most basic Script functions
@@ -178,6 +189,9 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        ScriptBase.prototype.isManaged = function() {
+            return this.manager !== null && this.manager !== void 0;
+        };
         Object.defineProperty( ScriptBase.prototype, "baseUrl", {
             //Based on the RequireJS 'standard' for relative locations
             //For SourceScripts, just set the filename to something relative
@@ -236,36 +250,20 @@ var Scriptor;
                 this._script.filename = null;
             }
         };
-        //Returns null unless using the Manager, which creates a special derived class that overrides this
         ScriptBase.prototype.include = function(filename) {
-            return null;
+            throw new Error( 'Cannot include script "' + filename + '"from an unmanaged script' );
         };
         return ScriptBase;
-    })( events.EventEmitter );
+    })( Base.EventPropagator );
     var AMDScript = (function(_super) {
         __extends( AMDScript, _super );
         function AMDScript(parent) {
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
-            this._propagateChanges = false;
-            this._hasPropagated = false;
-            this._addedPropagationHandler = false;
             this._init();
         }
 
-        AMDScript.prototype.propagateChanges = function(enable) {
-            if( enable === void 0 ) {
-                enable = true;
-            }
-            var wasPropagating = this._propagateChanges;
-            this._propagateChanges = enable;
-            if( wasPropagating && !enable ) {
-                //immediately disable propagation by pretending it's already been propagated
-                this._hasPropagated = true;
-            }
-            return wasPropagating;
-        };
         AMDScript.prototype._init = function() {
             var _this = this;
             var require = this._require.bind( this );
@@ -301,6 +299,11 @@ var Scriptor;
             //This is not an anonymous so stack traces make a bit more sense
             require.onError = function onErrorDefault(err) {
                 throw err;
+            };
+            //This is almost exactly like the normal require.resolve, but it's relative to this.baseUrl
+            require.resolve = function(id) {
+                var relative = path.resolve( _this.baseUrl, id );
+                return Module.Module._resolveFilename( relative, _this._script );
             };
             define.require = require;
             define.amd = {
@@ -363,23 +366,25 @@ var Scriptor;
                     var plugin;
                     if( plugin_id === 'include' ) {
                         plugin = {
-                            load: function(id, require, _onLoad, config) {
-                                var script = _this.include( id );
-                                if( script !== null && script !== void 0 ) {
-                                    _onLoad( script );
+                            normalize: function(id, defaultNormalize) {
+                                return defaultNormalize( id );
+                            },
+                            load:      function(id, require, _onLoad, config) {
+                                try {
+                                    _onLoad( _this.include( id ) );
                                 }
-                                else {
-                                    _onLoad( new Script( id, _this._script ) );
+                                catch( err ) {
+                                    _onLoad.error( err );
                                 }
                             }
                         };
                     }
                     else {
-                        plugin = this._require( parts[0] );
+                        plugin = this._require( plugin_id );
                     }
-                    assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin' );
+                    assert( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin: ' + plugin_id );
                     id = parts[1];
-                    if( plugin.normalize ) {
+                    if( typeof plugin.normalize === 'function' ) {
                         id = plugin.normalize( id, normalize );
                     }
                     else if( id.charAt( 0 ) === '.' ) {
@@ -409,28 +414,18 @@ var Scriptor;
                     //Exploit Scriptor as much as possible for relative and absolute paths
                     id = Module.Module._resolveFilename( normalize( id ), this.parent );
                     var script;
-                    if( this.manager !== null && this.manager !== void 0 ) {
+                    if( this.isManaged() ) {
                         script = this.include( id );
                     }
                     else {
                         script = Scriptor.load( id, this.watched, this._script );
+                        this._addPropagationHandler( script, 'change', function() {
+                            _this.unload();
+                            _this.emit( 'change', _this.filename );
+                        } );
+                        script.propagateEvents( this._propagateEvents );
+                        script.maxRecursion = this.maxRecursion;
                     }
-                    if( this._propagateChanges && !this._addedPropagationHandler ) {
-                        var onPropagate = function() {
-                            if( !_this._hasPropagated ) {
-                                _this.unload();
-                                _this.emit( 'change', _this.filename );
-                                _this._hasPropagated = true;
-                            }
-                            script.removeListener( 'change', onPropagate );
-                            _this._addedPropagationHandler = false;
-                        };
-                        script.propagateChanges();
-                        script.on( 'change', onPropagate );
-                        this._addedPropagationHandler = true;
-                        this._hasPropagated = false;
-                    }
-                    script.maxRecursion = this.maxRecursion;
                     result = script.exports();
                 }
                 else {
@@ -782,7 +777,6 @@ var Scriptor;
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
             this.on( 'rename', function(event, oldname, newname) {
-                console.log( oldname, newname );
                 _manager.scripts.set( newname, _manager.scripts.get( oldname ) );
                 _manager.scripts.delete( oldname );
             } );
@@ -796,6 +790,7 @@ var Scriptor;
             configurable: true
         } );
         ScriptAdapter.prototype.include = function(filename, load) {
+            var _this = this;
             if( load === void 0 ) {
                 load = false;
             }
@@ -809,7 +804,17 @@ var Scriptor;
             if( load && !script.loaded ) {
                 script.reload();
             }
+            this._addPropagationHandler( script, 'change', function() {
+                _this.unload();
+                _this.emit( 'change', _this.filename );
+            } );
+            script.propagateEvents( this._propagateEvents );
+            script.maxRecursion = this.maxRecursion;
             return script;
+        };
+        ScriptAdapter.prototype.close = function(permanent) {
+            delete this._manager;
+            return _super.prototype.close.call( this, permanent );
         };
         return ScriptAdapter;
     })( Script );
@@ -820,15 +825,15 @@ var Scriptor;
         }
         var script;
         filename = path.resolve( filename );
-        if( scriptCache.has( filename ) ) {
-            script = scriptCache.get( filename );
+        if( Scriptor.scriptCache.has( filename ) ) {
+            script = Scriptor.scriptCache.get( filename );
         }
         else {
             script = new Script( null, parent );
             script.load( filename, watch );
             //Remove the reference to the script upon close, even if it isn't permenant
             script.once( 'close', function() {
-                scriptCache.delete( filename );
+                Scriptor.scriptCache.delete( filename );
             } );
         }
         return script;
@@ -1187,7 +1192,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        Manager.prototype.propagateChanges = function(enable) {
+        Manager.prototype.propagateEvents = function(enable) {
             if( enable === void 0 ) {
                 enable = true;
             }
@@ -1196,12 +1201,12 @@ var Scriptor;
             if( wasPropagating && !enable ) {
                 //immediately disable propagation by pretending it's already been propagated
                 this._scripts.forEach( function(script) {
-                    script.propagateChanges( false );
+                    script.propagateEvents( false );
                 } );
             }
             else if( !wasPropagating && enable ) {
                 this._scripts.forEach( function(script) {
-                    script.propagateChanges();
+                    script.propagateEvents();
                 } );
             }
             return wasPropagating;
@@ -1219,7 +1224,7 @@ var Scriptor;
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, null, this._parent );
                 if( this._propagateChanges ) {
-                    script.propagateChanges();
+                    script.propagateEvents();
                 }
                 script.load( filename, watch );
                 this._scripts.set( filename, script );
