@@ -166,7 +166,7 @@ module.exports = function(argv) {
         var manager = new Scriptor.Manager();
 
         if( options.propagate ) {
-            manager.propagateChanges();
+            manager.propagateEvents();
         }
 
         var maxRecursion, concurrency, watch;
