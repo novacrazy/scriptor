@@ -1167,7 +1167,7 @@ var Scriptor;
         function Manager(grandParent) {
             this._scripts = MapAdapter.createMap();
             this._cwd = process.cwd();
-            this._propagateChanges = false;
+            this._propagateEvents = false;
             this._parent = new Module.Module( 'ScriptManager', grandParent );
         }
 
@@ -1196,8 +1196,8 @@ var Scriptor;
             if( enable === void 0 ) {
                 enable = true;
             }
-            var wasPropagating = this._propagateChanges;
-            this._propagateChanges = enable;
+            var wasPropagating = this._propagateEvents;
+            this._propagateEvents = enable;
             if( wasPropagating && !enable ) {
                 //immediately disable propagation by pretending it's already been propagated
                 this._scripts.forEach( function(script) {
@@ -1223,7 +1223,7 @@ var Scriptor;
             var script = this._scripts.get( filename );
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, null, this._parent );
-                if( this._propagateChanges ) {
+                if( this._propagateEvents ) {
                     script.propagateEvents();
                 }
                 script.load( filename, watch );

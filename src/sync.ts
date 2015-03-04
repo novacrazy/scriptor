@@ -1317,12 +1317,12 @@ module Scriptor {
             return this._scripts;
         }
 
-        private _propagateChanges : boolean = false;
+        private _propagateEvents : boolean = false;
 
         public propagateEvents( enable : boolean = true ) : boolean {
-            var wasPropagating : boolean = this._propagateChanges;
+            var wasPropagating : boolean = this._propagateEvents;
 
-            this._propagateChanges = enable;
+            this._propagateEvents = enable;
 
             if( wasPropagating && !enable ) {
                 //immediately disable propagation by pretending it's already been propagated
@@ -1355,7 +1355,7 @@ module Scriptor {
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, null, this._parent );
 
-                if( this._propagateChanges ) {
+                if( this._propagateEvents ) {
                     script.propagateEvents();
                 }
 
