@@ -1223,7 +1223,7 @@ var Scriptor;
             if( watch === void 0 ) {
                 watch = true;
             }
-            filename = path.resolve( this.cwd, filename );
+            filename = path.resolve( this.cwd(), filename );
             var script = this._scripts.get( filename );
             if( script === void 0 ) {
                 script = new ScriptAdapter( this, null, this._parent );
@@ -1247,7 +1247,7 @@ var Scriptor;
             if( close === void 0 ) {
                 close = true;
             }
-            filename = path.resolve( this.cwd, filename );
+            filename = path.resolve( this.cwd(), filename );
             var script = this._scripts.get( filename );
             if( script !== void 0 ) {
                 if( close ) {
@@ -1278,7 +1278,7 @@ var Scriptor;
             return this.add( filename ).reference( args );
         };
         Manager.prototype.get = function(filename) {
-            filename = path.resolve( this.cwd, filename );
+            filename = path.resolve( this.cwd(), filename );
             return this._scripts.get( filename );
         };
         //Make closing optional for the same reason as .remove

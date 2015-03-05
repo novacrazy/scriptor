@@ -1350,7 +1350,7 @@ module Scriptor {
         //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
         //from watching a file.
         public add( filename : string, watch : boolean = true ) : ScriptAdapter {
-            filename = path.resolve( this.cwd, filename );
+            filename = path.resolve( this.cwd(), filename );
 
             var script : ScriptAdapter = this._scripts.get( filename );
 
@@ -1379,7 +1379,7 @@ module Scriptor {
         //as it may sometimes make sense to move it out of a manager and use it independently.
         //However, that is quite rare so close defaults to true
         public remove( filename : string, close : boolean = true ) : boolean {
-            filename = path.resolve( this.cwd, filename );
+            filename = path.resolve( this.cwd(), filename );
 
             var script : ScriptAdapter = this._scripts.get( filename );
 
@@ -1412,7 +1412,7 @@ module Scriptor {
         }
 
         public get( filename : string ) : ScriptAdapter {
-            filename = path.resolve( this.cwd, filename );
+            filename = path.resolve( this.cwd(), filename );
 
             return this._scripts.get( filename );
         }
