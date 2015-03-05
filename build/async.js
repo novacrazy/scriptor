@@ -83,6 +83,7 @@ function isGeneratorFunction(obj) {
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
+    Scriptor.common = Common;
     Scriptor.default_dependencies = Common.default_dependencies;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.default_extensions = {
@@ -922,7 +923,9 @@ var Scriptor;
             return script;
         };
         ScriptAdapter.prototype.close = function(permanent) {
-            delete this._manager;
+            if( permanent ) {
+                delete this._manager;
+            }
             return _super.prototype.close.call( this, permanent );
         };
         return ScriptAdapter;
@@ -1361,8 +1364,6 @@ var Scriptor;
                 if( this._propagateEvents ) {
                     script.propagateEvents();
                 }
-                script.on( 'warning', function(message) {
-                } );
                 script.load( filename, watch );
                 this._scripts.set( filename, script );
             }

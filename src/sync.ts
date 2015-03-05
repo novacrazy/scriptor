@@ -19,6 +19,8 @@ var posix_path : any = path['posix'];
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
 
+    export var common = Common;
+
     export var default_dependencies : string[] = Common.default_dependencies;
 
     export var default_max_recursion : number = Common.default_max_recursion;
@@ -920,7 +922,10 @@ module Scriptor {
         }
 
         public close( permanent? : boolean ) : boolean {
-            delete this._manager;
+            if( permanent ) {
+                delete this._manager;
+            }
+
             return super.close( permanent );
         }
     }
