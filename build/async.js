@@ -685,6 +685,9 @@ var Scriptor;
             var _this = this;
             return this.exports().then( function(main) {
                 if( typeof main === 'function' ) {
+                    if( isGeneratorFunction( main ) ) {
+                        main = co.wrap( main );
+                    }
                     return _this._callWrapper( main, null, args );
                 }
                 else {

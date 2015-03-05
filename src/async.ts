@@ -765,6 +765,10 @@ module Scriptor {
         public apply( args : any[] ) : Promise<any> {
             return this.exports().then( ( main : any ) => {
                 if( typeof main === 'function' ) {
+                    if( isGeneratorFunction( main ) ) {
+                        main = co.wrap( main );
+                    }
+
                     return this._callWrapper( main, null, args );
 
                 } else {
