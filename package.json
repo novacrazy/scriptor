@@ -45,7 +45,7 @@
   "dependencies": {
     "bluebird": "^2.9.13",
     "co": "^4.4.0",
-    "commander": "^2.6.0",
-    "glob": "^4.4.1"
+    "commander": "^2.7.0",
+    "glob": "^4.5.1"
   }
 }
