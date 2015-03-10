@@ -19,6 +19,15 @@ function diff_ms(start) {
     return ms.toFixed( 3 ) + 'ms';
 }
 
+function parseIntOrInfinity(value) {
+    if( value.toLowerCase() === 'infinity' ) {
+        return Infinity;
+
+    } else {
+        return parseInt( value );
+    }
+}
+
 //Process status codes
 var EXIT_SUCCESS = 0,
     EXIT_FAILURE = 1;
@@ -174,14 +183,14 @@ module.exports = function(argv) {
         //Basically, if both max_recursion and concurrency are set, they have to play along
         //Otherwise, each will increase or whatever to not crash the application
         if( options.max_recursion ) {
-            maxRecursion = parseInt( options.max_recursion );
+            maxRecursion = parseIntOrInfinity( options.max_recursion );
 
             if( isNaN( maxRecursion ) ) {
                 logger.error( 'Not a Number value for option --max_recursion' );
                 process.exit( EXIT_FAILURE );
 
             } else if( options.concurrency ) {
-                concurrency = parseInt( options.concurrency );
+                concurrency = parseIntOrInfinity( options.concurrency );
 
                 if( isNaN( concurrency ) ) {
                     logger.error( 'Not a Number value for option -c, --concurrency' );
@@ -198,7 +207,7 @@ module.exports = function(argv) {
 
         } else {
             if( options.concurrency ) {
-                concurrency = parseInt( options.concurrency );
+                concurrency = parseIntOrInfinity( options.concurrency );
 
                 if( isNaN( concurrency ) ) {
                     logger.error( 'Not a Number value for option -c, --concurrency' );
