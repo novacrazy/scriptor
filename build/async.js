@@ -1089,6 +1089,9 @@ var Scriptor;
             this._transform = _transform;
             assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
+            if( isGeneratorFunction( _transform ) ) {
+                this._transform = co.wrap( _transform );
+            }
             this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
@@ -1171,6 +1174,9 @@ var Scriptor;
                 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
+            if( isGeneratorFunction( _transform ) ) {
+                this._transform = co.wrap( _transform );
+            }
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this
             this._onChange = function(event, filename) {
