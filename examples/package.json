@@ -10,8 +10,8 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "koa": "^0.18.0",
+    "koa": "^0.18.1",
     "koa-router": "^4.2.0",
-    "scriptor": "^2.0.0-beta.20"
+    "scriptor": "^2.0.0-beta.25"
   }
 }
