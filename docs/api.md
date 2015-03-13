@@ -405,7 +405,7 @@ Even more, it is fully integrated into Scriptor, with built-in plugins for scrip
 For example, using the asynchronous build:
 ```javascript
 //someScript.js
-define(['promisify!fs`], function*(fs, require) {
+define(['promisify!fs'], function*(fs, require) {
     var config = yield fs.readFileAsync('config.json', 'utf-8');
     config = JSON.parse(config);
 
@@ -415,10 +415,10 @@ define(['promisify!fs`], function*(fs, require) {
 });
 ```
 
-Or even better, taking advantage of the `import` plugin:
+Or even better, taking advantage of the `include` plugin:
 ```javascript
 //someScript.js
-define([`import!config.json`], function(configScript) {
+define([`include!config.json`], function(configScript) {
     return function() {
         return configScript.exports();
     };
@@ -449,7 +449,7 @@ interface IDefineFunction {
 
 This is a helper value for anything that might use it. Some common requirejs plugins or other stuff sometimes check this value to determine if jQuery is present. In Scriptor, it is not, so this is always false.
 
-######`.define`.require : `[`IRequireFunction`]()
+######`.define.require : `[`IRequireFunction`]()
 
 Simply a reference to [`.require`]().
 
@@ -627,7 +627,7 @@ Returns true if this Script instance is managed by a [`Manager`]().
 
 ##`SourceScript`
 
-Instead of loading from a file, a `SourceScript` will accept a string in which it will compile into a valid script instance that can be run and worked with just like a normal `Script` can.
+Instead of loading from a file, a `SourceScript` will accept a string, in which it will compile into a valid script instance that can be run and worked with just like a normal `Script` can.
 
 #####`new Script(src? : string|Reference, parent? : Module)` -> `SourceScript`
 
