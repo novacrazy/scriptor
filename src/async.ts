@@ -1228,7 +1228,7 @@ module Scriptor {
 
         public value() : Promise<any> {
             if( !this._ran ) {
-                return this._transform( this._ref, null ).then( ( value ) => {
+                return tryPromise( this._transform( this._ref, null ) ).then( ( value ) => {
                     if( typeof value === 'object' ) {
                         this._value = Object.freeze( value );
 
@@ -1313,7 +1313,7 @@ module Scriptor {
 
         public value() : Promise<any> {
             if( !this._ran ) {
-                return this._transform( this._left, this._right ).then( ( value ) => {
+                return tryPromise( this._transform( this._left, this._right ) ).then( ( value ) => {
                     if( typeof value === 'object' ) {
                         this._value = Object.freeze( value );
 

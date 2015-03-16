@@ -1102,7 +1102,7 @@ var Scriptor;
         TransformReference.prototype.value = function() {
             var _this = this;
             if( !this._ran ) {
-                return this._transform( this._ref, null ).then( function(value) {
+                return tryPromise( this._transform( this._ref, null ) ).then( function(value) {
                     if( typeof value === 'object' ) {
                         _this._value = Object.freeze( value );
                     }
@@ -1190,7 +1190,7 @@ var Scriptor;
         JoinedTransformReference.prototype.value = function() {
             var _this = this;
             if( !this._ran ) {
-                return this._transform( this._left, this._right ).then( function(value) {
+                return tryPromise( this._transform( this._left, this._right ) ).then( function(value) {
                     if( typeof value === 'object' ) {
                         _this._value = Object.freeze( value );
                     }
