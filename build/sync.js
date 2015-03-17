@@ -1256,7 +1256,7 @@ var Scriptor;
                 if( close ) {
                     script.close();
                 }
-                return delete this._scripts.delete( filename );
+                return this._scripts.delete( filename );
             }
             return false;
         };
