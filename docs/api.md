@@ -970,6 +970,27 @@ Internally, managers create a single 'fake' module to act as the parent to all m
 
 This creates a new Manager instance with the specified grandparent module, which will serve as the parent to the new module created internally.
 
+Example:
+```javascript
+//index.js
+var Scriptor = require( 'scriptor/sync' );
+
+var manager = new Scriptor.Manager( module );
+
+var res = manager.call( 'something.js' );
+
+console.log( res.value ); //100
+```
+
+```javascript
+//somescript.js
+module.define( {
+    value: 100
+} );
+```
+
+See [Example 8](https://github.com/novacrazy/scriptor/tree/master/examples/example%208) for full source code.
+
 -----
 
 #####`.add(filename : string, watch? : boolean)` -> `Script`
