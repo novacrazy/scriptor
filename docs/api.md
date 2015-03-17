@@ -902,7 +902,7 @@ var root = Reference.join_all( refs, function(left, right) {
 console.log( root.value() ); //0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 ```
 
-The actual 'tree' structure of the above code is:
+Here is a small printout of the actual 'tree' like structure of the above code:
 ```
 root
 ├─ value: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -944,8 +944,6 @@ root
             ├─ value: 9
 ```
 
-This shows off both the tree nature of it, and that it retains intermediary values in the references.
-
 -----
 
 #####`Reference.transform(ref : Reference, transform : ITransformFunction)` -> `Reference`
@@ -957,3 +955,113 @@ Exactly the same as `ref.transform(transform)`, but made static.
 ##Manager
 
 #####About Managers
+
+Managers offer an easy way to both manage many scripts and allows scripts to interact with each other via 'includes' and so forth, as well as set the current working directory for all added scripts to be resolved from.
+
+Internally, managers create a single 'fake' module to act as the parent to all managed scripts, so as to not clutter real modules with many children.
+
+#####`new Manager(grandParent? : IModule)` -> `Manager`
+
+This creates a new Manager instance with the specified grandparent module, which will serve as the parent to the new module created internally.
+
+-----
+
+#####`.add(filename : string, watch? : boolean)` -> `Script`
+
+This adds a script to the manager and optionally watches it for changes, then returns the new script instance.
+
+If the script was already added to the manager, it will return the previously created script. Duplicates are avoided as much as possible.
+
+`watch` defaults to true.
+
+-----
+
+#####`.get(filename : string)` -> `Script`
+
+Retrieves the associated Script instance given for `filename`.
+
+Returns null or undefined if the Script instance does not exist. `.get` does not create a new Script instance.
+
+-----
+
+#####`.remove(filename: string, close?: boolean)` -> `boolean`
+
+Removes a script from the manager, optionally closing it via [`Script.close`]().
+
+Returns true if the Script was removed, or false if it wasn't or was never there to begin with.
+
+`close` defaults to true.
+
+-----
+
+#####`.call(filename : string, ...args : any[])` -> `any | Promise<any>`
+
+Equivalent to `.add(filename, false).call(...args)`
+
+It will add the script to the manager if it doesn't already exist, call it, then return the result.
+
+-----
+
+#####`.apply(filename : string, args : any[])` -> `any | Promise<any>`
+
+Equivalent to `.add(filename, false).apply(args)`
+
+It will add the script to the manager if it doesn't already exist, call it, then return the result.
+
+-----
+
+#####`.cwd()` -> `String`
+
+Returns the Manager's current working directory, to which all script filenames resolve relative to.
+
+This default to `process.cwd()` upon the instantiation of a new Manager.
+
+-----
+
+#####`.chdir(dir : string)` -> `String`
+
+Changes the Manager's current working directory relative to the previous one, and returns the new one.
+
+-----
+
+#####`.reference(filename : string, ...args : any[])` -> `Reference`
+
+Equivalent to `.add(filename, false).reference(...args)`
+
+It will add the script to the manager if it doesn't already exist, then creates a new Reference with the arguments provided.
+
+-----
+
+#####`.reference_apply(filename : string, args : any[])` -> `Reference`
+
+Equivalent to `.add(filename, false).reference_apply(args)`
+
+It will add the script to the manager if it doesn't already exist, then creates a new Reference with the arguments provided.
+
+-----
+
+#####`.clear(close? : boolean)`
+
+Removes all scripts from the Manager, making it a clean slate to add more. If `close` is true, it will also close them via [`Script.close`]()
+
+`close` defaults to true.
+
+-----
+
+#####`.propagateEvents(enable? : boolean)`
+
+Will enable or disable event propagation in any current and future scripts managed by the Manager instance.
+
+`enable` defaults to true.
+
+-----
+
+#####`.parent` -> `IModule`
+
+A reference to the created module that serves as the parent for every script managed by the Manager instance.
+
+-----
+
+#####`.scripts` -> `Map<Script>`
+
+Reference to the internal Map instance in which the Script instances of held, with their filenames serving as their lookup keys.
