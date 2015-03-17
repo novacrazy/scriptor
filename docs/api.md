@@ -84,13 +84,13 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.left()`]()
     - [`.right()`]()
     - [`.transform(transform? : ITransformFunction)`]()
-    - [`.join(transform? : ITransformFunction)`]()
+    - [`.join(ref : Reference, transform? : ITransformFunction)`]()
     - [`.ran`]()
     - [`.closed`]()
     - Static
         - [`Reference.resolve(value : any)`]()
-        - [`Reference.join(left : Reference, right : Reference)`]()
-        - [`Reference.join_all(refs : Reference[])`]()
+        - [`Reference.join(left : Reference, right : Reference, transform : ITransformFunction)`]()
+        - [`Reference.join_all(refs : Reference[], transform : ITransformFunction)`]()
         - [`Reference.transform(ref : Reference, transform : ITransformFunction)`]()
 
 - [`Manager`]()
@@ -418,7 +418,7 @@ define(['promisify!fs'], function*(fs, require) {
 Or even better, taking advantage of the `include` plugin:
 ```javascript
 //someScript.js
-define([`include!config.json`], function(configScript) {
+define(['include!config.json'], function(configScript) {
     return function() {
         return configScript.exports();
     };
@@ -737,11 +737,11 @@ interface ITransformFunction {
 }
 ```
 
-For the synchronous build, it should return the value directly, but for the asynchronous build it should return a Promise which resolves to the value.
+The reason it passes left and/or right References directly into the transform function instead of their values it because the transform function may choose to completely ignore one or both References. It's up to the user.
 
-Furthermore, the transform function can be a coroutine in the asynchronous build, in the form of a generator function. More on that in the [`transform`]() and [`join`]() sections.
+Additionally, the transform function can be a coroutine in the asynchronous build, in the form of a generator function. More on that in the [`transform`]() and [`join`]() sections.
 
-Scriptor includes a simple identity function as well, as detailed in the [`Scriptor.identity`]() section.
+Scriptor includes a simple identity function as well, as detailed in the [`Scriptor.identity`]() section. It only returns the value of the left Reference, ignore the right one if one even exists.
 
 -----
 
@@ -752,3 +752,208 @@ Scriptor includes a simple identity function as well, as detailed in the [`Scrip
 This creates a new Reference instance with the specified script and arguments to be bound to. Once created, the arguments cannot be changed, nor can the referenced script.
 
 -----
+
+#####`.value()` -> `any | Promise<any>`
+
+If the Reference has not been evaluated, this will evaluate it, calling any transforms or joins or anything down the line, and will return the resulting value or, in the case of the asynchronous build, return a Promise that resolves to the resulting value.
+
+If the Reference has already been evaluated, the previous result was stored automatically and another call to `.value()` will simply retrieve the previous value, without having to re-run the scripts and transforms and stuff.
+
+-----
+
+#####`.close(recursive? : boolean)`
+
+This will delete the stored arguments and cached results, and make the Reference unusable. It will also stop any event propagation from the Reference that could potentially invalidate other References.
+
+If `recursive` is true, it will also close any References that the current Reference is using. For example, if given a long chain of transforms and joins, closing the top most one recursively will also close all the other created References.
+
+`recursive` defaults to false.
+
+-----
+
+#####`.left()` -> `Reference`
+
+If the Reference was created by a `transform`, `join` or `join_all` call, it will have a `left` child Reference which it listens on for changes to potentially invalidate itself.
+
+If the Reference was not created by a `transform`, `join` or `join_all` call, it will not have a `left` child, and `.left()` will return null.
+
+-----
+
+#####`.right()` -> `Reference`
+
+If the reference was created by a `join` or `join_all` call, it will have a `right` child Reference which it listens on for changes to potentially invalidate itself.
+
+If the Reference was not created by a `join` or `join_all` call, it will not have a `right` child, and `.right()` will return null.
+
+-----
+
+#####`.transform(transform? : ITransformFunction)` -> `Reference`
+
+This created a new Reference that will apply a transformation function to the value of the current Reference before returning it.
+
+Simple example:
+```javascript
+var Scriptor = require( 'scriptor/sync' );
+var Reference = Scriptor.Reference;
+
+var ref = Reference.resolve( 32 );
+
+ref = ref.transform( function(left) {
+    return left.value() + 10;
+} );
+
+console.log( ref.value() ); //42
+```
+
+See [Example 4]() for full source code.
+
+Or, for the synchronous build, ES6 coroutines can be used inside transform function to make operations more clear.
+
+For example:
+```javascript
+var Scriptor = require( 'scriptor/async' );
+var Reference = Scriptor.Reference;
+
+var ref = Reference.resolve( 'World!' );
+
+ref = ref.transform( function*(left) {
+    return 'Hello, ' + (yield left.value());
+} );
+
+ref.value().then( console.log ); //Hello, World!
+```
+
+See [Example 5]() for full source code.
+
+-----
+
+#####`.join(ref : Reference, transform? : ITransformFunction)` -> `Reference`
+
+Almost identical to `.transform`, `.join` allows two separate Reference to be joined together via a transform function.
+
+For example, a variation on [Example 5]():
+```javascript
+var Scriptor = require( 'scriptor/async' );
+var Reference = Scriptor.Reference;
+
+var a = Reference.resolve( 'Hello, ' );
+var b = Reference.resolve( 'World!' );
+
+var ref = a.join( b, function*(left, right) {
+    return (yield left.value()) + (yield right.value());
+} );
+
+ref.value().then( console.log ); //Hello, World!
+```
+
+It should be noted that extensive use of `.join` and `.transform` will eventually create an implicit linked list and/or binary tree -ish structure, and that should be taken into consideration when using many transforms.
+
+For convenience, Scriptor includes a helper function to create a real-ish balanced tree structure out of an array of References and a single transform function. For more details on that, see [`Reference.join_all`]().
+
+-----
+
+#####`.ran` -> `boolean`
+
+True if the Reference has already been evaluated, false otherwise.
+
+-----
+
+#####`.closed` -> `boolean`
+
+True if the Reference has been closed, false otherwise.
+
+-----
+
+#####Static Reference Functions
+
+#####`Reference.resolve(value : any)` -> `Reference`
+
+This is a helper function that creates a Reference that will always evaluate to `value` when `.value()` is called.
+
+It is similar to bluebird's `Promise.resolve` function, just with Scriptor References.
+
+-----
+
+#####`Reference.join(left : Reference, right : Reference, transform : ITransformFunction)` -> `Reference`
+
+Exactly the same as `left.join(right, transform)`, but made static.
+
+-----
+
+#####`Reference.join_all(refs : Reference[], transform : ITransformFunction)` -> `Reference`
+
+This will recursively join together References with the specified transform function from the first and last elements to the middle ones, creating a balanced tree-like implicit structure of joined References.
+
+For example:
+```javascript
+var Scriptor = require( 'scriptor/sync' );
+var Reference = Scriptor.Reference;
+
+var refs = [];
+
+for( var i = 0; i < 10; i++ ) {
+    refs.push( Reference.resolve( i ) );
+}
+
+var root = Reference.join_all( refs, function(left, right) {
+    return left.value() + ', ' + right.value();
+} );
+
+console.log( root.value() ); //0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+```
+
+The actual 'tree' structure of the above code is:
+```
+root
+├─ value: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+├─ left
+│  ├─ value: 0, 1, 2, 3, 4
+│  ├─ left
+│  │  ├─ value: 0, 1
+│  │  ├─ left
+│  │  │  ├─ value: 0
+│  │  └─ right
+│  │     ├─ value: 1
+│  └─ right
+│     ├─ value: 2, 3, 4
+│     ├─ left
+│     │  ├─ value: 2
+│     └─ right
+│        ├─ value: 3, 4
+│        ├─ left
+│        │  ├─ value: 3
+│        └─ right
+│           ├─ value: 4
+└─ right
+   ├─ value: 5, 6, 7, 8, 9
+   ├─ left
+   │  ├─ value: 5, 6
+   │  ├─ left
+   │  │  ├─ value: 5
+   │  └─ right
+   │     ├─ value: 6
+   └─ right
+      ├─ value: 7, 8, 9
+      ├─ left
+      │  ├─ value: 7
+      └─ right
+         ├─ value: 8, 9
+         ├─ left
+         │  ├─ value: 8
+         └─ right
+            ├─ value: 9
+```
+
+This shows off both the tree nature of it, and that it retains intermediary values in the references.
+
+-----
+
+#####`Reference.transform(ref : Reference, transform : ITransformFunction)` -> `Reference`
+
+Exactly the same as `ref.transform(transform)`, but made static.
+
+-----
+
+##Manager
+
+#####About Managers
