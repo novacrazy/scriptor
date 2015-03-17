@@ -36,7 +36,7 @@ scriptor
 
 Internally, when valid scripts or globs are passed to the Scriptor CLI, it will create a Manager instance for either the synchronous or asynchronous builds, and run the scripts through those.
 
-Using [`Manager.chdir()`](), it sets the current working directory for each script as set by the `--dir <path>` option.
+Using [`Manager.chdir()`](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#chdirdir--string---string), it sets the current working directory for each script as set by the `--dir <path>` option.
 
 ##Concurrency and Recursion
 
