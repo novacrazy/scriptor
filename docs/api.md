@@ -142,6 +142,7 @@ If `enable` is true, custom extension handlers will be enabled. By default, this
 For the asynchronous build, the custom handlers load files asynchronously, injects the AMD functions and compiles the scripts. For the synchronous version, it loads them synchronously and injects the AMD functions and compiles the scripts.
 
 For information on how to write your own extension handlers see [Custom Extension Handlers]()
+
 ------
 
 #####`Scriptor.disableCustomExtensions()` -> `void`
