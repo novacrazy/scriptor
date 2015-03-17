@@ -1268,7 +1268,7 @@ var Scriptor;
             return this.apply( filename, args );
         };
         Manager.prototype.apply = function(filename, args) {
-            return this.add( filename ).apply( args );
+            return this.add( filename, false ).apply( args );
         };
         Manager.prototype.reference = function(filename) {
             var args = [];
@@ -1278,7 +1278,7 @@ var Scriptor;
             return this.reference_apply( filename, args );
         };
         Manager.prototype.reference_apply = function(filename, args) {
-            return this.add( filename ).reference( args );
+            return this.add( filename, false ).reference( args );
         };
         Manager.prototype.get = function(filename) {
             filename = path.resolve( this.cwd(), filename );

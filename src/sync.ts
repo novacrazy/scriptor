@@ -1405,7 +1405,7 @@ module Scriptor {
         }
 
         public apply( filename : string, args : any[] ) : any {
-            return this.add( filename ).apply( args );
+            return this.add( filename, false ).apply( args );
         }
 
         public reference( filename : string, ...args : any[] ) : Reference {
@@ -1413,7 +1413,7 @@ module Scriptor {
         }
 
         public reference_apply( filename : string, args : any[] ) : Reference {
-            return this.add( filename ).reference( args );
+            return this.add( filename, false ).reference( args );
         }
 
         public get( filename : string ) : ScriptAdapter {
