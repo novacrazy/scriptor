@@ -21,14 +21,14 @@ As of Version 2.0, Scriptor now has a command line interface capable of running 
 The initial purpose of Scriptor was to create a system for writing simple scripts that generate web pages. It has since become a standalone library.
 
 # Topics
-* [Quick Start]()
-* [Features]()
-* [Documentation]()
-    * [Synchronous API]()
-    * [Asynchronous API]()
-    * [Asynchronous Module Definitions]()
-* [Example Code]()
-* [Useful recipes]()
+* [Quick Start](https://github.com/novacrazy/scriptor#quick-start)
+* [Features](https://github.com/novacrazy/scriptor#scriptor-features)
+* [Documentation](https://github.com/novacrazy/scriptor#documentation)
+    * [API Documentation](/docs/api.md)
+    * [Asynchronous Module Definitions](/docs/amd.md)
+    * [CLI Documentation](/docs/cli.md)
+* [Example Code](https://github.com/novacrazy/scriptor#example-code)
+* [Useful recipes](https://github.com/novacrazy/scriptor#useful-recipes)
 * [Support](#support)
 * [Changelog](/CHANGELOG.md)
 * [License](#license)
@@ -73,14 +73,16 @@ $scriptor
 # Scriptor Features
 
 ##### Synchronous or Asynchronous
-Scriptor comes in two variations. There is the normal, synchronous build, which lazily evaluates scripts, but returns values synchronously. Then there is the asynchronous build, which also lazily evaluates scripts, but can load scripts and wait on return values asynchronously using Promises.
+Scriptor comes in two variations. There is the normal, synchronous build, which lazily evaluates scripts, but returns values synchronously.
 
-For the advantages or disadvantages of either, see [Here]()
+Then there is the asynchronous build, which not only lazily evaluates scripts, but can load scripts and wait on return values asynchronously using Promises and even run module factories using coroutines.
+
+For the advantages or disadvantages of either, see [Here](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#foreword-about-the-sync-and-async-builds)
 
 ##### AMD
-Inside a script, Scriptor injects a few extra functions into the global `module` variable that facilitates Asynchronous Module Defintions (AMD). It is a fully fledged AMD implementation complete with plugin support, lazy evaluation of defined modules, and (in the asynchronous build), fully asynchronous dependency resolution. All of which integrates gracefully with standard Node.js modules and Scriptor itself.
+Inside a script, Scriptor injects a few extra functions into the global `module` variable that facilitates Asynchronous Module Definitions (AMD). It is a fully fledged AMD implementation complete with plugin support, lazy evaluation of defined modules, and (in the asynchronous build), fully asynchronous dependency resolution. All of which integrates gracefully with standard Node.js modules and Scriptor itself.
 
-For a full tutorial on how to best use Scriptor with AMD, see [Here]()
+For a full tutorial on how to best use Scriptor with AMD, see [Here](/docs/amd.md)
 
 ##### Automatic Reloading
 Scriptor utilizes file watchers to automatically reload and rename scripts as needed. No need to manually recompile scripts using complex file watcher code. It's all built-in.
@@ -88,13 +90,13 @@ Scriptor utilizes file watchers to automatically reload and rename scripts as ne
 ##### References
 Scriptor has a way overpowered system that can be used to 'reference' a single evaluation of a script and automatically reload and re-evaluate the reference when the script changes. In addition, Scriptor includes a fully fledged system for merging, transforming and generally manipulating references values while still propagating changes in the originating scripts.
 
-For more information on this feature, see [Here]()
+For more information on this feature, see [Here](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#reference)
 
 # Documentation
 
-* [Synchronous API]()
-* [Asynchronous API]()
-* [Asynchronous Module Definitions]()
+* [API Documentation](/docs/api.md)
+* [Asynchronous Module Definitions](/docs/amd.md)
+* [CLI Documentation](/docs/cli.md)
 
 # Example Code
 
