@@ -9,7 +9,7 @@ Scriptor
 # Introduction
 Scriptor is the ultimate library for dynamically loading, reloading and running scripts, with built-in support for file watching to automatically reload when necessary.
 
-A script is defined as a file which can be 'required' via CommonJS `require` function in node and io.js. It can be a `.js`, `.json`, and even `.node` or any other installed extension. For the asynchronous build of Scriptor, custom extensions can even be defined that take advantage of Promises and Coroutines. See the [Extending](#extending) section for more detail on that.
+A script is defined as a file which can be 'required' via CommonJS `require` function in node and io.js. It can be a `.js`, `.json`, and even `.node` or any other installed extension. For the asynchronous build of Scriptor, custom extensions can even be defined that take advantage of Promises and Coroutines.
 
 Additionally, Scriptor includes a Manager class that helps to coordinate many scripts and even allow them to cross-reference each other to form more complex multi-script applications.
 
