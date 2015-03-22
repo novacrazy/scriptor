@@ -19,14 +19,13 @@ As of Version 2.0, Scriptor now has a command line interface capable of running 
 The initial purpose of Scriptor was to create a system for writing simple scripts that generate web pages. It has since become a standalone library.
 
 # Topics
-* [Quick Start](https://github.com/novacrazy/scriptor#quick-start)
-* [Features](https://github.com/novacrazy/scriptor#scriptor-features)
-* [Documentation](https://github.com/novacrazy/scriptor#documentation)
+* [Quick Start](#quick-start)
+* [Features](#scriptor-features)
+* [Documentation](#documentation)
     * [API Documentation](/docs/api.md)
     * [Asynchronous Module Definitions](/docs/amd.md)
     * [CLI Documentation](/docs/cli.md)
-* [Example Code](https://github.com/novacrazy/scriptor#example-code)
-* [Useful recipes](https://github.com/novacrazy/scriptor#useful-recipes)
+* [Example Code](#example-code-and-useful-recipes)
 * [Support](#support)
 * [Changelog](/CHANGELOG.md)
 * [License](#license)
