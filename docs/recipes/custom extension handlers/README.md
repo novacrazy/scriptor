@@ -2,9 +2,9 @@ Custom Extension Handlers
 =========================
 
 ##Topics
-* [What is an extension handler?]()
-* [So what makes Scriptor's custom extensions special?]()
-* [Adding new custom extension handlers]()
+* [What is an extension handler?](#what-is-an-extension-handler)
+* [So what makes Scriptor's custom extensions special?](#so-what-makes-scriptors-custom-extensions-special)
+* [Adding new custom extension handlers](#adding-new-custom-extension-handlers)
 
 
 One of the unique features about Scriptor is the ability to load and compile files using its own custom extension handlers. This allows it to load files asynchronously and inject code into them to add additional features. However, not many probably know exactly how Node.js and io.js load and compile files to begin with, so custom extensions can seem quite foreign, but they really aren't that bad.
@@ -90,4 +90,4 @@ define( ['Scriptor', 'promisify!fs', 'react-tools'], function(Scriptor, fs, Reac
 } );
 ```
 
-The dependency `Scriptor` is a special module in which Scriptor interprets should be itself, obviously. This also takes advantage of the internal api `Scriptor.Common`, which is described more in depth [HERE]()
+The dependency `Scriptor` is a special module in which Scriptor interprets should be itself, obviously. This also takes advantage of the internal api `Scriptor.Common`, which is described more in depth [HERE](https://github.com/novacrazy/scriptor/blob/master/docs/internal_api.md#common-module)
