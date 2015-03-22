@@ -1,5 +1,3 @@
-# NOTE: Documentation is in progress for version 2.0, for version 1.x documentation see [HERE](https://github.com/novacrazy/scriptor/blob/8e95250dfc5d8a6987d9522c30759ad857a2e475/README.md)
-
 Scriptor
 ========
 
@@ -45,29 +43,29 @@ Or for the command line interface:
 ```
 $scriptor
 
-   Usage: scriptor [options] files...
+  Usage: scriptor [options] files...
 
-   Options:
+  Options:
 
-     -h, --help               output usage information
-     -V, --version            output the version number
-     -d, --dir <path>         Directory to run Scriptor in
-     -a, --async              Run scripts asynchronously
-     -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
-     -q, --close              End the process when all scripts finish
-     -w, --watch              Watch scripts for changes and re-run them when changed
-     -p, --propagate          Propagate changes upwards when watching scripts
-     -l, --long_stack_traces  Display long stack trace for asynchronous errors
-     -r, --repeat <n>         Run script n times (in parallel if async)
-     -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
-     --use_strict             Enforce strict mode
-     --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
-     -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
-     --cork                   Cork stdout before calling scripts
-     -s, --silent             Do not echo anything
-     --no_ext                 Disable use of custom extensions with AMD injection
-     --no_signal              Do not intercept process signals
-     --no_glob                Do not match glob patterns
+    -h, --help               output usage information
+    -V, --version            output the version number
+    -d, --dir <path>         Directory to run Scriptor in
+    -a, --async              Run scripts asynchronously
+    -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
+    -q, --close              End the process when all scripts finish
+    -w, --watch              Watch scripts for changes and re-run them when changed
+    -p, --propagate          Propagate changes upwards when watching scripts
+    -l, --long_stack_traces  Display long stack trace for asynchronous errors
+    -r, --repeat <n>         Run script n times (in parallel if async)
+    -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
+    --use_strict             Enforce strict mode
+    --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
+    -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
+    --cork                   Cork stdout before calling scripts
+    -s, --silent             Do not echo anything
+    --no_ext                 Disable use of custom extensions with AMD injection
+    --no_signal              Do not intercept process signals
+    --no_glob                Do not match glob patterns
 ```
 
 # Scriptor Features
@@ -98,13 +96,10 @@ For more information on this feature, see [Here](https://github.com/novacrazy/sc
 * [Asynchronous Module Definitions](/docs/amd.md)
 * [CLI Documentation](/docs/cli.md)
 
-# Example Code
-
-* [Simple AMD Script]()
-* [Asynchronous Plugins]()
-
-# Useful recipes
-* TODO
+# Example Code and Useful Recipes
+* [Example Custom Extension Handlers](https://github.com/novacrazy/scriptor/tree/master/docs/recipes/custom%20extension%20handlers)
+* [Example Server using React and Koa](https://github.com/novacrazy/scriptor/tree/master/docs/recipes/react-server)
+* [Example AMD Plugin](https://github.com/novacrazy/scriptor/tree/master/docs/recipes/async-plugin)
 
 # Support
 * [Github issues for bugs and feature requests](/issues)
