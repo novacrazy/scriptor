@@ -5,7 +5,7 @@ Scriptor comes with a nifty little command line tool for executing simple script
 
 Here is the help text for the binary:
 ```
-scriptor
+$scriptor
 
   Usage: scriptor [options] files...
 
