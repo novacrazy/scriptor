@@ -211,7 +211,7 @@ main.call().then( function(app) {
     app.listen( 8080 );
 } );
 ```
-See [Example 1](https://github.com/novacrazy/scriptor/tree/master/examples/example%201) for source files.
+See [Example 1](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%201) for source files.
 
 ------
 
@@ -254,7 +254,7 @@ var main = new Scriptor.Script( 'test.js' );
 assert.strictEqual( main.exports(), 42 );
 ```
 
-See [Example 2](https://github.com/novacrazy/scriptor/tree/master/examples/example%202) for source files.
+See [Example 2](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%202) for source files.
 
 Scriptor is primarily lazily evaluated, so if the script has not been loaded from file or has not been compiled, it will be done so in this function.
 
@@ -559,7 +559,7 @@ define( ['imports'], function(imports) {
 } );
 ```
 
-See [Example #3](https://github.com/novacrazy/scriptor/tree/master/examples/example%203) for the source files
+See [Example #3](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%203) for the source files
 
 It's just a simple way of sending 'compile-time' or 'evaluation-time' values to a script.
 
@@ -807,7 +807,7 @@ ref = ref.transform( function(left) {
 console.log( ref.value() ); //42
 ```
 
-See [Example 4](https://github.com/novacrazy/scriptor/tree/master/examples/example%204) for full source code.
+See [Example 4](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%204) for full source code.
 
 Or, for the synchronous build, ES6 coroutines can be used inside transform function to make operations more clear.
 
@@ -825,7 +825,7 @@ ref = ref.transform( function*(left) {
 ref.value().then( console.log ); //Hello, World!
 ```
 
-See [Example 5](https://github.com/novacrazy/scriptor/tree/master/examples/example%205) for full source code.
+See [Example 5](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%205) for full source code.
 
 -----
 
@@ -833,7 +833,7 @@ See [Example 5](https://github.com/novacrazy/scriptor/tree/master/examples/examp
 
 Almost identical to `.transform`, `.join` allows two separate Reference to be joined together via a transform function.
 
-For example, a variation on [Example 5](https://github.com/novacrazy/scriptor/tree/master/examples/example%205):
+For example, a variation on [Example 5](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%205):
 ```javascript
 var Scriptor = require( 'scriptor/async' );
 var Reference = Scriptor.Reference;
@@ -848,7 +848,7 @@ var ref = a.join( b, function*(left, right) {
 ref.value().then( console.log ); //Hello, World!
 ```
 
-See [Example 6](https://github.com/novacrazy/scriptor/tree/master/examples/example%206) for full source code.
+See [Example 6](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%206) for full source code.
 
 It should be noted that extensive use of `.join` and `.transform` will eventually create an implicit linked list and/or binary tree -ish structure, and that should be taken into consideration when using many transforms.
 
@@ -906,7 +906,7 @@ var root = Reference.join_all( refs, function(left, right) {
 console.log( root.value() ); //0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 ```
 
-See [Example 7](https://github.com/novacrazy/scriptor/tree/master/examples/example%207) for full source code.
+See [Example 7](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%207) for full source code.
 
 Here is a small printout of the actual 'tree' like structure of the above code:
 ```
@@ -989,7 +989,7 @@ module.define( {
 } );
 ```
 
-See [Example 8](https://github.com/novacrazy/scriptor/tree/master/examples/example%208) for full source code.
+See [Example 8](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%208) for full source code.
 
 -----
 
