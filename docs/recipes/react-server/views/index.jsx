@@ -2,19 +2,17 @@
  * Created by novacrazy on 3/22/2015.
  */
 
-define( ['react', './react-top.jsx'], function(React, Top) {
+define( ['react', './components/hello-world.jsx'], function(React, Hello) {
 
-    var Hello = React.createClass( {
+    var Index = React.createClass( {
         render: function() {
             return (
-                <Top>
-                    <p>Hello, World!</p>
-                </Top>
+                <Hello/>
             );
         }
     } );
 
     return function() {
-        return Hello;
+        return Index;
     };
 } );

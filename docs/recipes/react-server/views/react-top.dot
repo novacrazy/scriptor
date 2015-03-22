@@ -1,0 +1,11 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>{{=it.title}}</title>
+    </head>
+    <body>
+        <div id="react-mount">
+            {{=it.content}}
+        </div>
+    </body>
+</html>
