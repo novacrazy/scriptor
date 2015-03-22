@@ -4,27 +4,27 @@ Scriptor Internals
 Internally, Scriptor is not as simple as the standard API would have one believe. To simplify things, Scriptor takes advantage of TypeScript's inheritance to simplify tasks and modularity.
 
 ##Table of contents
-- [Script inheritance]()
-    - [EventPropagator]() extends EventEmitter
-    - [ScriptBase]() extends [EventPropagator]()
-    - [AMDScript]() extends [ScriptBase]()
-    - [Script]() extends [AMDScript]()
-    - [ScriptAdapter]() extends [Script]()
+- [Script inheritance](#script-inheritance)
+    - [EventPropagator](#eventpropagator) extends EventEmitter
+    - [ScriptBase](#scriptbase) extends [EventPropagator](#eventpropagator)
+    - [AMDScript](#amdscript) extends [ScriptBase](#scriptbase)
+    - [Script](#script) extends [AMDScript](#amdscript)
+    - [ScriptAdapter](#scriptadapter) extends [Script](#script)
 
-- [`Common` module]()
-    - [`isAbsolutePath(filepath : string)`]()
-    - [`isAbsoluteOrRelative(filepath : string)`]()
-    - [`bind(func : Function, ...args : any[])`]()
-    - [`parseDefine(id : any, deps? : any, factory? : any)`]()
-    - [`normalizeError(id : any, type : string, err : any)`]()
-    - [`removeFromParent(script : IModule)`]()
-    - [`stripBOM(content : string)`]()
-    - [`injectAMD(content : string)`]()
-    - [`injectAMDAndStripBOM(content : string)`]()
-    - [`shallowCloneObject(obj : any)`]()
-    - [`AMD_Header`]()
-    - [`default_max_recursion`]()
-    - [`default_dependencies`]()
+- [`Common` module](#common-module)
+    - [`isAbsolutePath(filepath : string)`](#isabsolutepathfilepath--string---boolean)
+    - [`isAbsoluteOrRelative(filepath : string)`](#isabsoluteorrelativefilepath--string---boolean)
+    - [`bind(func : Function, ...args : any[])`](#bindfunc--function-args--any---function)
+    - [`parseDefine(id : any, deps? : any, factory? : any)`](#parsedefineid--any-deps--any-factory--any---id-deps-factory)
+    - [`normalizeError(id : any, type : string, err : any)`](#normalizeerrorid--any-type--string-err--any---error)
+    - [`removeFromParent(script : IModule)`](#removefromparentscript--imodule)
+    - [`stripBOM(content : string)`](#stripbomcontent--string---string)
+    - [`injectAMD(content : string)`](#injectamdcontent--string---string)
+    - [`injectAMDAndStripBOM(content : string)`](#injectamdandstripbomcontent--string---string)
+    - [`shallowCloneObject(obj : any)`](#shallowcloneobjectobj--any---object)
+    - [`AMD_Header`](#amd_header---string)
+    - [`default_max_recursion`](#default_max_recursion---number)
+    - [`default_dependencies`](#default_dependencies---string)
 
 ##Script Inheritance
 
@@ -50,7 +50,7 @@ This is the class that handles the `define` and `require` function primarily. It
 
 Actual implementation of file loading, compilation, evaluation and watching. Most of it.
 
-See [`Scriptor.Script`]() for full documentation of everything in this class.
+See [`Scriptor.Script`](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#script) for full documentation of everything in this class.
 
 -----
 
@@ -104,7 +104,7 @@ Parses the raw `define` arguments, which are sort of variadic and out of order, 
 
 For example `define('myModule', {})` will result in the parsed arguments `['myModule', null, {}]`
 
-This code is mostly taken from [amdefine]()
+This code is mostly taken from [amdefine](https://github.com/jrburke/amdefine/blob/ebcc612e924ab08e3e993238cbb42251b17d27a2/amdefine.js#L248)
 
 -----
 
@@ -120,7 +120,7 @@ This is used with `require` for error normalization.
 
 Takes a script and searches its parent for itself, then removes itself from the parent.
 
-Used in [`Script.close(true)`]()
+Used in [`Script.close(true)`](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#closepermanent--boolean)
 
 -----
 
@@ -132,13 +132,13 @@ If the string starts with `0xFEFF`, a Byte Order Marker, that character is remov
 
 #####`injectAMD(content : string)` -> `string`
 
-Prepends [`AMD_Header`]() to `content` and returns it.
+Prepends [`AMD_Header`](#amd_header---string) to `content` and returns it.
 
 -----
 
 #####`injectAMDAndStripBOM(content : string)` -> `string`
 
-[Removes BOM]() and [Injects AMD Header]() in one function.
+[Removes BOM](#stripbomcontent--string---string) and [Injects AMD Header](#injectamdcontent--string---string) in one function.
 
 -----
 
