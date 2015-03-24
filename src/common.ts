@@ -108,9 +108,9 @@ module ScriptorCommon {
     }
 
     export var AMD_Header = "if(typeof define !== 'function' " +
-                            "&& typeof module.define === 'function') {" +
-                            "\n\tvar define = module.define;" +
-                            "\n}\n";
+        "&& typeof module.define === 'function') {" +
+        "var define = module.define;" +
+        "}";
 
     export function injectAMD( content : string ) : string {
         return AMD_Header + content;

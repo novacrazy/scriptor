@@ -131,8 +131,8 @@ var ScriptorCommon;
 
     ScriptorCommon.stripBOM = stripBOM;
     ScriptorCommon.AMD_Header =
-    "if(typeof define !== 'function' " + "&& typeof module.define === 'function') {" + "\n\tvar define = module.define;"
-    + "\n}\n";
+        "if(typeof define !== 'function' " + "&& typeof module.define === 'function') {" + "var define = module.define;"
+        + "}";
     function injectAMD(content) {
         return ScriptorCommon.AMD_Header + content;
     }
