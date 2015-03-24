@@ -2,6 +2,9 @@ Scriptor Changelog
 ==================
 
 
+#####2.0.1
+* Removed spacing in the AMD Header that would cause some line number issues
+
 ##Version 2.0
 * Completely asynchronous build
 * Many Reference types with advanced features
