@@ -410,7 +410,7 @@ module Scriptor {
                             normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
                                 return defaultNormalize( id );
                             },
-                            load:      ( id, require, _onLoad, config ) => {
+                            load: ( id, require, _onLoad, config ) => {
                                 try {
                                     _onLoad( this.include( id ) );
 
@@ -1172,7 +1172,7 @@ module Scriptor {
 
             //Just to prevent stupid mistakes
             assert( _left instanceof ReferenceBase &&
-                    _right instanceof ReferenceBase, 'join will only work on References' );
+            _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 

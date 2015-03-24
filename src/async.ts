@@ -45,7 +45,7 @@ function isGeneratorFunction( obj : any ) : boolean {
     if( !obj.constructor ) {
         return false;
     } else if( 'GeneratorFunction' === obj.constructor.name ||
-               'GeneratorFunction' === obj.constructor.displayName ) {
+        'GeneratorFunction' === obj.constructor.displayName ) {
         return true;
     } else {
         return isGenerator( obj.constructor.prototype );
@@ -63,7 +63,7 @@ module Scriptor {
 
     export var default_extensions : {[ext : string] : ( module : Module.IModule,
                                                         filename : string ) => Promise<any>} = {
-        '.js':   ( module : Module.IModule, filename : string ) => {
+        '.js': ( module : Module.IModule, filename : string ) => {
             return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( ( content : string ) => {
                 module._compile( content, filename );
             } );
@@ -454,7 +454,7 @@ module Scriptor {
                             normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
                                 return defaultNormalize( id );
                             },
-                            load:      ( id, require, _onLoad, config ) => {
+                            load: ( id, require, _onLoad, config ) => {
                                 try {
                                     _onLoad( this.include( id ) );
 
@@ -1291,7 +1291,7 @@ module Scriptor {
 
             //Just to prevent stupid mistakes
             assert( _left instanceof ReferenceBase &&
-                    _right instanceof ReferenceBase, 'join will only work on References' );
+            _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 

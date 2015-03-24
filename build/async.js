@@ -90,8 +90,8 @@ var Scriptor;
         '.js':   function(module, filename) {
             return readFile( filename,
                 'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( function(content) {
-                    module._compile( content, filename );
-                } );
+                module._compile( content, filename );
+            } );
         },
         '.json': function(module, filename) {
             return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
