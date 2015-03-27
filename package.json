@@ -43,7 +43,7 @@
     "test": "mocha -Cb test"
   },
   "dependencies": {
-    "bluebird": "^2.9.14",
+    "bluebird": "^2.9.15",
     "co": "^4.5.1",
     "commander": "^2.7.1",
     "glob": "^5.0.3"
