@@ -14,7 +14,7 @@ Keep in mind there are some things that cannot be made asynchronous without fork
 
 Using custom extension handlers (of which `.js` and `.json` are included), Scriptor can load the script files asynchronously, but even then script compilation into executable code is **always** synchronous. However, its all done lazily in both builds to avert any unneeded hiccups wherever possible.
 
-------
+-----
 
 ##Table of contents
 - [Static Methods](#static-methods)
@@ -31,6 +31,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`new Script(filename? : string, parent? : Module)`](#new-scriptfilename--string-parent--module)
     - [`.load(filename : string, watch? : boolean)`](#loadfilename--string-watch--boolean---script)
     - [`.exports()`](#exports---any--promiseany)
+    - [`.source()`]()
     - [`.call(...args : any[])`](#callargs--any---any--promiseany)
     - [`.apply(args : any[])`](#applyargs--any---any--promiseany)
     - [`.reference(...args : any[])`](#referenceargs--any---reference)
@@ -111,7 +112,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.parent`](#parent---imodule-1)
     - [`.scripts`](#scripts---mapscript)
 
-------
+-----
 
 ##Static Methods
 
@@ -123,7 +124,7 @@ This is effectively a shortcut for `new Script(filename, parent)`, but allows pr
 
 Additionally, a script cache is kept for loaded scripts, mostly so that non-managed scripts requiring other scripts don't create additional memory leaks. Otherwise it behaves normally. This does prevent a single script from being created more than once, but if you need that kind of functionality, it would be better to create your own functions and use the `Script` constructor.
 
-------
+-----
 
 #####`Scriptor.compile(src : string | Reference, watch? : boolean, parent? : IModule)` -> `SourceScript`
 
@@ -133,7 +134,7 @@ Unlike `Scriptor.load`, `Scriptor.compile` does not have a script cache, and eve
 
 Sources can be watched for changes if they are a `Reference` instance.
 
-------
+-----
 
 #####`Scriptor.installCustomExtensions(enable? : boolean)` -> `void`
 
@@ -143,13 +144,13 @@ For the asynchronous build, the custom handlers load files asynchronously, injec
 
 For information on how to write your own extension handlers see [Custom Extension Handlers]()
 
-------
+-----
 
 #####`Scriptor.disableCustomExtensions()` -> `void`
 
 The same as [`Scriptor.installCustomExtensions(false)`](#scriptorinstallcustomextensionsenable--boolean---void)
 
-------
+-----
 
 #####`Scriptor.extensions` <-> `{[ext : string] : handler}`
 
@@ -157,13 +158,13 @@ This is an object that holds the custom extension handlers for Scriptor to use w
 
 See [Custom Extension Handlers]() for more information on how to use this.
 
-------
+-----
 
 #####`Scriptor.extensions_enabled` -> `boolean`
 
 Simple boolean flag for if extensions are enabled. It *can* be changed manually, but it's much safer to set it via [`Scriptor.installCustomExtensions()`](#scriptorinstallcustomextensionsenable--boolean---void) instead.
 
-------
+-----
 
 #####`Scriptor.identity(left : Reference, right : Reference)` -> `any | Promise<any>`
 
@@ -177,7 +178,7 @@ function identity(left : Reference, right : Reference) {
 }
 ```
 
-------
+-----
 
 ##Script
 
@@ -213,7 +214,7 @@ main.call().then( function(app) {
 ```
 See [Example 1](https://github.com/novacrazy/scriptor/tree/master/docs/examples/example%201) for source files.
 
-------
+-----
 
 #####`new Script(filename? : string, parent? : Module)`
 
@@ -223,7 +224,7 @@ If a filename is given, the constructor calls [`.load(filename)`](#loadfilename-
 
 Since JavaScript does not have destructors, it is highly recommended to call [`.close()`](#closepermanent--boolean) on Script instances when they are no longer required, especially in long-running processes where memory is essential.
 
-------
+-----
 
 #####`.load(filename : string, watch? : boolean)` -> `Script`
 
@@ -233,7 +234,7 @@ If `watch` is true, it will watch the file for changes and take care of reloadin
 
 `watch` defaults to true.
 
-------
+-----
 
 #####`.exports()` -> `any | Promise<any>`
 
@@ -258,19 +259,27 @@ See [Example 2](https://github.com/novacrazy/scriptor/tree/master/docs/examples/
 
 Scriptor is primarily lazily evaluated, so if the script has not been loaded from file or has not been compiled, it will be done so in this function.
 
-------
+-----
+
+#####`.source()` -> `string | Promise<string>`
+
+When custom extension handlers are enabled, they can optionally return the source code (in pure-JS preferably) and allow it to be stored by the script and accessed via `.source()`
+
+This way if a extension handler for, as an example, React.js's `.jsx` format is added, the transformed code can be available to serve or do something else with.
+
+-----
 
 #####`.call(...args : any[])` -> `any | Promise<any>`
 
 If `.exports()` is a function, `.call` will invoke that function safely with any arguments given. If `.exports()` is not a function, it will not invoke anything and just return `.exports()` untouched.
 
-------
+-----
 
 #####`.apply(args : any[])` -> `any | Promise<any>`
 
 Same as [`.call`](#callargs--any---any--promiseany), but instead of a variadic function this takes an array of arguments to apply to `.exports()`
 
-------
+-----
 
 #####`.reference(...args : any[])` -> [`Reference`](#reference)
 
@@ -278,13 +287,13 @@ Same as `new Reference(this, args)`.
 
 Creates a new [`Reference`](#reference) with the variadic arguments.
 
-------
+-----
 
 #####`.reference_apply(args : any[])` -> [`Reference`](#reference)
 
 Like [`.reference`](#referenceargs--any---reference), but instead of a variadic function this takes an array of arguments.
 
-------
+-----
 
 #####`.require : `[`IRequireFunction`](#irequirefunction)
 
@@ -392,7 +401,7 @@ The default error handler for `require` and dependency resolving functions.
 #####`.require.resolve( id : string )` -> `string`
 This will attempt to find the absolute location of a file path given as `id` relative to the script's `baseUrl`. Very much like the normal `module.require.resolve`, and can throw errors like it.
 
-------
+-----
 
 #####`.define : `[`IDefineFunction`](#idefinefunction)
 
@@ -455,7 +464,7 @@ This is a helper value for anything that might use it. Some common requirejs plu
 
 Simply a reference to [`.require`](#require-irequirefunction).
 
-------
+-----
 
 #####`.include(filename : string, load? : boolean)` -> `Script`
 
