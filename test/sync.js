@@ -292,6 +292,14 @@ describe( 'Scriptor with custom extensions', function() {
         assert( script.loaded );
     } );
 
+    it( 'should have stored the file source with the custom extension handler', function() {
+        var source = script.source();
+
+        assert.notEqual( source, null );
+
+        assert.strictEqual( source, fs.readFileSync( name, 'utf-8' ) );
+    } );
+
     it( 'should have exported the main function', function() {
         var script_exports = script.exports();
 

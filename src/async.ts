@@ -64,8 +64,10 @@ module Scriptor {
     export var default_extensions : {[ext : string] : ( module : Module.IModule,
                                                         filename : string ) => Promise<any>} = {
         '.js': ( module : Module.IModule, filename : string ) => {
-            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( ( content : string ) => {
-                module._compile( content, filename );
+            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( ( content : string ) => {
+                module._compile( Common.injectAMD( content ), filename );
+
+                return content;
             } );
         },
         '.json': ( module : Module.IModule, filename : string ) => {
@@ -81,7 +83,7 @@ module Scriptor {
         }
     };
 
-    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<any>} = {};
+    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<string>} = {};
 
     export var extensions_enabled : boolean = false;
 
@@ -675,6 +677,8 @@ module Scriptor {
     }
 
     export class Script extends AMDScript implements IScriptBase {
+        protected _source : string;
+
         constructor( filename? : string, parent? : Module.IModule ) {
             if( parent === void 0 || parent === null ) {
                 if( <any>filename instanceof Module.Module ) {
@@ -724,7 +728,8 @@ module Scriptor {
             if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                return tryPromise( extensions[ext]( this._script, this.filename ) ).then( () => {
+                return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : string ) => {
+                    this._source = src;
                     this._script.loaded = true;
 
                     this.emit( 'loaded', this.loaded );
@@ -738,6 +743,15 @@ module Scriptor {
                 this._script.load( this._script.filename );
 
                 this.emit( 'loaded', this.loaded );
+            }
+        }
+
+        public source() : Promise<string> {
+            if( this.loaded ) {
+                return Promise.resolve( this._source );
+
+            } else {
+                return this._callWrapper( this.do_load ).then( () => this.source() );
             }
         }
 

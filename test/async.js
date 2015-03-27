@@ -299,6 +299,13 @@ describe( 'Scriptor with custom extensions', function() {
         } ).then( done );
     } );
 
+    it( 'should have stored the file source with the custom extension handler', function(done) {
+        script.source().then( function(source) {
+            assert.notEqual( source, null );
+            assert.strictEqual( source, fs.readFileSync( name, 'utf-8' ) );
+        } ).then( done );
+    } );
+
     it( 'should have exported the main function', function(done) {
         script.exports().then( function(script_exports) {
             assert.deepEqual( script_exports, {} );

@@ -88,9 +88,9 @@ var Scriptor;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.default_extensions = {
         '.js':   function(module, filename) {
-            return readFile( filename,
-                'utf-8' ).then( Common.stripBOM ).then( Common.injectAMD ).then( function(content) {
-                module._compile( content, filename );
+            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
+                module._compile( Common.injectAMD( content ), filename );
+                return content;
             } );
         },
         '.json': function(module, filename) {
@@ -641,7 +641,8 @@ var Scriptor;
             //Use custom extension if available
             if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function() {
+                return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
+                    _this._source = src;
                     _this._script.loaded = true;
                     _this.emit( 'loaded', _this.loaded );
                 } );
@@ -654,6 +655,17 @@ var Scriptor;
                 }
                 this._script.load( this._script.filename );
                 this.emit( 'loaded', this.loaded );
+            }
+        };
+        Script.prototype.source = function() {
+            var _this = this;
+            if( this.loaded ) {
+                return Promise.resolve( this._source );
+            }
+            else {
+                return this._callWrapper( this.do_load ).then( function() {
+                    return _this.source();
+                } );
             }
         };
         Script.prototype.exports = function() {

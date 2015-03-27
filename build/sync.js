@@ -59,7 +59,9 @@ var Scriptor;
     Scriptor.default_extensions = {
         '.js': function(module, filename) {
             var content = fs.readFileSync( filename, 'utf8' );
-            module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
+            content = Common.stripBOM( content );
+            module._compile( Common.injectAMD( content ), filename );
+            return content;
         }
     };
     Scriptor.extensions = {};
@@ -549,7 +551,7 @@ var Scriptor;
             var ext = path.extname( this.filename ) || '.js';
             if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                Scriptor.extensions[ext]( this._script, this.filename );
+                this._source = Scriptor.extensions[ext]( this._script, this.filename );
                 this._script.loaded = true;
             }
             else {
@@ -561,6 +563,12 @@ var Scriptor;
                 this._script.load( this._script.filename );
             }
             this.emit( 'loaded', this.loaded );
+        };
+        Script.prototype.source = function() {
+            if( !this.loaded ) {
+                this._callWrapper( this.do_load );
+            }
+            return this._source;
         };
         Script.prototype.exports = function() {
             if( !this.loaded ) {

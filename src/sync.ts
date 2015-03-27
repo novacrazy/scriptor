@@ -25,14 +25,18 @@ module Scriptor {
 
     export var default_max_recursion : number = Common.default_max_recursion;
 
-    export var default_extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => void} = {
+    export var default_extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => string} = {
         '.js': ( module : Module.IModule, filename : string ) => {
             var content = fs.readFileSync( filename, 'utf8' );
-            module._compile( Common.injectAMD( Common.stripBOM( content ) ), filename );
+            content = Common.stripBOM( content );
+
+            module._compile( Common.injectAMD( content ), filename );
+
+            return content;
         }
     };
 
-    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => void} = {};
+    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => string} = {};
 
     export var extensions_enabled : boolean = false;
 
@@ -578,6 +582,7 @@ module Scriptor {
     }
 
     export class Script extends AMDScript implements IScriptBase {
+        protected _source : string;
 
         constructor( filename? : string, parent? : Module.IModule ) {
             if( parent === void 0 || parent === null ) {
@@ -627,7 +632,7 @@ module Scriptor {
             if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                extensions[ext]( this._script, this.filename );
+                this._source = extensions[ext]( this._script, this.filename );
 
                 this._script.loaded = true;
 
@@ -640,6 +645,14 @@ module Scriptor {
             }
 
             this.emit( 'loaded', this.loaded );
+        }
+
+        public source() : string {
+            if( !this.loaded ) {
+                this._callWrapper( this.do_load );
+            }
+
+            return this._source;
         }
 
         public exports() : any {
