@@ -71,35 +71,35 @@ var ScriptorCLI;
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            this.do_log( -2 /* LOG_ERROR */, 'ERROR: ' + format, args );
+            this.do_log( LogLevel.LOG_ERROR, 'ERROR: ' + format, args );
         };
         Logger.prototype.warn = function(format) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            this.do_log( 0 /* LOG_WARN */, 'WARNING: ' + format, args );
+            this.do_log( LogLevel.LOG_WARN, 'WARNING: ' + format, args );
         };
         Logger.prototype.log = function(format) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            this.do_log( 0 /* LOG_NORMAL */, 'LOG: ' + format, args );
+            this.do_log( LogLevel.LOG_NORMAL, 'LOG: ' + format, args );
         };
         Logger.prototype.info = function(format) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            this.do_log( 1 /* LOG_INFO */, 'INFO: ' + format, args );
+            this.do_log( LogLevel.LOG_INFO, 'INFO: ' + format, args );
         };
         Logger.prototype.verbose = function(format) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
-            this.do_log( 2 /* LOG_VERBOSE */, 'VERBOSE: ' + format, args );
+            this.do_log( LogLevel.LOG_VERBOSE, 'VERBOSE: ' + format, args );
         };
         Logger.prototype.do_log = function(level, format, args) {
             if( level <= this.level ) {
@@ -114,11 +114,9 @@ var ScriptorCLI;
     ScriptorCLI.Logger = Logger;
     function print_message(level, message) {
         switch( level ) {
-            case -2 /* LOG_ERROR */
-            :
+            case LogLevel.LOG_ERROR:
                 return console.error( message );
-            case 0 /* LOG_WARN */
-            :
+            case LogLevel.LOG_WARN:
                 return console.warn( message );
             default:
                 return console.log( message );

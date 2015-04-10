@@ -25,18 +25,17 @@ module Scriptor {
 
     export var default_max_recursion : number = Common.default_max_recursion;
 
-    export var default_extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => string} = {
+    export var default_extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Buffer} = {
         '.js': ( module : Module.IModule, filename : string ) => {
-            var content = fs.readFileSync( filename, 'utf8' );
-            content = Common.stripBOM( content );
+            var content : Buffer = <Buffer>Common.stripBOM( fs.readFileSync( filename ) );
 
-            module._compile( Common.injectAMD( content ), filename );
+            module._compile( (<Buffer>Common.injectAMD( content )).toString( 'utf-8' ), filename );
 
             return content;
         }
     };
 
-    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => string} = {};
+    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Buffer} = {};
 
     export var extensions_enabled : boolean = false;
 
@@ -582,7 +581,7 @@ module Scriptor {
     }
 
     export class Script extends AMDScript implements IScriptBase {
-        protected _source : string;
+        protected _source : Buffer;
 
         constructor( filename? : string, parent? : Module.IModule ) {
             if( parent === void 0 || parent === null ) {
@@ -647,12 +646,17 @@ module Scriptor {
             this.emit( 'loaded', this.loaded );
         }
 
-        public source() : string {
+        public source( encoding : string = null ) : string | Buffer {
             if( !this.loaded ) {
                 this._callWrapper( this.do_load );
             }
 
-            return this._source;
+            if( encoding !== null && encoding !== void 0 ) {
+                return this._source.toString( encoding );
+
+            } else {
+                return this._source;
+            }
         }
 
         public exports() : any {
@@ -774,6 +778,28 @@ module Scriptor {
         }
     }
 
+    export class TextScript extends Script {
+        public constructor( filename? : string, parent? : Module.IModule ) {
+            super( filename, parent );
+        }
+
+        protected do_load() {
+            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
+            this.unload();
+
+            var src : Buffer = fs.readFileSync( this.filename );
+
+            this._script.exports = this._source = src;
+            this._script.loaded = true;
+
+            this.emit( 'loaded', this.loaded );
+        }
+
+        public apply( args : any[] ) : string | Buffer {
+            return this.source.apply( this, args );
+        }
+    }
+
     export class SourceScript extends Script {
         protected _source : any; //string|Reference
 
@@ -801,23 +827,32 @@ module Scriptor {
             return this._onChange === void 0;
         }
 
-        public source() : string {
-            var src : string;
+        public source( encoding : string = null ) : string | Buffer {
+            var src : string | Buffer;
 
             if( this._source instanceof ReferenceBase ) {
                 src = this._source.value();
 
-                assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                if( !Buffer.isBuffer( src ) ) {
+                    assert.strictEqual( typeof src, 'string', 'Reference source must return string or Buffer as value' );
+                }
 
             } else {
                 src = this._source;
             }
 
             if( extensions_enabled ) {
-                return Common.injectAMDAndStripBOM( src );
+                src = Common.injectAMDAndStripBOM( src );
 
             } else {
-                return Common.stripBOM( src );
+                src = Common.stripBOM( src );
+            }
+
+            if( Buffer.isBuffer( src ) && encoding !== void 0 && encoding !== null ) {
+                return (<Buffer>src).toString( encoding );
+
+            } else {
+                return src;
             }
         }
 
@@ -833,7 +868,7 @@ module Scriptor {
             if( !this.loaded ) {
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
 
-                this._script._compile( this.source(), this.filename );
+                this._script._compile( <string>this.source( 'utf-8' ), this.filename );
 
                 this._script.loaded = true;
 

@@ -97,26 +97,36 @@ module ScriptorCommon {
         }
     }
 
-    export function stripBOM( content : string ) {
+    export function stripBOM( content : string | Buffer ) : string | Buffer {
         // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
         // because the buffer-to-string conversion in `fs.readFileSync()`
         // translates it to FEFF, the UTF-16 BOM.
-        if( content.charCodeAt( 0 ) === 0xFEFF ) {
+        if( Buffer.isBuffer( content ) && content.length >= 2
+            && (content[0] === 0xFE && content[1] === 0xFF) ) {
+            content = content.slice( 2 );
+
+        } else if( typeof content === 'string' && content.charCodeAt( 0 ) === 0xFEFF ) {
             content = content.slice( 1 );
         }
+
         return content;
     }
 
-    export var AMD_Header = "if(typeof define !== 'function' " +
-        "&& typeof module.define === 'function') {" +
-        "var define = module.define;" +
-        "}";
+    export var AMD_Header : Buffer = new Buffer( "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}" );
 
-    export function injectAMD( content : string ) : string {
-        return AMD_Header + content;
+    export function injectAMD( content : string | Buffer, encoding : string = 'utf-8' ) : string | Buffer {
+        if( Buffer.isBuffer( content ) ) {
+            return Buffer.concat( [AMD_Header, <Buffer>content] );
+
+        } else if( typeof content === 'string' ) {
+            return AMD_Header.toString( encoding ) + content;
+
+        } else {
+            return content;
+        }
     }
 
-    export function injectAMDAndStripBOM( content : string ) : string {
+    export function injectAMDAndStripBOM( content : string | Buffer ) : string | Buffer {
         return injectAMD( stripBOM( content ) );
     }
 

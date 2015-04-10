@@ -58,9 +58,8 @@ var Scriptor;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.default_extensions = {
         '.js': function(module, filename) {
-            var content = fs.readFileSync( filename, 'utf8' );
-            content = Common.stripBOM( content );
-            module._compile( Common.injectAMD( content ), filename );
+            var content = Common.stripBOM( fs.readFileSync( filename ) );
+            module._compile( Common.injectAMD( content ).toString( 'utf-8' ), filename );
             return content;
         }
     };
@@ -305,7 +304,7 @@ var Scriptor;
             };
             //This is not an anonymous so stack traces make a bit more sense
             require.onError = function onErrorDefault(err) {
-                throw err;
+                throw err; //default error
             };
             //This is almost exactly like the normal require.resolve, but it's relative to this.baseUrl
             require.resolve = function(id) {
@@ -564,11 +563,19 @@ var Scriptor;
             }
             this.emit( 'loaded', this.loaded );
         };
-        Script.prototype.source = function() {
+        Script.prototype.source = function(encoding) {
+            if( encoding === void 0 ) {
+                encoding = null;
+            }
             if( !this.loaded ) {
                 this._callWrapper( this.do_load );
             }
-            return this._source;
+            if( encoding !== null && encoding !== void 0 ) {
+                return this._source.toString( encoding );
+            }
+            else {
+                return this._source;
+            }
         };
         Script.prototype.exports = function() {
             if( !this.loaded ) {
@@ -678,6 +685,26 @@ var Scriptor;
         return Script;
     })( AMDScript );
     Scriptor.Script = Script;
+    var TextScript = (function(_super) {
+        __extends( TextScript, _super );
+        function TextScript(filename, parent) {
+            _super.call( this, filename, parent );
+        }
+
+        TextScript.prototype.do_load = function() {
+            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
+            this.unload();
+            var src = fs.readFileSync( this.filename );
+            this._script.exports = this._source = src;
+            this._script.loaded = true;
+            this.emit( 'loaded', this.loaded );
+        };
+        TextScript.prototype.apply = function(args) {
+            return this.source.apply( this, args );
+        };
+        return TextScript;
+    })( Script );
+    Scriptor.TextScript = TextScript;
     var SourceScript = (function(_super) {
         __extends( SourceScript, _super );
         function SourceScript(src, parent) {
@@ -718,26 +745,38 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        SourceScript.prototype.source = function() {
+        SourceScript.prototype.source = function(encoding) {
+            if( encoding === void 0 ) {
+                encoding = null;
+            }
             var src;
             if( this._source instanceof ReferenceBase ) {
                 src = this._source.value();
-                assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                if( !Buffer.isBuffer( src ) ) {
+                    assert.strictEqual( typeof src, 'string',
+                        'Reference source must return string or Buffer as value' );
+                }
             }
             else {
                 src = this._source;
             }
             if( Scriptor.extensions_enabled ) {
-                return Common.injectAMDAndStripBOM( src );
+                src = Common.injectAMDAndStripBOM( src );
             }
             else {
-                return Common.stripBOM( src );
+                src = Common.stripBOM( src );
+            }
+            if( Buffer.isBuffer( src ) && encoding !== void 0 && encoding !== null ) {
+                return src.toString( encoding );
+            }
+            else {
+                return src;
             }
         };
         SourceScript.prototype.do_compile = function() {
             if( !this.loaded ) {
                 assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
-                this._script._compile( this.source(), this.filename );
+                this._script._compile( this.source( 'utf-8' ), this.filename );
                 this._script.loaded = true;
                 this.emit( 'loaded', this.loaded );
             }
@@ -1057,8 +1096,8 @@ var Scriptor;
             this._right = _right;
             this._transform = _transform;
             //Just to prevent stupid mistakes
-            assert( _left instanceof ReferenceBase && _right instanceof ReferenceBase,
-                'join will only work on References' );
+            assert( _left instanceof ReferenceBase &&
+                    _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             //This has to be a closure because the two emitters down below

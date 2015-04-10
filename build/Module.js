@@ -57,8 +57,8 @@
  *
  * */
 var Module;
-(function(_Module) {
+(function(Module_1) {
     //Also happens to match the backwards compatibility in the 'module' module
-    _Module.Module = require( 'module' );
+    Module_1.Module = require( 'module' );
 })( Module || (Module = {}) );
 module.exports = Module;

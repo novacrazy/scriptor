@@ -300,7 +300,7 @@ describe( 'Scriptor with custom extensions', function() {
     } );
 
     it( 'should have stored the file source with the custom extension handler', function(done) {
-        script.source().then( function(source) {
+        script.source( 'utf-8' ).then( function(source) {
             assert.notEqual( source, null );
             assert.strictEqual( source, fs.readFileSync( name, 'utf-8' ) );
         } ).then( done );
@@ -417,6 +417,56 @@ describe( 'ES6 Scripts with co', function() {
     it( 'should return the result even though it is not a function to call', function(done) {
         script.call().then( function(result) {
             assert.strictEqual( result, '' );
+        } ).then( done );
+    } );
+} );
+
+describe( 'Text Scripts', function() {
+    var script, name = './test/scripts/simple.js';
+
+    it( 'should create a new text script instance', function() {
+        script = new Scriptor.TextScript( name, module );
+
+        assert( script instanceof Scriptor.TextScript );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy evaluation)', function(done) {
+        script.exports().then( function() {
+            assert( script.loaded );
+        } ).then( done );
+    } );
+
+    it( 'should have exported the result', function(done) {
+        script.exports().then( function(script_exports) {
+            assert( Buffer.isBuffer( script_exports ) );
+        } ).then( done );
+    } );
+
+    it( 'should have stored the file text as source', function(done) {
+        script.source( 'utf-8' ).then( function(source) {
+            assert.notEqual( source, null );
+            assert.strictEqual( source, fs.readFileSync( name, 'utf-8' ) );
+
+        } ).then( done );
+    } );
+
+    it( 'should have stored the file text as call result', function(done) {
+        script.call( 'utf-8' ).then( function(result) {
+            assert.notEqual( result, null );
+            assert.strictEqual( result, fs.readFileSync( name, 'utf-8' ) );
+
         } ).then( done );
     } );
 } );

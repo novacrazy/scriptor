@@ -293,10 +293,9 @@ describe( 'Scriptor with custom extensions', function() {
     } );
 
     it( 'should have stored the file source with the custom extension handler', function() {
-        var source = script.source();
+        var source = script.source( 'utf-8' );
 
         assert.notEqual( source, null );
-
         assert.strictEqual( source, fs.readFileSync( name, 'utf-8' ) );
     } );
 
@@ -372,5 +371,53 @@ describe( 'Advanced Script with synchronous plugin', function() {
                 done();
             } );
         } );
+    } );
+} );
+
+
+describe( 'Text Scripts', function() {
+    var script, name = './test/scripts/simple.js';
+
+    it( 'should create a new text script instance', function() {
+        script = new Scriptor.TextScript( name, module );
+
+        assert( script instanceof Scriptor.TextScript );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching a file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'should load the file upon calling it (lazy execution)', function() {
+        script.exports();
+
+        assert( script.loaded );
+    } );
+
+    it( 'should have exported the result', function() {
+        var script_exports = script.exports();
+
+        assert( Buffer.isBuffer( script_exports ) );
+    } );
+
+    it( 'should have stored the file text as source', function() {
+        var source = script.source( 'utf-8' );
+
+        assert.notEqual( source, null );
+        assert.strictEqual( source, fs.readFileSync( name, 'utf-8' ) );
+    } );
+
+    it( 'should have stored the file text as call result', function() {
+        var result = script.call( 'utf-8' );
+        assert.notEqual( result, null );
+        assert.strictEqual( result, fs.readFileSync( name, 'utf-8' ) );
     } );
 } );

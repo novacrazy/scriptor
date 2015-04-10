@@ -50,10 +50,12 @@ var ScriptorCommon;
     //The 'to' arguments is in ...args
     function bind(func) {
         var args = [];
-        for( var _i = 1; _i < arguments.length; _i++ ) {
-            args[_i - 1] = arguments[_i];
+        for( var _a = 1; _a < arguments.length; _a++ ) {
+            args[_a - 1] = arguments[_a];
         }
         var res = Function.prototype.bind.apply( func, args );
+        //This assumes sub-functions can handle their own scopes
+        //or are closures that take that into account
         for( var i in func ) {
             if( func.hasOwnProperty( i ) ) {
                 res[i] = func[i];
@@ -92,7 +94,9 @@ var ScriptorCommon;
         if( err === void 0 ) {
             err = {};
         }
-        if( Array.isArray( err.requireModules ) && !Array.isArray( id ) && err.requireModules.indexOf( id ) === -1 ) {
+        if( Array.isArray( err.requireModules )
+            && !Array.isArray( id )
+            && err.requireModules.indexOf( id ) === -1 ) {
             err.requireModules.push( id );
         }
         else {
@@ -123,7 +127,11 @@ var ScriptorCommon;
         // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
         // because the buffer-to-string conversion in `fs.readFileSync()`
         // translates it to FEFF, the UTF-16 BOM.
-        if( content.charCodeAt( 0 ) === 0xFEFF ) {
+        if( Buffer.isBuffer( content ) && content.length >= 2
+            && (content[0] === 0xFE && content[1] === 0xFF) ) {
+            content = content.slice( 2 );
+        }
+        else if( typeof content === 'string' && content.charCodeAt( 0 ) === 0xFEFF ) {
             content = content.slice( 1 );
         }
         return content;
@@ -131,10 +139,20 @@ var ScriptorCommon;
 
     ScriptorCommon.stripBOM = stripBOM;
     ScriptorCommon.AMD_Header =
-        "if(typeof define !== 'function' " + "&& typeof module.define === 'function') {" + "var define = module.define;"
-        + "}";
-    function injectAMD(content) {
-        return ScriptorCommon.AMD_Header + content;
+        new Buffer( "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}" );
+    function injectAMD(content, encoding) {
+        if( encoding === void 0 ) {
+            encoding = 'utf-8';
+        }
+        if( Buffer.isBuffer( content ) ) {
+            return Buffer.concat( [ScriptorCommon.AMD_Header, content] );
+        }
+        else if( typeof content === 'string' ) {
+            return ScriptorCommon.AMD_Header.toString( encoding ) + content;
+        }
+        else {
+            return content;
+        }
     }
 
     ScriptorCommon.injectAMD = injectAMD;

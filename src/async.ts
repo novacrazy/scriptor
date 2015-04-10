@@ -62,10 +62,10 @@ module Scriptor {
     export var default_max_recursion : number = Common.default_max_recursion;
 
     export var default_extensions : {[ext : string] : ( module : Module.IModule,
-                                                        filename : string ) => Promise<any>} = {
+                                                        filename : string ) => Promise<Buffer>} = {
         '.js': ( module : Module.IModule, filename : string ) => {
-            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( ( content : string ) => {
-                module._compile( Common.injectAMD( content ), filename );
+            return readFile( filename ).then( Common.stripBOM ).then( ( content : Buffer ) => {
+                module._compile( (<Buffer>Common.injectAMD( content, null )).toString( 'utf-8' ), filename );
 
                 return content;
             } );
@@ -83,7 +83,7 @@ module Scriptor {
         }
     };
 
-    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<string>} = {};
+    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<Buffer>} = {};
 
     export var extensions_enabled : boolean = false;
 
@@ -677,7 +677,7 @@ module Scriptor {
     }
 
     export class Script extends AMDScript implements IScriptBase {
-        protected _source : string;
+        protected _source : Buffer;
 
         constructor( filename? : string, parent? : Module.IModule ) {
             if( parent === void 0 || parent === null ) {
@@ -728,7 +728,7 @@ module Scriptor {
             if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
                 this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : string ) => {
+                return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
                     this._source = src;
                     this._script.loaded = true;
 
@@ -746,19 +746,22 @@ module Scriptor {
             }
         }
 
-        public source() : Promise<string> {
+        public source( encoding : string = null ) : Promise<string | Buffer> {
             if( this.loaded ) {
-                return Promise.resolve( this._source );
+                if( encoding !== null && encoding !== void 0 ) {
+                    return Promise.resolve( this._source.toString( encoding ) );
+
+                } else {
+                    return Promise.resolve( this._source );
+                }
 
             } else {
-                return this._callWrapper( this.do_load ).then( () => this.source() );
+                return this._callWrapper( this.do_load ).then( () => this.source( encoding ) );
             }
         }
 
         public exports() : Promise<any> {
             if( this.loaded ) {
-                assert( this.loaded );
-
                 if( this.pending ) {
                     return this._resolver;
 
@@ -885,6 +888,29 @@ module Scriptor {
         }
     }
 
+    export class TextScript extends Script {
+        public constructor( filename? : string, parent? : Module.IModule ) {
+            super( filename, parent );
+        }
+
+        protected do_load() : Promise<any> {
+            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
+
+            this.unload();
+
+            return readFile( this.filename ).then( ( src : Buffer ) => {
+                this._script.exports = this._source = src;
+                this._script.loaded = true;
+
+                this.emit( 'loaded', this.loaded );
+            } );
+        }
+
+        public apply( args : any[] ) : Promise<string | Buffer> {
+            return this.source.apply( this, args );
+        }
+    }
+
     export class SourceScript extends Script {
         protected _source : any; //string|Reference
 
@@ -912,12 +938,14 @@ module Scriptor {
             return this._onChange === void 0;
         }
 
-        public source() : Promise<string> {
-            var srcPromise : Promise<string>;
+        public source( encoding : string = null ) : Promise<string | Buffer> {
+            var srcPromise : Promise<string | Buffer>;
 
             if( this._source instanceof ReferenceBase ) {
-                srcPromise = this._source.value().then( ( src : string ) => {
-                    assert.strictEqual( typeof src, 'string', 'Reference source must return string as value' );
+                srcPromise = this._source.value().then( ( src : string | Buffer ) => {
+                    if( !Buffer.isBuffer( src ) ) {
+                        assert.strictEqual( typeof src, 'string', 'Reference source must return string or Buffer as value' );
+                    }
 
                     return src;
                 } );
@@ -926,7 +954,21 @@ module Scriptor {
                 srcPromise = Promise.resolve( this._source );
             }
 
-            return srcPromise.then( extensions_enabled ? Common.injectAMDAndStripBOM : Common.stripBOM );
+            return srcPromise.then( ( src : string | Buffer ) => {
+                if( extensions_enabled ) {
+                    src = Common.injectAMDAndStripBOM( src );
+
+                } else {
+                    src = Common.stripBOM( src );
+                }
+
+                if( Buffer.isBuffer( src ) && encoding !== void 0 && encoding !== null ) {
+                    return (<Buffer>src).toString( encoding );
+
+                } else {
+                    return src;
+                }
+            } );
         }
 
         constructor( src? : any, parent : Module.IModule = this_module ) {
@@ -940,7 +982,7 @@ module Scriptor {
         protected do_compile() : Promise<any> {
             assert.notStrictEqual( this._source, void 0, 'Source must be set to compile' );
 
-            return this.source().then( ( src : string ) => {
+            return this.source( 'utf-8' ).then( ( src : string ) => {
                 this._script._compile( src, this.filename );
 
                 this._script.loaded = true;
