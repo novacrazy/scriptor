@@ -1,6 +1,8 @@
 Scriptor Changelog
 ==================
 
+#####2.1.0
+* Added `.source()` on normal scripts, which custom extensions can populate by returning the source string
 
 #####2.0.1
 * Removed spacing in the AMD Header that would cause some line number issues
