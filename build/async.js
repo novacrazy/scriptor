@@ -582,7 +582,6 @@ var Scriptor;
                     if( result !== null && result !== void 0 ) {
                         _this._script.exports = result;
                     }
-                    delete _this._resolver;
                     return _this._script.exports;
                 } );
             }

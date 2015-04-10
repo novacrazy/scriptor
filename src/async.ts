@@ -650,8 +650,6 @@ module Scriptor {
                         this._script.exports = result;
                     }
 
-                    delete this._resolver;
-
                     return this._script.exports;
                 } );
             }
