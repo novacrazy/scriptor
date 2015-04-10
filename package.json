@@ -33,19 +33,19 @@
     "grunt": "^0.4.5",
     "grunt-banner": "^0.2.3",
     "grunt-contrib-clean": "^0.6.0",
-    "grunt-ts": "^3.0.0",
+    "grunt-ts": "^4.0.1",
     "mocha": "^1.21.5",
     "touch": "0.0.3",
     "treeify": "^1.0.1",
-    "typescript": "^1.4.1"
+    "typescript": "^1.5.0-alpha"
   },
   "scripts": {
     "test": "mocha -Cb test"
   },
   "dependencies": {
-    "bluebird": "^2.9.15",
+    "bluebird": "^2.9.24",
     "co": "^4.5.1",
     "commander": "^2.7.1",
-    "glob": "^5.0.3"
+    "glob": "^5.0.5"
   }
 }
