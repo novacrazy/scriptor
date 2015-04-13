@@ -63,7 +63,7 @@ module Scriptor {
 
     export var default_extensions : {[ext : string] : ( module : Module.IModule,
                                                         filename : string ) => Promise<Buffer>} = {
-        '.js': ( module : Module.IModule, filename : string ) => {
+        '.js':   ( module : Module.IModule, filename : string ) => {
             return readFile( filename ).then( Common.stripBOM ).then( ( content : Buffer ) => {
                 module._compile( (<Buffer>Common.injectAMD( content, null )).toString( 'utf-8' ), filename );
 
@@ -71,14 +71,16 @@ module Scriptor {
             } );
         },
         '.json': ( module : Module.IModule, filename : string ) => {
-            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( ( content : string ) => {
+            return readFile( filename ).then( Common.stripBOM ).then( ( content : Buffer ) => {
                 try {
-                    module.exports = JSON.parse( content );
+                    module.exports = JSON.parse( content.toString( 'utf-8' ) );
 
                 } catch( err ) {
                     err.message = filename + ': ' + err.message;
                     throw err;
                 }
+
+                return content;
             } );
         }
     };

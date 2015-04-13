@@ -95,14 +95,15 @@ var Scriptor;
             } );
         },
         '.json': function(module, filename) {
-            return readFile( filename, 'utf-8' ).then( Common.stripBOM ).then( function(content) {
+            return readFile( filename ).then( Common.stripBOM ).then( function(content) {
                 try {
-                    module.exports = JSON.parse( content );
+                    module.exports = JSON.parse( content.toString( 'utf-8' ) );
                 }
                 catch( err ) {
                     err.message = filename + ': ' + err.message;
                     throw err;
                 }
+                return content;
             } );
         }
     };
