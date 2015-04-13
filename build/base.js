@@ -79,10 +79,6 @@ var ScriptorBase;
             }
             var wasPropagating = this._propagateEvents;
             this._propagateEvents = enable;
-            if( wasPropagating && !enable ) {
-                //immediately disable propagation by pretending it's already been propagated
-                this._hasPropagated = true;
-            }
             return wasPropagating;
         };
         EventPropagator.prototype._addPropagationHandler = function(emitter, event, handler, target) {
@@ -92,15 +88,15 @@ var ScriptorBase;
             }
             if( this._propagateEvents && !hasPropagationHandler( emitter, event, target ) ) {
                 var propagate = function() {
-                    if( !_this._hasPropagated ) {
+                    if( !propagate._hasPropagated && _this._propagateEvents ) {
                         handler.call( target );
-                        _this._hasPropagated = true;
+                        propagate._hasPropagated = true;
                     }
                     emitter.removeListener( event, propagate );
                 };
                 propagate.__target__ = target;
                 emitter.on( event, propagate );
-                this._hasPropagated = false;
+                propagate._hasPropagated = false;
             }
         };
         Object.defineProperty( EventPropagator.prototype, "isPropagatingEvents", {

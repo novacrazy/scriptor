@@ -46,11 +46,6 @@ module ScriptorBase {
 
             this._propagateEvents = enable;
 
-            if( wasPropagating && !enable ) {
-                //immediately disable propagation by pretending it's already been propagated
-                this._hasPropagated = true;
-            }
-
             return wasPropagating;
         }
 
@@ -60,9 +55,9 @@ module ScriptorBase {
                                           target : EventPropagator = this ) {
             if( this._propagateEvents && !hasPropagationHandler( emitter, event, target ) ) {
                 var propagate : any = () => {
-                    if( !this._hasPropagated ) {
+                    if( !propagate._hasPropagated && this._propagateEvents ) {
                         handler.call( target );
-                        this._hasPropagated = true;
+                        propagate._hasPropagated = true;
                     }
 
                     emitter.removeListener( event, propagate );
@@ -72,7 +67,7 @@ module ScriptorBase {
 
                 emitter.on( event, propagate );
 
-                this._hasPropagated = false;
+                propagate._hasPropagated = false;
             }
         }
 
