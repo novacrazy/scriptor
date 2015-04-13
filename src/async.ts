@@ -45,7 +45,7 @@ function isGeneratorFunction( obj : any ) : boolean {
     if( !obj.constructor ) {
         return false;
     } else if( 'GeneratorFunction' === obj.constructor.name ||
-        'GeneratorFunction' === obj.constructor.displayName ) {
+               'GeneratorFunction' === obj.constructor.displayName ) {
         return true;
     } else {
         return isGenerator( obj.constructor.prototype );
@@ -646,11 +646,9 @@ module Scriptor {
             } else {
                 this._resolver = this._runFactory.apply( this, define_args ).then( ( result ) => {
                     //Allows for main factory to not return anything.
-                    if( result !== null && result !== void 0 ) {
-                        this._script.exports = result;
-                    }
+                    this._script.exports = result;
 
-                    return this._script.exports;
+                    return result;
                 } );
             }
         }
@@ -1019,9 +1017,9 @@ module Scriptor {
             if( !this.watched && this._source instanceof ReferenceBase ) {
 
                 this._onChange = ( event : string, filename : string ) => {
-                    this.emit( 'change', event, filename );
-
                     this.unload();
+
+                    this.emit( 'change', event, filename );
                 };
 
                 this._source.on( 'change', this._onChange );
@@ -1345,7 +1343,7 @@ module Scriptor {
 
             //Just to prevent stupid mistakes
             assert( _left instanceof ReferenceBase &&
-            _right instanceof ReferenceBase, 'join will only work on References' );
+                    _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 

@@ -579,10 +579,8 @@ var Scriptor;
             else {
                 this._resolver = this._runFactory.apply( this, define_args ).then( function(result) {
                     //Allows for main factory to not return anything.
-                    if( result !== null && result !== void 0 ) {
-                        _this._script.exports = result;
-                    }
-                    return _this._script.exports;
+                    _this._script.exports = result;
+                    return result;
                 } );
             }
         };
@@ -924,8 +922,8 @@ var Scriptor;
             var _this = this;
             if( !this.watched && this._source instanceof ReferenceBase ) {
                 this._onChange = function(event, filename) {
-                    _this.emit( 'change', event, filename );
                     _this.unload();
+                    _this.emit( 'change', event, filename );
                 };
                 this._source.on( 'change', this._onChange );
                 return true;
