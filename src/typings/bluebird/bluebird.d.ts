@@ -16,7 +16,8 @@
 
 // TODO verify support to have no return statement in handlers to get a Promise<void> (more overloads?)
 
-declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
+declare
+class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     /**
      * Create a new promise. The passed in function will receive functions `resolve` and `reject` as its arguments which can be called to seal the fate of the created promise.
      */
@@ -46,9 +47,11 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * Alias `.caught();` for compatibility with earlier ECMAScript version.
      */
     catch<U>( onReject? : ( error : any ) => Promise.Thenable<U> ) : Promise<U>;
+
     caught<U>( onReject? : ( error : any ) => Promise.Thenable<U> ) : Promise<U>;
 
     catch<U>( onReject? : ( error : any ) => U ) : Promise<U>;
+
     caught<U>( onReject? : ( error : any ) => U ) : Promise<U>;
 
     /**
@@ -59,15 +62,19 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * Alias `.caught();` for compatibility with earlier ECMAScript version.
      */
     catch<U>( predicate : ( error : any ) => boolean, onReject : ( error : any ) => Promise.Thenable<U> ) : Promise<U>;
+
     caught<U>( predicate : ( error : any ) => boolean, onReject : ( error : any ) => Promise.Thenable<U> ) : Promise<U>;
 
     catch<U>( predicate : ( error : any ) => boolean, onReject : ( error : any ) => U ) : Promise<U>;
+
     caught<U>( predicate : ( error : any ) => boolean, onReject : ( error : any ) => U ) : Promise<U>;
 
     catch<U>( ErrorClass : Function, onReject : ( error : any ) => Promise.Thenable<U> ) : Promise<U>;
+
     caught<U>( ErrorClass : Function, onReject : ( error : any ) => Promise.Thenable<U> ) : Promise<U>;
 
     catch<U>( ErrorClass : Function, onReject : ( error : any ) => U ) : Promise<U>;
+
     caught<U>( ErrorClass : Function, onReject : ( error : any ) => U ) : Promise<U>;
 
     /**
@@ -257,8 +264,11 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * Alias `.thenReturn();` for compatibility with earlier ECMAScript version.
      */
     return() : Promise<any>;
+
     thenReturn() : Promise<any>;
+
     return<U>( value : U ) : Promise<U>;
+
     thenReturn<U>( value : U ) : Promise<U>;
 
     /**
@@ -274,6 +284,7 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * Alias `.thenThrow();` for compatibility with earlier ECMAScript version.
      */
     throw( reason : Error ) : Promise<R>;
+
     thenThrow( reason : Error ) : Promise<R>;
 
     /**
@@ -292,6 +303,7 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     // TODO how to model instance.spread()? like Q?
     spread<U>( onFulfill : Function, onReject? : ( reason : any ) => Promise.Thenable<U> ) : Promise<U>;
     spread<U>( onFulfill : Function, onReject? : ( reason : any ) => U ) : Promise<U>;
+
     /*
      // TODO or something like this?
      spread<U, W>(onFulfill: (...values: W[]) => Promise.Thenable<U>, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
@@ -433,7 +445,37 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      *
      * If you pass a `receiver`, the `nodeFunction` will be called as a method on the `receiver`.
      */
-    // TODO how to model promisify?
+    static promisify<T>( func : ( callback : ( err : any, result : T ) => void ) => void,
+                         receiver? : any ) : () => Promise<T>;
+    static promisify<T, A1>( func : ( arg1 : A1, callback : ( err : any, result : T ) => void ) => void,
+                             receiver? : any ) : ( arg1 : A1 ) => Promise<T>;
+    static promisify<T, A1, A2>( func : ( arg1 : A1, arg2 : A2, callback : ( err : any, result : T ) => void ) => void,
+                                 receiver? : any ) : ( arg1 : A1, arg2 : A2 ) => Promise<T>;
+    static promisify<T, A1, A2, A3>( func : ( arg1 : A1,
+                                              arg2 : A2,
+                                              arg3 : A3,
+                                              callback : ( err : any, result : T ) => void ) => void,
+                                     receiver? : any ) : ( arg1 : A1, arg2 : A2, arg3 : A3 ) => Promise<T>;
+    static promisify<T, A1, A2, A3, A4>( func : ( arg1 : A1,
+                                                  arg2 : A2,
+                                                  arg3 : A3,
+                                                  arg4 : A4,
+                                                  callback : ( err : any, result : T ) => void ) => void,
+                                         receiver? : any ) : ( arg1 : A1,
+                                                               arg2 : A2,
+                                                               arg3 : A3,
+                                                               arg4 : A4 ) => Promise<T>;
+    static promisify<T, A1, A2, A3, A4, A5>( func : ( arg1 : A1,
+                                                      arg2 : A2,
+                                                      arg3 : A3,
+                                                      arg4 : A4,
+                                                      arg5 : A5,
+                                                      callback : ( err : any, result : T ) => void ) => void,
+                                             receiver? : any ) : ( arg1 : A1,
+                                                                   arg2 : A2,
+                                                                   arg3 : A3,
+                                                                   arg4 : A4,
+                                                                   arg5 : A5 ) => Promise<T>;
     static promisify( nodeFunction : Function, receiver? : any ) : Function;
 
     /**
@@ -709,10 +751,15 @@ declare module Promise {
     // However, if we want to catch() only a specific error type, we need to pass
     // a constructor function to it. So, as a workaround, we define them here as such.
     export function RangeError() : RangeError;
+
     export function CancellationError() : CancellationError;
+
     export function TimeoutError() : TimeoutError;
+
     export function TypeError() : TypeError;
+
     export function RejectionError() : RejectionError;
+
     export function OperationalError() : OperationalError;
 
     export interface Thenable<R> {

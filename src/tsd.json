@@ -6,10 +6,10 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "node/node.d.ts": {
-      "commit": "2272849a06f2b68205611665e6b86ffec58c1e10"
+      "commit": "b0056383b51495b373a32b791de8112fcafe2ace"
     },
     "bluebird/bluebird.d.ts": {
-      "commit": "2272849a06f2b68205611665e6b86ffec58c1e10"
+      "commit": "b0056383b51495b373a32b791de8112fcafe2ace"
     }
   }
 }
