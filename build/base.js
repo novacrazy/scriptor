@@ -70,7 +70,6 @@ var ScriptorBase;
         function EventPropagator() {
             _super.apply( this, arguments );
             this._propagateEvents = false;
-            this._hasPropagated = false;
         }
 
         EventPropagator.prototype.propagateEvents = function(enable) {

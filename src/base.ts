@@ -39,7 +39,6 @@ module ScriptorBase {
 
     export class EventPropagator extends events.EventEmitter {
         protected _propagateEvents : boolean = false;
-        protected _hasPropagated : boolean = false;
 
         public propagateEvents( enable : boolean = true ) : boolean {
             var wasPropagating : boolean = this._propagateEvents;
