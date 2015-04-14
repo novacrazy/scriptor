@@ -19,6 +19,45 @@ function diff_ms(start) {
     return ms.toFixed( 3 ) + 'ms';
 }
 
+function toMilliseconds(str) {
+    var pattern = /([0-9]+)([A-Z]+)?/i;
+    var match = str.match( pattern );
+
+    if( match ) {
+        var i = parseInt( match[1] );
+
+        if( !isNaN( i ) ) {
+            var u = match[2];
+
+            if( typeof u === 'string' ) {
+                u = u.toLowerCase();
+
+            } else if( u === void 0 ) {
+                return i;
+            }
+
+            switch( u ) {
+                case 'ms':
+                    return i;
+                case 's':
+                    return i * 1000;
+                case 'm':
+                    return i * 60 * 1000;
+                case 'h':
+                    return i * 60 * 60 * 1000;
+                case 'd':
+                    return i * 24 * 60 * 60 * 1000;
+                case 'y':
+                    return i * 365 * 24 * 60 * 60 * 1000;
+                default:
+                    return i;
+            }
+        }
+    }
+
+    return null;
+}
+
 function parseIntOrInfinity(value) {
     if( value.toLowerCase() === 'infinity' ) {
         return Infinity;
@@ -45,6 +84,7 @@ options
     .option( '-l, --long_stack_traces', 'Display long stack trace for asynchronous errors' )
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if async)' )
     .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
+    .option( '--debounce <n>', 'Wait n milliseconds for debounce on file watching events (default: 50ms)' )
     .option( '--use_strict', 'Enforce strict mode' )
     .option( '--max_recursion <n>', 'Set the maximum recursion depth of scripts (default: ' +
                                     ScriptorCommon.default_max_recursion + ')' )
@@ -178,6 +218,10 @@ module.exports = function(argv) {
             manager.propagateEvents();
         }
 
+        if( typeof options.debounce === 'string' ) {
+            manager.debounceMaxWait = toMilliseconds( options.debounce );
+        }
+
         var maxRecursion, concurrency, watch;
 
         //Basically, if both max_recursion and concurrency are set, they have to play along
@@ -235,7 +279,7 @@ module.exports = function(argv) {
 
         var run_script,
             script_start = process.hrtime(),
-            place = 0,
+            place     = 0,
             instances = [];
 
         if( !options.no_signal ) {

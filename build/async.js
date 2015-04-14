@@ -153,6 +153,7 @@ var Scriptor;
             _super.call( this );
             this._recursion = 0;
             this._maxRecursion = Scriptor.default_max_recursion;
+            this._debounceMaxWait = 50; //50ms is a good starting point for local files.
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
         }
@@ -261,6 +262,17 @@ var Scriptor;
                 //JSHint doesn't like bitwise operators
                 this._maxRecursion = Math.floor( value );
                 assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "debounceMaxWait", {
+            get:          function() {
+                return this._debounceMaxWait;
+            },
+            set:          function(time) {
+                this._debounceMaxWait = Math.floor( time );
+                assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
             },
             enumerable:   true,
             configurable: true
@@ -776,7 +788,7 @@ var Scriptor;
                             _this.emit( 'rename', old_filename, filename );
                         }
                     }
-                }, 50 ) );
+                }, this.debounceMaxWait ) );
                 watcher.on( 'error', function(error) {
                     //In the event of an error, unload and unwatch
                     _this.close( false );
@@ -1372,6 +1384,7 @@ var Scriptor;
     /**** BEGIN SECTION MANAGER ****/
     var Manager = (function() {
         function Manager(grandParent) {
+            this._debounceMaxWait = null; //set to null if it shouldn't set it at all
             this._scripts = MapAdapter.createMap();
             this._cwd = process.cwd();
             this._propagateEvents = false;
@@ -1385,6 +1398,22 @@ var Scriptor;
             this._cwd = path.resolve( this.cwd(), value );
             return this._cwd;
         };
+        Object.defineProperty( Manager.prototype, "debounceMaxWait", {
+            get:          function() {
+                return this._debounceMaxWait;
+            },
+            set:          function(time) {
+                if( time !== null && time !== void 0 ) {
+                    this._debounceMaxWait = Math.floor( time );
+                    assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
+                }
+                else {
+                    this._debounceMaxWait = null;
+                }
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         Object.defineProperty( Manager.prototype, "parent", {
             get:          function() {
                 return this._parent;
@@ -1432,6 +1461,9 @@ var Scriptor;
                 script = new ScriptAdapter( this, null, this._parent );
                 if( this._propagateEvents ) {
                     script.propagateEvents();
+                }
+                if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
+                    script.debounceMaxWait = this.debounceMaxWait;
                 }
                 script.load( filename, watch );
                 this._scripts.set( filename, script );

@@ -125,6 +125,7 @@ module Scriptor {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
         protected _maxRecursion : number = default_max_recursion;
+        protected _debounceMaxWait : number = 50; //50ms is a good starting point for local files.
 
         protected _watcher : fs.FSWatcher;
 
@@ -220,6 +221,16 @@ module Scriptor {
 
         get maxRecursion() : number {
             return this._maxRecursion;
+        }
+
+        set debounceMaxWait( time : number ) {
+            this._debounceMaxWait = Math.floor( time );
+
+            assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
+        }
+
+        get debounceMaxWait() : number {
+            return this._debounceMaxWait;
         }
 
         public unload() : boolean {
@@ -753,7 +764,7 @@ module Scriptor {
                             this.emit( 'rename', old_filename, filename );
                         }
                     }
-                }, 50 ) );
+                }, this.debounceMaxWait ) );
 
                 watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
                     //In the event of an error, unload and unwatch
@@ -1349,6 +1360,7 @@ module Scriptor {
     /**** BEGIN SECTION MANAGER ****/
 
     export class Manager {
+        private _debounceMaxWait : number = null; //set to null if it shouldn't set it at all
 
         private _scripts : Map<string, ScriptAdapter> = MapAdapter.createMap<ScriptAdapter>();
 
@@ -1362,6 +1374,21 @@ module Scriptor {
             this._cwd = path.resolve( this.cwd(), value );
 
             return this._cwd;
+        }
+
+        set debounceMaxWait( time : number ) {
+            if( time !== null && time !== void 0 ) {
+                this._debounceMaxWait = Math.floor( time );
+
+                assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
+
+            } else {
+                this._debounceMaxWait = null;
+            }
+        }
+
+        get debounceMaxWait() : number {
+            return this._debounceMaxWait;
         }
 
         private _parent : Module.IModule;
@@ -1414,6 +1441,10 @@ module Scriptor {
 
                 if( this._propagateEvents ) {
                     script.propagateEvents();
+                }
+
+                if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
+                    script.debounceMaxWait = this.debounceMaxWait;
                 }
 
                 script.load( filename, watch );
