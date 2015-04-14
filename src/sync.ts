@@ -736,7 +736,25 @@ module Scriptor {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
 
-                watcher.on( 'change', _.debounce( ( event : string, filename : string ) => {
+                //These are separated out so rename and change events can be debounced seperately.
+                var onChange = _.debounce( ( event : string, filename : string ) => {
+                    this.unload();
+                    this.emit( 'change', event, filename );
+
+                }, this.debounceMaxWait );
+
+                var onRename = _.debounce( ( event : string, filename : string ) => {
+                    var old_filename = this._script.filename;
+
+                    //A simple rename doesn't change file content, so just change the filename
+                    //and leave the script loaded
+                    this._script.filename = filename;
+
+                    this.emit( 'rename', old_filename, filename );
+
+                }, this.debounceMaxWait );
+
+                watcher.on( 'change', ( event : string, filename : string ) => {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
                         //If filename is null, that is generally a bad sign, so just close the script (not permanently)
@@ -750,21 +768,13 @@ module Scriptor {
                         filename = path.resolve( this.baseUrl, filename );
 
                         if( event === 'change' && this.loaded ) {
-                            this.unload();
-
-                            this.emit( 'change', event, filename );
+                            onChange( event, filename )
 
                         } else if( event === 'rename' && filename !== this.filename ) {
-                            var old_filename = this._script.filename;
-
-                            //A simple rename doesn't change file content, so just change the filename
-                            //and leave the script loaded
-                            this._script.filename = filename;
-
-                            this.emit( 'rename', old_filename, filename );
+                            onRename( event, filename );
                         }
                     }
-                }, this.debounceMaxWait ) );
+                } );
 
                 watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
                     //In the event of an error, unload and unwatch

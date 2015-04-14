@@ -765,7 +765,19 @@ var Scriptor;
                 catch( err ) {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
-                watcher.on( 'change', _.debounce( function(event, filename) {
+                //These are separated out so rename and change events can be debounced seperately.
+                var onChange = _.debounce( function(event, filename) {
+                    _this.unload();
+                    _this.emit( 'change', event, filename );
+                }, this.debounceMaxWait );
+                var onRename = _.debounce( function(event, filename) {
+                    var old_filename = _this._script.filename;
+                    //A simple rename doesn't change file content, so just change the filename
+                    //and leave the script loaded
+                    _this._script.filename = filename;
+                    _this.emit( 'rename', old_filename, filename );
+                }, this.debounceMaxWait );
+                watcher.on( 'change', function(event, filename) {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
                         //If filename is null, that is generally a bad sign, so just close the script (not permanently)
@@ -777,18 +789,13 @@ var Scriptor;
                         //actually is. So we have to get the directory of the last filename and combine it with the new name
                         filename = path.resolve( _this.baseUrl, filename );
                         if( event === 'change' && _this.loaded ) {
-                            _this.unload();
-                            _this.emit( 'change', event, filename );
+                            onChange( event, filename );
                         }
                         else if( event === 'rename' && filename !== _this.filename ) {
-                            var old_filename = _this._script.filename;
-                            //A simple rename doesn't change file content, so just change the filename
-                            //and leave the script loaded
-                            _this._script.filename = filename;
-                            _this.emit( 'rename', old_filename, filename );
+                            onRename( event, filename );
                         }
                     }
-                }, this.debounceMaxWait ) );
+                } );
                 watcher.on( 'error', function(error) {
                     //In the event of an error, unload and unwatch
                     _this.close( false );
