@@ -4,6 +4,8 @@
 
 import events = require('events');
 
+import _ = require('lodash');
+
 /*
  * Propagating events is not a simple matter, at least not if you want to avoid memory leaks.
  *
@@ -53,14 +55,14 @@ module ScriptorBase {
                                           handler : Function,
                                           target : EventPropagator = this ) {
             if( this._propagateEvents && !hasPropagationHandler( emitter, event, target ) ) {
-                var propagate : any = () => {
+                var propagate : any = _.once( () => {
                     if( !propagate._hasPropagated && this._propagateEvents ) {
                         handler.call( target );
                         propagate._hasPropagated = true;
                     }
 
                     emitter.removeListener( event, propagate );
-                };
+                } );
 
                 propagate.__target__ = target;
 

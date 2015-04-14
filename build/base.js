@@ -40,6 +40,7 @@ var __extends = this.__extends || function(d, b) {
         d.prototype = new __();
     };
 var events = require( 'events' );
+var _ = require( 'lodash' );
 /*
  * Propagating events is not a simple matter, at least not if you want to avoid memory leaks.
  *
@@ -86,13 +87,13 @@ var ScriptorBase;
                 target = this;
             }
             if( this._propagateEvents && !hasPropagationHandler( emitter, event, target ) ) {
-                var propagate = function() {
+                var propagate = _.once( function() {
                     if( !propagate._hasPropagated && _this._propagateEvents ) {
                         handler.call( target );
                         propagate._hasPropagated = true;
                     }
                     emitter.removeListener( event, propagate );
-                };
+                } );
                 propagate.__target__ = target;
                 emitter.on( event, propagate );
                 propagate._hasPropagated = false;
