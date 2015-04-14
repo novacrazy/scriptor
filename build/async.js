@@ -594,6 +594,7 @@ var Scriptor;
                 this._resolver = this._runFactory.apply( this, define_args ).then( function(result) {
                     //Allows for main factory to not return anything.
                     _this._script.exports = result;
+                    delete _this._resolver;
                     return result;
                 } );
             }
@@ -765,7 +766,7 @@ var Scriptor;
                 catch( err ) {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
-                //These are separated out so rename and change events can be debounced seperately.
+                //These are separated out so rename and change events can be debounced separately.
                 var onChange = _.debounce( function(event, filename) {
                     _this.unload();
                     _this.emit( 'change', event, filename );

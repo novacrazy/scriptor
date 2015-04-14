@@ -663,6 +663,8 @@ module Scriptor {
                     //Allows for main factory to not return anything.
                     this._script.exports = result;
 
+                    delete this._resolver;
+
                     return result;
                 } );
             }
@@ -844,7 +846,7 @@ module Scriptor {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
 
-                //These are separated out so rename and change events can be debounced seperately.
+                //These are separated out so rename and change events can be debounced separately.
                 var onChange = _.debounce( ( event : string, filename : string ) => {
                     this.unload();
                     this.emit( 'change', event, filename );
