@@ -14,6 +14,8 @@ import Module = require('./Module');
 import Common = require('./common');
 import MapAdapter = require('./map');
 
+import _ = require('lodash');
+
 var posix_path : any = path['posix'];
 
 module Scriptor {
@@ -723,7 +725,7 @@ module Scriptor {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
 
-                watcher.on( 'change', ( event : string, filename : string ) => {
+                watcher.on( 'change', _.debounce( ( event : string, filename : string ) => {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
                         //If filename is null, that is generally a bad sign, so just close the script (not permanently)
@@ -751,7 +753,7 @@ module Scriptor {
                             this.emit( 'rename', old_filename, filename );
                         }
                     }
-                } );
+                }, 50 ) );
 
                 watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
                     //In the event of an error, unload and unwatch
@@ -1220,7 +1222,7 @@ module Scriptor {
 
             //Just to prevent stupid mistakes
             assert( _left instanceof ReferenceBase &&
-            _right instanceof ReferenceBase, 'join will only work on References' );
+                    _right instanceof ReferenceBase, 'join will only work on References' );
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 

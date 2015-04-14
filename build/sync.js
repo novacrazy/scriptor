@@ -49,6 +49,7 @@ var Base = require( './base' );
 var Module = require( './Module' );
 var Common = require( './common' );
 var MapAdapter = require( './map' );
+var _ = require( 'lodash' );
 var posix_path = path['posix'];
 var Scriptor;
 (function(Scriptor) {
@@ -640,7 +641,7 @@ var Scriptor;
                 catch( err ) {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
-                watcher.on( 'change', function(event, filename) {
+                watcher.on( 'change', _.debounce( function(event, filename) {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
                         //If filename is null, that is generally a bad sign, so just close the script (not permanently)
@@ -663,7 +664,7 @@ var Scriptor;
                             _this.emit( 'rename', old_filename, filename );
                         }
                     }
-                } );
+                }, 50 ) );
                 watcher.on( 'error', function(error) {
                     //In the event of an error, unload and unwatch
                     _this.close( false );

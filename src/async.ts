@@ -16,6 +16,8 @@ import MapAdapter = require('./map');
 
 import Promise = require('bluebird');
 
+import _ = require('lodash');
+
 var co : any = require( 'co' );
 
 var readFile = Promise.promisify( fs.readFile );
@@ -831,7 +833,7 @@ module Scriptor {
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
 
-                watcher.on( 'change', ( event : string, filename : string ) => {
+                watcher.on( 'change', _.debounce( ( event : string, filename : string ) => {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
                         //If filename is null, that is generally a bad sign, so just close the script (not permanently)
@@ -859,7 +861,7 @@ module Scriptor {
                             this.emit( 'rename', old_filename, filename );
                         }
                     }
-                } );
+                }, 50 ) );
 
                 watcher.on( 'error', ( error : NodeJS.ErrnoException ) => {
                     //In the event of an error, unload and unwatch
