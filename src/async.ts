@@ -13,6 +13,7 @@ import Base = require('./base')
 import Module = require('./Module');
 import Common = require('./common');
 import MapAdapter = require('./map');
+import Types = require('./types');
 
 import Promise = require('bluebird');
 
@@ -63,8 +64,9 @@ module Scriptor {
 
     export var default_max_recursion : number = Common.default_max_recursion;
 
-    export var default_extensions : {[ext : string] : ( module : Module.IModule,
-                                                        filename : string ) => Promise<Buffer>} = {
+    export type ScriptorExtensionMap = Types.ISimpleMap<Types.ScriptorExtension<Promise<Buffer>>>;
+
+    export var default_extensions : ScriptorExtensionMap = {
         '.js':   ( module : Module.IModule, filename : string ) => {
             return readFile( filename ).then( Common.stripBOM ).then( ( content : Buffer ) => {
                 module._compile( (<Buffer>Common.injectAMD( content, null )).toString( 'utf-8' ), filename );
@@ -87,7 +89,7 @@ module Scriptor {
         }
     };
 
-    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Promise<Buffer>} = {};
+    export var extensions : ScriptorExtensionMap = {};
 
     export var extensions_enabled : boolean = false;
 
@@ -121,48 +123,14 @@ module Scriptor {
 
     /**** BEGIN SECTION SCRIPT ****/
 
-    export interface IScriptBase extends Module.IModulePublic {
-        imports : {[key : string] : any};
-        reference( ...args : any[] ) : Reference;
-        reference_apply( args : any[] ) : Reference;
-        include( filename : string, load? : boolean ) : Script;
-    }
+    export type IScriptBase = Types.IScriptBase<Promise<any>, Script>;
 
-    export interface IDefineFunction {
-        ( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : void;
-        ( id : string, deps : string[], factory : {[key : string] : any} ) : void;
-        ( deps : string[], factory : ( ...deps : any[] ) => any ) : void;
-        ( deps : string[], factory : {[key : string] : any} ) : void;
-        ( factory : ( ...deps : any[] ) => any ) : void;
-        ( factory : {[key : string] : any} ) : void;
+    export type IRequireFunction = Types.IRequireFunction<Promise<any>, Promise<any[]>>;
+    export type IDefineFunction = Types.IDefineFunction<Promise<any>, Promise<any[]>>;
 
-        amd: {
-            jQuery: boolean; //false
-        };
+    export type IAMDScriptBase = Types.IAMDScriptBase<Promise<any>, Promise<any[]>>;
 
-        require : IRequireFunction;
-    }
-
-    export interface IRequireFunction {
-        ( path : string ) : Promise<any>;
-        ( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : Promise<any>
-        ( id : string[], cb? : ( ...deps : any[] ) => any, ecb? : ( err : any ) => any ) : Promise<any[]>;
-        ( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : Promise<any>;
-
-        toUrl( path : string ) : string;
-        specified( id : string ) : boolean;
-        defined( id : string ) : boolean;
-        undef( id : string ) : void;
-        onError( err : any ) : void;
-        resolve( id : string ) : string;
-
-        define : IDefineFunction;
-    }
-
-    export interface IAMDScriptBase {
-        require : IRequireFunction;
-        define : IDefineFunction;
-    }
+    export type IScriptorPlugin = Types.IScriptorPlugin<Promise<any>, Promise<any[]>>;
 
     export interface IScriptModule extends IScriptBase, IAMDScriptBase,
                                            Module.IModulePublic, Module.IModuleInternal,
@@ -462,7 +430,7 @@ module Scriptor {
                     //modules to be loaded through an AMD loader transform
                     var parts : string[] = id.split( '!', 2 );
 
-                    var plugin_resolver : Promise<{}>;
+                    var plugin_resolver : Promise<IScriptorPlugin>;
 
                     var plugin_id : string = parts[0];
 
@@ -660,12 +628,15 @@ module Scriptor {
 
             } else {
                 this._resolver = this._runFactory.apply( this, define_args ).then( ( result ) => {
-                    //Allows for main factory to not return anything.
-                    this._script.exports = result;
+                    //To match AMDefine, don't export the result unless there is one.
+                    //Null is allowed, since it would have to have been returned explicitly.
+                    if( result !== void 0 ) {
+                        this._script.exports = result;
+                    }
 
                     delete this._resolver;
 
-                    return result;
+                    return this._script.exports;
                 } );
             }
         }
@@ -1154,24 +1125,12 @@ module Scriptor {
 
     /**** BEGIN SECTION REFERENCE ****/
 
-    export interface ITransformFunction {
-        ( left : IReference, right : IReference ) : Promise<any>;
-    }
+    export type IReference = Types.IReference<Promise<any>>;
+    export type ITransformFunction = Types.ITransformFunction<Promise<any>>;
 
     export var identity : ITransformFunction = ( left : IReference, right : IReference ) => {
         return left.value();
     };
-
-    export interface IReference extends NodeJS.EventEmitter {
-        value() : Promise<any>;
-        ran : boolean;
-        closed : boolean;
-        join( ref : IReference, transform? : ITransformFunction ) : IReference;
-        transform( transform? : ITransformFunction )
-        left() : IReference;
-        right() : IReference;
-        close( recursive? );
-    }
 
     class ReferenceBase extends events.EventEmitter {
         protected _onChange : ( event : string, filename : string ) => any;

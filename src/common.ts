@@ -7,6 +7,8 @@ import path = require('path');
 
 module ScriptorCommon {
 
+    export type stringOrBuffer = string | Buffer;
+
     export function isAbsolutePath( filepath : string ) : boolean {
         if( typeof path.isAbsolute === 'function' ) {
             return path.isAbsolute( filepath );
@@ -97,7 +99,7 @@ module ScriptorCommon {
         }
     }
 
-    export function stripBOM( content : string | Buffer ) : string | Buffer {
+    export function stripBOM( content : stringOrBuffer ) : stringOrBuffer {
         // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
         // because the buffer-to-string conversion in `fs.readFileSync()`
         // translates it to FEFF, the UTF-16 BOM.
@@ -114,7 +116,7 @@ module ScriptorCommon {
 
     export var AMD_Header : Buffer = new Buffer( "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}" );
 
-    export function injectAMD( content : string | Buffer, encoding : string = 'utf-8' ) : string | Buffer {
+    export function injectAMD( content : stringOrBuffer, encoding : string = 'utf-8' ) : stringOrBuffer {
         if( Buffer.isBuffer( content ) ) {
             return Buffer.concat( [AMD_Header, <Buffer>content] );
 
@@ -126,7 +128,7 @@ module ScriptorCommon {
         }
     }
 
-    export function injectAMDAndStripBOM( content : string | Buffer ) : string | Buffer {
+    export function injectAMDAndStripBOM( content : stringOrBuffer ) : stringOrBuffer {
         return injectAMD( stripBOM( content ) );
     }
 

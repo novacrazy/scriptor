@@ -592,10 +592,13 @@ var Scriptor;
             }
             else {
                 this._resolver = this._runFactory.apply( this, define_args ).then( function(result) {
-                    //Allows for main factory to not return anything.
-                    _this._script.exports = result;
+                    //To match AMDefine, don't export the result unless there is one.
+                    //Null is allowed, since it would have to have been returned explicitly.
+                    if( result !== void 0 ) {
+                        _this._script.exports = result;
+                    }
                     delete _this._resolver;
-                    return result;
+                    return _this._script.exports;
                 } );
             }
         };

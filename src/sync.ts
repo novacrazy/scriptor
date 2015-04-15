@@ -13,6 +13,7 @@ import Base = require('./base');
 import Module = require('./Module');
 import Common = require('./common');
 import MapAdapter = require('./map');
+import Types = require('./types');
 
 import _ = require('lodash');
 
@@ -27,7 +28,9 @@ module Scriptor {
 
     export var default_max_recursion : number = Common.default_max_recursion;
 
-    export var default_extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Buffer} = {
+    export type ScriptorExtensionMap = Types.ISimpleMap<Types.ScriptorExtension<Buffer>>;
+
+    export var default_extensions : ScriptorExtensionMap = {
         '.js': ( module : Module.IModule, filename : string ) => {
             var content : Buffer = <Buffer>Common.stripBOM( fs.readFileSync( filename ) );
 
@@ -37,7 +40,7 @@ module Scriptor {
         }
     };
 
-    export var extensions : {[ext : string] : ( module : Module.IModule, filename : string ) => Buffer} = {};
+    export var extensions : ScriptorExtensionMap = {};
 
     export var extensions_enabled : boolean = false;
 
@@ -69,48 +72,12 @@ module Scriptor {
 
     /**** BEGIN SECTION SCRIPT ****/
 
-    export interface IScriptBase extends Module.IModulePublic {
-        imports : {[key : string] : any};
-        reference( ...args : any[] ) : Reference;
-        reference_apply( args : any[] ) : Reference;
-        include( filename : string, load? : boolean ) : Script;
-    }
+    export type IScriptBase = Types.IScriptBase<any, Script>;
 
-    export interface IDefineFunction {
-        ( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : void;
-        ( id : string, deps : string[], factory : {[key : string] : any} ) : void;
-        ( deps : string[], factory : ( ...deps : any[] ) => any ) : void;
-        ( deps : string[], factory : {[key : string] : any} ) : void;
-        ( factory : ( ...deps : any[] ) => any ) : void;
-        ( factory : {[key : string] : any} ) : void;
+    export type IRequireFunction = Types.IRequireFunction<any, any[]>;
+    export type IDefineFunction = Types.IDefineFunction<any, any[]>;
 
-        amd: {
-            jQuery: boolean; //false
-        };
-
-        require : IRequireFunction;
-    }
-
-    export interface IRequireFunction {
-        ( path : string ) : any;
-        ( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any;
-        ( id : string[], cb? : ( ...deps : any[] ) => any, ecb? : ( err : any ) => any ) : any[];
-        ( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : any;
-
-        toUrl( path : string ) : string;
-        specified( id : string ) : boolean;
-        defined( id : string ) : boolean;
-        undef( id : string ) : void;
-        onError( err : any ) : void;
-        resolve( id : string ) : string;
-
-        define : IDefineFunction;
-    }
-
-    export interface IAMDScriptBase {
-        require : IRequireFunction;
-        define : IDefineFunction;
-    }
+    export type IAMDScriptBase = Types.IAMDScriptBase<any, any[]>;
 
     export interface IScriptModule extends IScriptBase, IAMDScriptBase,
                                            Module.IModulePublic, Module.IModuleInternal,
@@ -1037,24 +1004,12 @@ module Scriptor {
 
     /**** BEGIN SECTION REFERENCE ****/
 
-    export interface ITransformFunction {
-        ( left : IReference, right : IReference ) : any;
-    }
+    export type IReference = Types.IReference<any>;
+    export type ITransformFunction = Types.ITransformFunction<any>;
 
     export var identity : ITransformFunction = ( left : IReference, right : IReference ) => {
         return left.value();
     };
-
-    export interface IReference extends NodeJS.EventEmitter {
-        value() : any;
-        ran : boolean;
-        closed : boolean;
-        join( ref : IReference, transform? : ITransformFunction ) : IReference;
-        transform( transform? : ITransformFunction )
-        left() : IReference;
-        right() : IReference;
-        close( recursive? );
-    }
 
     class ReferenceBase extends events.EventEmitter {
         protected _onChange : ( event : string, filename : string ) => any;
