@@ -74,7 +74,7 @@ module ScriptorTypes {
     export interface IScriptorPluginOnLoad<T> {
         ( value : any ) : void;
         fromText( text : string | IReference<T> ) : void;
-        onError( err : any ) : void;
+        error( err : any ) : void;
     }
 
     export interface IScriptorPlugin<T, TArray> {

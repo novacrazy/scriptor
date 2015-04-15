@@ -403,6 +403,21 @@ module Scriptor {
                             }
                         };
 
+                    } else if( plugin_id === 'text' ) {
+                        plugin = {
+                            normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
+                                return defaultNormalize( id );
+                            },
+                            load:      ( id, require, _onLoad, config ) => {
+                                try {
+                                    _onLoad( new TextScript( id ) );
+
+                                } catch( err ) {
+                                    _onLoad.error( err );
+                                }
+                            }
+                        };
+
                     } else {
                         plugin = this._require( plugin_id );
                     }

@@ -471,6 +471,21 @@ var Scriptor;
                             }
                         } );
                     }
+                    else if( plugin_id === 'text' ) {
+                        plugin_resolver = Promise.resolve( {
+                            normalize: function(id, defaultNormalize) {
+                                return defaultNormalize( id );
+                            },
+                            load:      function(id, require, _onLoad, config) {
+                                try {
+                                    _onLoad( new TextScript( id ) );
+                                }
+                                catch( err ) {
+                                    _onLoad.error( err );
+                                }
+                            }
+                        } );
+                    }
                     else {
                         plugin_resolver = this._require( plugin_id );
                     }

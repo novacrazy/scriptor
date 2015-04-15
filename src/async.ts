@@ -481,6 +481,21 @@ module Scriptor {
                             }
                         } );
 
+                    } else if( plugin_id === 'text' ) {
+                        plugin_resolver = Promise.resolve( {
+                            normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
+                                return defaultNormalize( id );
+                            },
+                            load:      ( id, require, _onLoad, config ) => {
+                                try {
+                                    _onLoad( new TextScript( id ) );
+
+                                } catch( err ) {
+                                    _onLoad.error( err );
+                                }
+                            }
+                        } );
+
                     } else {
                         plugin_resolver = this._require( plugin_id );
                     }
