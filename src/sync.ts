@@ -93,6 +93,7 @@ module Scriptor {
         protected _recursion : number = 0;
         protected _maxRecursion : number = default_max_recursion;
         protected _debounceMaxWait : number = 50; //50ms is a good starting point for local files.
+        protected _textMode : boolean = false;
 
         protected _watcher : fs.FSWatcher;
 
@@ -198,6 +199,14 @@ module Scriptor {
 
         get debounceMaxWait() : number {
             return this._debounceMaxWait;
+        }
+
+        get textMode() : boolean {
+            return this._textMode;
+        }
+
+        set textMode( value : boolean ) {
+            this._textMode = !!value;
         }
 
         public unload() : boolean {
@@ -395,7 +404,11 @@ module Scriptor {
                             },
                             load: ( id, require, _onLoad, config ) => {
                                 try {
-                                    _onLoad( this.include( id ) );
+                                    var script = this.include( id );
+
+                                    script.textMode = false;
+
+                                    _onLoad( script );
 
                                 } catch( err ) {
                                     _onLoad.error( err );
@@ -410,7 +423,11 @@ module Scriptor {
                             },
                             load:      ( id, require, _onLoad, config ) => {
                                 try {
-                                    _onLoad( new TextScript( id ) );
+                                    var script = this.include( id );
+
+                                    script.textMode = true;
+
+                                    _onLoad( script );
 
                                 } catch( err ) {
                                     _onLoad.error( err );
@@ -619,23 +636,31 @@ module Scriptor {
 
             this.unload();
 
-            this.do_setup();
+            if( !this.textMode ) {
+                this.do_setup();
 
-            var ext = path.extname( this.filename ) || '.js';
+                var ext = path.extname( this.filename ) || '.js';
 
-            if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
-                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
+                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                this._source = extensions[ext]( this._script, this.filename );
+                    this._source = extensions[ext]( this._script, this.filename );
 
-                this._script.loaded = true;
+                    this._script.loaded = true;
 
-            } else {
-                if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                    this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                } else {
+                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                        this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                    }
+
+                    this._script.load( this._script.filename );
                 }
 
-                this._script.load( this._script.filename );
+            } else {
+                var src : Buffer = fs.readFileSync( this.filename );
+
+                this._script.exports = this._source = src;
+                this._script.loaded = true;
             }
 
             this.emit( 'loaded', this.loaded );
@@ -668,14 +693,19 @@ module Scriptor {
         }
 
         public apply( args : any[] ) : any {
-            //This will ensure it is loaded (safely) and return the exports
-            var main : any = this.exports();
+            if( !this.textMode ) {
+                //This will ensure it is loaded (safely) and return the exports
+                var main : any = this.exports();
 
-            if( typeof main === 'function' ) {
-                return this._callWrapper( main, null, args );
+                if( typeof main === 'function' ) {
+                    return this._callWrapper( main, null, args );
+
+                } else {
+                    return main;
+                }
 
             } else {
-                return main;
+                return this.source.apply( this, args );
             }
         }
 
@@ -788,20 +818,8 @@ module Scriptor {
             super( filename, parent );
         }
 
-        protected do_load() {
-            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
-            this.unload();
-
-            var src : Buffer = fs.readFileSync( this.filename );
-
-            this._script.exports = this._source = src;
-            this._script.loaded = true;
-
-            this.emit( 'loaded', this.loaded );
-        }
-
-        public apply( args : any[] ) : string | Buffer {
-            return this.source.apply( this, args );
+        get textMode() : boolean {
+            return true;
         }
     }
 

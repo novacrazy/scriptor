@@ -154,6 +154,7 @@ var Scriptor;
             this._recursion = 0;
             this._maxRecursion = Scriptor.default_max_recursion;
             this._debounceMaxWait = 50; //50ms is a good starting point for local files.
+            this._textMode = false;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
         }
@@ -273,6 +274,16 @@ var Scriptor;
             set:          function(time) {
                 this._debounceMaxWait = Math.floor( time );
                 assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "textMode", {
+            get:          function() {
+                return this._textMode;
+            },
+            set:          function(value) {
+                this._textMode = !!value;
             },
             enumerable:   true,
             configurable: true
@@ -435,7 +446,9 @@ var Scriptor;
                             },
                             load:      function(id, require, _onLoad, config) {
                                 try {
-                                    _onLoad( _this.include( id ) );
+                                    var script = _this.include( id );
+                                    script.textMode = false;
+                                    _onLoad( script );
                                 }
                                 catch( err ) {
                                     _onLoad.error( err );
@@ -478,7 +491,9 @@ var Scriptor;
                             },
                             load:      function(id, require, _onLoad, config) {
                                 try {
-                                    _onLoad( new TextScript( id ) );
+                                    var script = _this.include( id );
+                                    script.textMode = true;
+                                    _onLoad( script );
                                 }
                                 catch( err ) {
                                     _onLoad.error( err );
@@ -667,25 +682,34 @@ var Scriptor;
             var _this = this;
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
             this.unload();
-            this.do_setup();
-            var ext = path.extname( this.filename ) || '.js';
-            //Use custom extension if available
-            if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
-                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
-                    _this._source = src;
+            if( !this.textMode ) {
+                this.do_setup();
+                var ext = path.extname( this.filename ) || '.js';
+                //Use custom extension if available
+                if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
+                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                    return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
+                        _this._source = src;
+                        _this._script.loaded = true;
+                        _this.emit( 'loaded', _this.loaded );
+                    } );
+                }
+                else {
+                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                        this.emit( 'warning',
+                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                this.filename ) );
+                    }
+                    this._script.load( this._script.filename );
+                    this.emit( 'loaded', this.loaded );
+                }
+            }
+            else {
+                return readFile( this.filename ).then( function(src) {
+                    _this._script.exports = _this._source = src;
                     _this._script.loaded = true;
                     _this.emit( 'loaded', _this.loaded );
                 } );
-            }
-            else {
-                if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                    this.emit( 'warning',
-                        util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
-                            this.filename ) );
-                }
-                this._script.load( this._script.filename );
-                this.emit( 'loaded', this.loaded );
             }
         };
         Script.prototype.source = function(encoding) {
@@ -733,17 +757,22 @@ var Scriptor;
         };
         Script.prototype.apply = function(args) {
             var _this = this;
-            return this.exports().then( function(main) {
-                if( typeof main === 'function' ) {
-                    if( isGeneratorFunction( main ) ) {
-                        main = co.wrap( main );
+            if( !this.textMode ) {
+                return this.exports().then( function(main) {
+                    if( typeof main === 'function' ) {
+                        if( isGeneratorFunction( main ) ) {
+                            main = co.wrap( main );
+                        }
+                        return _this._callWrapper( main, null, args );
                     }
-                    return _this._callWrapper( main, null, args );
-                }
-                else {
-                    return main;
-                }
-            } );
+                    else {
+                        return main;
+                    }
+                } );
+            }
+            else {
+                return this.source.apply( this, args );
+            }
         };
         Script.prototype.reference = function() {
             var args = [];
@@ -842,19 +871,13 @@ var Scriptor;
             _super.call( this, filename, parent );
         }
 
-        TextScript.prototype.do_load = function() {
-            var _this = this;
-            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
-            this.unload();
-            return readFile( this.filename ).then( function(src) {
-                _this._script.exports = _this._source = src;
-                _this._script.loaded = true;
-                _this.emit( 'loaded', _this.loaded );
-            } );
-        };
-        TextScript.prototype.apply = function(args) {
-            return this.source.apply( this, args );
-        };
+        Object.defineProperty( TextScript.prototype, "textMode", {
+            get:          function() {
+                return true;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         return TextScript;
     })( Script );
     Scriptor.TextScript = TextScript;

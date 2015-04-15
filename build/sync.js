@@ -109,6 +109,7 @@ var Scriptor;
             this._recursion = 0;
             this._maxRecursion = Scriptor.default_max_recursion;
             this._debounceMaxWait = 50; //50ms is a good starting point for local files.
+            this._textMode = false;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));
         }
@@ -231,6 +232,16 @@ var Scriptor;
             set:          function(time) {
                 this._debounceMaxWait = Math.floor( time );
                 assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
+            },
+            enumerable:   true,
+            configurable: true
+        } );
+        Object.defineProperty( ScriptBase.prototype, "textMode", {
+            get:          function() {
+                return this._textMode;
+            },
+            set:          function(value) {
+                this._textMode = !!value;
             },
             enumerable:   true,
             configurable: true
@@ -390,7 +401,9 @@ var Scriptor;
                             },
                             load:      function(id, require, _onLoad, config) {
                                 try {
-                                    _onLoad( _this.include( id ) );
+                                    var script = _this.include( id );
+                                    script.textMode = false;
+                                    _onLoad( script );
                                 }
                                 catch( err ) {
                                     _onLoad.error( err );
@@ -405,7 +418,9 @@ var Scriptor;
                             },
                             load:      function(id, require, _onLoad, config) {
                                 try {
-                                    _onLoad( new TextScript( id ) );
+                                    var script = _this.include( id );
+                                    script.textMode = true;
+                                    _onLoad( script );
                                 }
                                 catch( err ) {
                                     _onLoad.error( err );
@@ -574,20 +589,27 @@ var Scriptor;
         Script.prototype.do_load = function() {
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
             this.unload();
-            this.do_setup();
-            var ext = path.extname( this.filename ) || '.js';
-            if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
-                this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                this._source = Scriptor.extensions[ext]( this._script, this.filename );
-                this._script.loaded = true;
+            if( !this.textMode ) {
+                this.do_setup();
+                var ext = path.extname( this.filename ) || '.js';
+                if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
+                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                    this._source = Scriptor.extensions[ext]( this._script, this.filename );
+                    this._script.loaded = true;
+                }
+                else {
+                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                        this.emit( 'warning',
+                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                this.filename ) );
+                    }
+                    this._script.load( this._script.filename );
+                }
             }
             else {
-                if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                    this.emit( 'warning',
-                        util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
-                            this.filename ) );
-                }
-                this._script.load( this._script.filename );
+                var src = fs.readFileSync( this.filename );
+                this._script.exports = this._source = src;
+                this._script.loaded = true;
             }
             this.emit( 'loaded', this.loaded );
         };
@@ -620,13 +642,18 @@ var Scriptor;
             return this.apply( args );
         };
         Script.prototype.apply = function(args) {
-            //This will ensure it is loaded (safely) and return the exports
-            var main = this.exports();
-            if( typeof main === 'function' ) {
-                return this._callWrapper( main, null, args );
+            if( !this.textMode ) {
+                //This will ensure it is loaded (safely) and return the exports
+                var main = this.exports();
+                if( typeof main === 'function' ) {
+                    return this._callWrapper( main, null, args );
+                }
+                else {
+                    return main;
+                }
             }
             else {
-                return main;
+                return this.source.apply( this, args );
             }
         };
         Script.prototype.reference = function() {
@@ -726,17 +753,13 @@ var Scriptor;
             _super.call( this, filename, parent );
         }
 
-        TextScript.prototype.do_load = function() {
-            assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
-            this.unload();
-            var src = fs.readFileSync( this.filename );
-            this._script.exports = this._source = src;
-            this._script.loaded = true;
-            this.emit( 'loaded', this.loaded );
-        };
-        TextScript.prototype.apply = function(args) {
-            return this.source.apply( this, args );
-        };
+        Object.defineProperty( TextScript.prototype, "textMode", {
+            get:          function() {
+                return true;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         return TextScript;
     })( Script );
     Scriptor.TextScript = TextScript;
