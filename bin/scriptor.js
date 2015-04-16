@@ -13,6 +13,8 @@ var constants = process.binding( 'constants' );
 var ScriptorCommon = require( './../build/common.js' );
 var ScriptorCLI = require( './../build/cli.js' );
 
+var _ = require( 'lodash' );
+
 function diff_ms(start) {
     var diff = process.hrtime( start );
     var ms = diff[0] * 1e3 + diff[1] * 1e-6;
@@ -218,11 +220,11 @@ module.exports = function(argv) {
             manager.propagateEvents();
         }
 
-        if( typeof options.debounce === 'string' ) {
-            manager.debounceMaxWait = toMilliseconds( options.debounce );
-        }
+        var maxRecursion, concurrency, watch, debounce;
 
-        var maxRecursion, concurrency, watch;
+        if( typeof options.debounce === 'string' ) {
+            debounce = manager.debounceMaxWait = toMilliseconds( options.debounce );
+        }
 
         //Basically, if both max_recursion and concurrency are set, they have to play along
         //Otherwise, each will increase or whatever to not crash the application
@@ -335,10 +337,16 @@ module.exports = function(argv) {
                 if( watch ) {
                     instance.watch( true );
 
-                    instance.on( 'change', function() {
+                    var onChange = function() {
                         logger.verbose( 'Re-running script #%d, %s', num, script );
                         run_script( instance, script, num );
-                    } );
+                    };
+
+                    if( typeof debounce === 'number' ) {
+                        onChange = _.debounce( onChange, debounce );
+                    }
+
+                    instance.on( 'change', onChange );
                 }
 
                 return run_script( instance, script, num );
@@ -384,10 +392,16 @@ module.exports = function(argv) {
                     if( watch ) {
                         instance.watch( true );
 
-                        instance.on( 'change', function() {
-                            logger.verbose( 'Re-running script #%d, %s.', num, script );
+                        var onChange = function() {
+                            logger.verbose( 'Re-running script #%d, %s', num, script );
                             run_script( instance, script, num );
-                        } );
+                        };
+
+                        if( typeof debounce === 'number' ) {
+                            onChange = _.debounce( onChange, debounce );
+                        }
+
+                        instance.on( 'change', onChange );
                     }
 
                     run_script( instance, script, num );

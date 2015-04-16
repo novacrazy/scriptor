@@ -984,10 +984,10 @@ var Scriptor;
         SourceScript.prototype.watch = function() {
             var _this = this;
             if( !this.watched && this._source instanceof ReferenceBase ) {
-                this._onChange = function(event, filename) {
+                this._onChange = _.debounce( function(event, filename) {
                     _this.unload();
                     _this.emit( 'change', event, filename );
-                };
+                }, this.debounceMaxWait );
                 this._source.on( 'change', this._onChange );
                 return true;
             }

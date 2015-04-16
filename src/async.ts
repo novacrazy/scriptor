@@ -1048,11 +1048,10 @@ module Scriptor {
         public watch() : boolean {
             if( !this.watched && this._source instanceof ReferenceBase ) {
 
-                this._onChange = ( event : string, filename : string ) => {
+                this._onChange = _.debounce( ( event : string, filename : string ) => {
                     this.unload();
-
                     this.emit( 'change', event, filename );
-                };
+                }, this.debounceMaxWait );
 
                 this._source.on( 'change', this._onChange );
 
