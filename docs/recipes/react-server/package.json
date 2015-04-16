@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "setup": "npm install && npm install -g scriptor@latest",
-    "server": "scriptor -awvlp --use_strict app.js"
+    "server": "scriptor -awvlp --use_strict --debounce 500ms app.js"
   },
   "author": "Aaron Trent <novacrazy@gmail.com>",
   "license": "MIT",
