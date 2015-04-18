@@ -313,10 +313,13 @@ module Scriptor {
         }
     }
 
+    export type IAMDConfig = Types.IAMDConfig;
+
     class AMDScript extends ScriptBase implements IAMDScriptBase {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
         protected _resolver : Promise<any>;
+        protected _config : IAMDConfig = Common.normalizeAMDConfig( null );
 
         public require : IRequireFunction;
         public define : IDefineFunction;
@@ -613,6 +616,11 @@ module Scriptor {
                         } );
                         //The callbacks can be done pretty easily this way
 
+                    } else if( this._config.paths.hasOwnProperty( id ) ) {
+                        var p = path.resolve( this.baseUrl, this._config.paths[id] );
+
+                        return this.require( p );
+
                     } else {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
 
@@ -671,6 +679,14 @@ module Scriptor {
                     return this._script.exports;
                 } );
             }
+        }
+
+        public config( config? : IAMDConfig ) : IAMDConfig {
+            if( config !== void 0 && config !== null ) {
+                this._config = Common.normalizeAMDConfig( config );
+            }
+
+            return this._config;
         }
 
         public unload() : boolean {
@@ -1512,6 +1528,8 @@ module Scriptor {
     export class Manager {
         private _debounceMaxWait : number = null; //set to null if it shouldn't set it at all
 
+        private _config : IAMDConfig = null;
+
         private _scripts : Map<string, ScriptAdapter> = MapAdapter.createMap<ScriptAdapter>();
 
         private _cwd : string = process.cwd();
@@ -1539,6 +1557,14 @@ module Scriptor {
 
         get debounceMaxWait() : number {
             return this._debounceMaxWait;
+        }
+
+        public config( config? : IAMDConfig ) : IAMDConfig {
+            if( config !== void 0 && config !== null ) {
+                this._config = Common.normalizeAMDConfig( config );
+            }
+
+            return this._config;
         }
 
         private _parent : Module.IModule;
@@ -1595,6 +1621,10 @@ module Scriptor {
 
                 if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
                     script.debounceMaxWait = this.debounceMaxWait;
+                }
+
+                if( this._config !== void 0 && this._config !== null ) {
+                    script.config( this._config );
                 }
 
                 script.load( filename, watch );

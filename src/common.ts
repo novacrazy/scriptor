@@ -3,7 +3,10 @@
  */
 
 import Module = require('./Module');
+import Types = require('./types');
 import path = require('path');
+
+import _ = require('lodash');
 
 module ScriptorCommon {
 
@@ -148,6 +151,46 @@ module ScriptorCommon {
 
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     export var default_dependencies : string[] = ['require', 'exports', 'module', 'imports'];
+
+    export type IAMDConfig = Types.IAMDConfig;
+
+    export var default_AMDConfig : IAMDConfig = {
+        paths: {}
+    };
+
+    export function normalizeAMDConfig( config : IAMDConfig, baseUrl? : string ) : IAMDConfig {
+        var isObject = _.isObject( config ) && !Array.isArray( config );
+
+        if( isObject ) {
+            config = _.defaults<IAMDConfig, IAMDConfig>( _.cloneDeep( config ), default_AMDConfig );
+
+        } else {
+            return _.cloneDeep( default_AMDConfig );
+        }
+
+
+        //Make sure paths is an object
+        if( !_.isObject( config.paths ) ) {
+            config.paths = default_AMDConfig.paths;
+
+        } else {
+            //Normalize paths
+            for( let it in config.paths ) {
+                if( config.paths.hasOwnProperty( it ) ) {
+                    let p = config.paths[it];
+
+                    if( typeof p !== 'string' ) {
+                        delete config.paths[it];
+
+                    } else if( typeof baseUrl === 'string' ) {
+                        config.paths[it] = path.resolve( baseUrl, p );
+                    }
+                }
+            }
+        }
+
+        return config;
+    }
 }
 
 export = ScriptorCommon;

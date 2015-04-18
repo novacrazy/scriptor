@@ -27,6 +27,7 @@
  * Created by novacrazy on 1/18/2015.
  */
 var path = require( 'path' );
+var _ = require( 'lodash' );
 var ScriptorCommon;
 (function(ScriptorCommon) {
     function isAbsolutePath(filepath) {
@@ -175,5 +176,38 @@ var ScriptorCommon;
     ScriptorCommon.default_max_recursion = 9;
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
+    ScriptorCommon.default_AMDConfig = {
+        paths: {}
+    };
+    function normalizeAMDConfig(config, baseUrl) {
+        var isObject = _.isObject( config ) && !Array.isArray( config );
+        if( isObject ) {
+            config = _.defaults( _.cloneDeep( config ), ScriptorCommon.default_AMDConfig );
+        }
+        else {
+            return _.cloneDeep( ScriptorCommon.default_AMDConfig );
+        }
+        //Make sure paths is an object
+        if( !_.isObject( config.paths ) ) {
+            config.paths = ScriptorCommon.default_AMDConfig.paths;
+        }
+        else {
+            //Normalize paths
+            for( var it in config.paths ) {
+                if( config.paths.hasOwnProperty( it ) ) {
+                    var p = config.paths[it];
+                    if( typeof p !== 'string' ) {
+                        delete config.paths[it];
+                    }
+                    else if( typeof baseUrl === 'string' ) {
+                        config.paths[it] = path.resolve( baseUrl, p );
+                    }
+                }
+            }
+        }
+        return config;
+    }
+
+    ScriptorCommon.normalizeAMDConfig = normalizeAMDConfig;
 })( ScriptorCommon || (ScriptorCommon = {}) );
 module.exports = ScriptorCommon;

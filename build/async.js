@@ -338,6 +338,7 @@ var Scriptor;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
+            this._config = Common.normalizeAMDConfig( null );
             this._init();
         }
 
@@ -583,6 +584,10 @@ var Scriptor;
                             return exported;
                         } );
                     }
+                    else if( this._config.paths.hasOwnProperty( id ) ) {
+                        var p = path.resolve( this.baseUrl, this._config.paths[id] );
+                        return this.require( p );
+                    }
                     else {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
                         result = new Promise( function(resolve, reject) {
@@ -631,6 +636,12 @@ var Scriptor;
                     return _this._script.exports;
                 } );
             }
+        };
+        AMDScript.prototype.config = function(config) {
+            if( config !== void 0 && config !== null ) {
+                this._config = Common.normalizeAMDConfig( config );
+            }
+            return this._config;
         };
         AMDScript.prototype.unload = function() {
             var res = _super.prototype.unload.call( this );
@@ -1434,6 +1445,7 @@ var Scriptor;
     var Manager = (function() {
         function Manager(grandParent) {
             this._debounceMaxWait = null; //set to null if it shouldn't set it at all
+            this._config = null;
             this._scripts = MapAdapter.createMap();
             this._cwd = process.cwd();
             this._propagateEvents = false;
@@ -1463,6 +1475,12 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        Manager.prototype.config = function(config) {
+            if( config !== void 0 && config !== null ) {
+                this._config = Common.normalizeAMDConfig( config );
+            }
+            return this._config;
+        };
         Object.defineProperty( Manager.prototype, "parent", {
             get:          function() {
                 return this._parent;
@@ -1513,6 +1531,9 @@ var Scriptor;
                 }
                 if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
                     script.debounceMaxWait = this.debounceMaxWait;
+                }
+                if( this._config !== void 0 && this._config !== null ) {
+                    script.config( this._config );
                 }
                 script.load( filename, watch );
                 this._scripts.set( filename, script );
