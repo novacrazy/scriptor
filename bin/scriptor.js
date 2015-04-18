@@ -1,7 +1,5 @@
 "use strict";
 
-process.title = 'Scriptor';
-
 var options = require( 'commander' );
 var Module = require( 'module' );
 var glob = require( 'glob' );
@@ -95,7 +93,8 @@ options
     .option( '-s, --silent', 'Do not echo anything' )
     .option( '--no_ext', 'Disable use of custom extensions with AMD injection' )
     .option( '--no_signal', 'Do not intercept process signals' )
-    .option( '--no_glob', 'Do not match glob patterns' );
+    .option( '--no_glob', 'Do not match glob patterns' )
+    .option( '--no_title', 'Do not set process title' );
 
 module.exports = function(argv) {
     process.options = options.parse( argv );
@@ -103,6 +102,10 @@ module.exports = function(argv) {
     if( options.use_strict ) {
         Module.wrapper[0] += '"use strict";';
         Object.freeze( Module.wrap );
+    }
+
+    if( !options.no_title ) {
+        process.title = 'Scriptor';
     }
 
     //The default log_level is LOG_NORMAL
