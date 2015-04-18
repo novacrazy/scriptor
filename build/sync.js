@@ -456,7 +456,7 @@ var Scriptor;
                         //For the sync build, set this to undefined just to make it known the result is out-of-order
                         this._loadCache.set( id, void 0 );
                         //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                        plugin.load( id, this.require, onLoad, {} );
+                        plugin.load( id, this.require, onLoad, this._config );
                     }
                     result = this._loadCache.get( id );
                 }

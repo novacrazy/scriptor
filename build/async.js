@@ -532,7 +532,7 @@ var Scriptor;
                                     reject( Common.normalizeError( id, 'scripterror', err ) );
                                 };
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                                plugin.load( id, _this.require, onLoad, {} );
+                                plugin.load( id, _this.require, onLoad, _this._config );
                             }
                         } );
                     } );

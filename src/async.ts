@@ -554,7 +554,7 @@ module Scriptor {
                                 };
 
                                 //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                                plugin.load( id, this.require, onLoad, {} );
+                                plugin.load( id, this.require, onLoad, this._config );
                             }
                         } );
                     } );
