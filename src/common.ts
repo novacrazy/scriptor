@@ -170,7 +170,7 @@ module ScriptorCommon {
 
 
         //Make sure paths is an object
-        if( !_.isObject( config.paths ) ) {
+        if( !_.isObject( config.paths ) || Array.isArray( config.paths ) ) {
             config.paths = default_AMDConfig.paths;
 
         } else {

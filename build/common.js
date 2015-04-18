@@ -188,7 +188,7 @@ var ScriptorCommon;
             return _.cloneDeep( ScriptorCommon.default_AMDConfig );
         }
         //Make sure paths is an object
-        if( !_.isObject( config.paths ) ) {
+        if( !_.isObject( config.paths ) || Array.isArray( config.paths ) ) {
             config.paths = ScriptorCommon.default_AMDConfig.paths;
         }
         else {
