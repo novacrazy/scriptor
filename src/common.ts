@@ -149,6 +149,8 @@ module ScriptorCommon {
 
     export var default_max_recursion : number = 9;
 
+    export var default_debounceMaxWait : number = 50; //50ms
+
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     export var default_dependencies : string[] = ['require', 'exports', 'module', 'imports'];
 

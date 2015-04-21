@@ -108,7 +108,7 @@ var Scriptor;
             _super.call( this );
             this._recursion = 0;
             this._maxRecursion = Scriptor.default_max_recursion;
-            this._debounceMaxWait = 50; //50ms is a good starting point for local files.
+            this._debounceMaxWait = Common.default_debounceMaxWait;
             this._textMode = false;
             this.imports = {};
             this._script = (new Module.Module( null, parent ));

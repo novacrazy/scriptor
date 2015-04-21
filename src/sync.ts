@@ -92,7 +92,7 @@ module Scriptor {
         protected _script : IScriptModule;
         protected _recursion : number = 0;
         protected _maxRecursion : number = default_max_recursion;
-        protected _debounceMaxWait : number = 50; //50ms is a good starting point for local files.
+        protected _debounceMaxWait : number = Common.default_debounceMaxWait;
         protected _textMode : boolean = false;
 
         protected _watcher : fs.FSWatcher;

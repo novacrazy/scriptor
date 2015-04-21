@@ -174,6 +174,7 @@ var ScriptorCommon;
 
     ScriptorCommon.shallowCloneObject = shallowCloneObject;
     ScriptorCommon.default_max_recursion = 9;
+    ScriptorCommon.default_debounceMaxWait = 50; //50ms
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
     ScriptorCommon.default_AMDConfig = {
