@@ -84,7 +84,9 @@ options
     .option( '-l, --long_stack_traces', 'Display long stack trace for asynchronous errors' )
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if async)' )
     .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
-    .option( '--debounce <n>', 'Wait n milliseconds for debounce on file watching events (default: 50ms)' )
+    .option( '--debounce <n>',
+    'Wait n milliseconds for debounce on file watching events (default: ' +
+    ScriptorCommon.default_debounceMaxWait + 'ms)' )
     .option( '--use_strict', 'Enforce strict mode' )
     .option( '--max_recursion <n>', 'Set the maximum recursion depth of scripts (default: ' +
                                     ScriptorCommon.default_max_recursion + ')' )
