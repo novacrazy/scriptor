@@ -31,7 +31,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`new Script(filename? : string, parent? : Module)`](#new-scriptfilename--string-parent--module)
     - [`.load(filename : string, watch? : boolean)`](#loadfilename--string-watch--boolean---script)
     - [`.exports()`](#exports---any--promiseany)
-    - [`.source(encoding? : string)`]()
+    - [`.source(encoding? : string)`](#sourceencoding--string---string--buffer--promisestring--buffer)
     - [`.call(...args : any[])`](#callargs--any---any--promiseany)
     - [`.apply(args : any[])`](#applyargs--any---any--promiseany)
     - [`.reference(...args : any[])`](#referenceargs--any---reference)
@@ -63,21 +63,21 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.watched`](#watched---boolean)
     - [`.filename`](#filename---string)
     - [`.maxRecursion`](#maxrecursion---number)
-    - [`.debounceMaxWait`]()
+    - [`.debounceMaxWait`](#debouncemaxwait---number)
     - [`.manager`](#manager---manager)
     - [`.isManaged()`](#ismanaged---boolean)
-    - [`.textMode`]()
+    - [`.textMode`](#textmode---boolean)
 
 - [`SourceScript`](#sourcescript)
     - [`new Script(src? : string|Reference, parent? : Module)`](#new-scriptsrc--stringreference-parent--module---sourcescript)
     - [`.load(src? : string|Reference, watch? : boolean)`](#loadsrc--stringreference-watch--boolean---sourcescript)
-    - [`.source()`]()
+    - [`.source()`](#sourceencoding--string---string--buffer--promisestring--buffer-1)
 
-- [`TextScript`]()
-    - [`new TextScript(filename? : string, parent? : Module)`]()
-    - [`.call(encoding? : string)`]()
-    - [`.apply([encoding? : string])`]()
-    - [`.textMode`]()
+- [`TextScript`](#textscript)
+    - [`new TextScript(filename? : string, parent? : Module)`](#new-textscriptfilename--string-parent--module---textscript)
+    - [`.call(encoding? : string)`](#callencoding--string---string--buffer--promisestring--buffer)
+    - [`.apply([encoding? : string])`](#applyencoding--string---string--buffer--promisestring--buffer)
+    - [`.textMode`](#textmode---true)
 
 - [Script Environment](#script-environment)
     - [`module.define : IDefineFunction`](#moduledefine-idefinefunction)
@@ -662,7 +662,7 @@ Returns true if this Script instance is managed by a [`Manager`](#manager).
 
 If set to true, the Script content will not be evaluated, but instead loaded in as only text. It effectively turns a normal `Script` instance into a `TextScript`, including the changes to `.apply` and `.call`
 
-See the documentation on [`TextScript`]()s for more information.
+See the documentation on [`TextScript`](#textscript)s for more information.
 
 -----
 
@@ -726,9 +726,9 @@ In the case of a TextScript, `.textMode` will always return true and cannot be m
 
 In addition to managing the loading and evaluation of scripts, Scriptor will also add some custom properties and functions to the global-ish `module` variable inside scripts.
 
-#####`module.define : `[`IDefineFunction`](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#idefinefunction)
+#####`module.define : `[`IDefineFunction`](#idefinefunction)
 
-This is the exact same function as [`define`](https://github.com/novacrazy/scriptor/blob/master/docs/api.md#define-idefinefunction), but made available to the script.
+This is the exact same function as [`define`](#define-idefinefunction), but made available to the script.
 
 If custom extensions are enabled and installed, `define` is made global to the running script so it can use it directly.
 
