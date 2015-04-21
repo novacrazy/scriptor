@@ -1,6 +1,16 @@
 Scriptor Changelog
 ==================
 
+#####2.3.0
+* New TextScript class
+* New `textMode` property on Scripts
+* New `text!` plugin for TextScripts
+* Buffers now used for source storage
+* File watchers debounce changes. Debounce time can be set (before watching) via `debounceMaxWait` property
+* Event propagation base improvements
+* Limited support for RequireJS-like `.config` configuration settings with `paths` value for module lookup
+* Optionally disable Scriptor from setting process title
+
 #####2.1.0
 * Added `.source()` on normal scripts, which custom extensions can populate by returning the source string
 

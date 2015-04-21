@@ -31,7 +31,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`new Script(filename? : string, parent? : Module)`](#new-scriptfilename--string-parent--module)
     - [`.load(filename : string, watch? : boolean)`](#loadfilename--string-watch--boolean---script)
     - [`.exports()`](#exports---any--promiseany)
-    - [`.source()`]()
+    - [`.source(encoding? : string)`]()
     - [`.call(...args : any[])`](#callargs--any---any--promiseany)
     - [`.apply(args : any[])`](#applyargs--any---any--promiseany)
     - [`.reference(...args : any[])`](#referenceargs--any---reference)
@@ -63,13 +63,21 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.watched`](#watched---boolean)
     - [`.filename`](#filename---string)
     - [`.maxRecursion`](#maxrecursion---number)
+    - [`.debounceMaxWait`]()
     - [`.manager`](#manager---manager)
     - [`.isManaged()`](#ismanaged---boolean)
+    - [`.textMode`]()
 
 - [`SourceScript`](#sourcescript)
     - [`new Script(src? : string|Reference, parent? : Module)`](#new-scriptsrc--stringreference-parent--module---sourcescript)
     - [`.load(src? : string|Reference, watch? : boolean)`](#loadsrc--stringreference-watch--boolean---sourcescript)
-    - [`.source()`](#source---stringpromisestring)
+    - [`.source()`]()
+
+- [`TextScript`]()
+    - [`new TextScript(filename? : string, parent? : Module)`]()
+    - [`.call(encoding? : string)`]()
+    - [`.apply([encoding? : string])`]()
+    - [`.textMode`]()
 
 - [Script Environment](#script-environment)
     - [`module.define : IDefineFunction`](#moduledefine-idefinefunction)
@@ -261,11 +269,13 @@ Scriptor is primarily lazily evaluated, so if the script has not been loaded fro
 
 -----
 
-#####`.source()` -> `string | Promise<string>`
+#####`.source(encoding? : string)` -> `string | Buffer | Promise<string | Buffer>`
 
 When custom extension handlers are enabled, they can optionally return the source code (in pure-JS preferably) and allow it to be stored by the script and accessed via `.source()`
 
 This way if a extension handler for, as an example, React.js's `.jsx` format is added, the transformed code can be available to serve or do something else with.
+
+If `encoding` is provided, it will conver the internal Buffer instance to a JavaScript string of that encoding, otherwise the raw Buffer instance is returned.
 
 -----
 
@@ -624,6 +634,18 @@ Scriptor Scripts contain a built-in recursion protection system that will throw 
 
 -----
 
+#####`.debounceMaxWait` <-> `number`
+
+This sets the maximum time allowed for a file change events to 'settle down', in the case where there are many changes to a file in a short period of time. For example, some IDEs may do 'atomic' saves and similar techniques that may cause the file watcher system to emit two or three `change` events within about 20ms. If Scriptor has already begun reloading, say, the contents of the file as of the first or second event, it could be incomplete or invalid and cause errors.
+
+Debouncing the change events gives some time for the file activity to settle down before attempting to reload it.
+
+For local files, a debounce wait time doesn't need to be more than 50ms to 100ms at most. However, for networks and FTP transfers, this time may need to be increased to 1000ms or more, based on network latency.
+
+`.debounceMaxWait` defaults to 50ms. File watcher `change` and `rename` events are debounced individually.
+
+-----
+
 #####`.manager` -> `Manager`
 
 If the script is managed by a [`Manager`](#manager) instance, this will be a reference to that manager. If it is not managed, this will be null or undefined.
@@ -633,6 +655,14 @@ If the script is managed by a [`Manager`](#manager) instance, this will be a ref
 #####`.isManaged()` -> `boolean`
 
 Returns true if this Script instance is managed by a [`Manager`](#manager).
+
+-----
+
+#####`.textMode` <-> `boolean`
+
+If set to true, the Script content will not be evaluated, but instead loaded in as only text. It effectively turns a normal `Script` instance into a `TextScript`, including the changes to `.apply` and `.call`
+
+See the documentation on [`TextScript`]()s for more information.
 
 -----
 
@@ -656,9 +686,39 @@ If a `Reference` instance is given, it can also watch that `Reference` for chang
 
 -----
 
-#####`.source()` -> `string|Promise<string>`
+#####`.source(encoding? : string)` -> `string | Buffer | Promise<string | Buffer>`
 
 Will process the source and return a string of code or a Promise to the string of code, depending on which Scriptor build is used.
+
+If `encoding` is provided, it will conver the internal Buffer instance to a JavaScript string of that encoding, otherwise the raw Buffer instance is returned.
+
+-----
+
+##`TextScript`
+
+TextScripts are a simple way to use any of the Scriptor systems while not having to evaluate any code, but rather handle it as pure text.
+
+#####`new TextScript(filename? : string, parent? : Module)` -> `TextScript`
+
+Creates a new TextScript instance, optionally loading `filename` and/or specifying a parent Module.
+
+-----
+
+#####`.call(encoding? : string)` -> `string | Buffer | Promise<string | Buffer>`
+
+This is a shortcut to [`.source(encoding)`]()
+
+-----
+
+#####`.apply([encoding? : string])` -> `string | Buffer | Promise<string | Buffer>`
+
+This is also a shortcut to [`.source(encoding)`]()
+
+-----
+
+#####`.textMode` -> `true`
+
+In the case of a TextScript, `.textMode` will always return true and cannot be modified.
 
 -----
 
