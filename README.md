@@ -40,31 +40,33 @@ Then:
 Or for the command line interface:
 
 ```
-$scriptor
+$scriptor -h
 
-  Usage: scriptor [options] files...
+   Usage: scriptor [options] files...
 
-  Options:
+   Options:
 
-    -h, --help               output usage information
-    -V, --version            output the version number
-    -d, --dir <path>         Directory to run Scriptor in
-    -a, --async              Run scripts asynchronously
-    -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
-    -q, --close              End the process when all scripts finish
-    -w, --watch              Watch scripts for changes and re-run them when changed
-    -p, --propagate          Propagate changes upwards when watching scripts
-    -l, --long_stack_traces  Display long stack trace for asynchronous errors
-    -r, --repeat <n>         Run script n times (in parallel if async)
-    -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
-    --use_strict             Enforce strict mode
-    --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
-    -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
-    --cork                   Cork stdout before calling scripts
-    -s, --silent             Do not echo anything
-    --no_ext                 Disable use of custom extensions with AMD injection
-    --no_signal              Do not intercept process signals
-    --no_glob                Do not match glob patterns
+     -h, --help               output usage information
+     -V, --version            output the version number
+     -d, --dir <path>         Directory to run Scriptor in
+     -a, --async              Run scripts asynchronously
+     -c, --concurrency <n>    Limit script concurrency to n when executed asynchronously (default: max_recursion + 1)
+     -q, --close              End the process when all scripts finish
+     -w, --watch              Watch scripts for changes and re-run them when changed
+     -p, --propagate          Propagate changes upwards when watching scripts
+     -l, --long_stack_traces  Display long stack trace for asynchronous errors
+     -r, --repeat <n>         Run script n times (in parallel if async)
+     -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
+     --debounce <n>           Wait n milliseconds for debounce on file watching events (default: 50ms)
+     --use_strict             Enforce strict mode
+     --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
+     -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
+     --cork                   Cork stdout before calling scripts
+     -s, --silent             Do not echo anything
+     --no_ext                 Disable use of custom extensions with AMD injection
+     --no_signal              Do not intercept process signals
+     --no_glob                Do not match glob patterns
+     --no_title               Do not set process title
 ```
 
 # Scriptor Features
