@@ -1,6 +1,9 @@
 Scriptor Changelog
 ==================
 
+#####2.3.1
+* Added `.dependencies` to view script dependencies specified via `define`
+
 #####2.3.0
 * New TextScript class
 * New `textMode` property on Scripts

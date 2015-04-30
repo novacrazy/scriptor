@@ -54,6 +54,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.propagateEvents(enable? : boolean)`](#propagateeventsenable--boolean---boolean)
     - [`.close(permanent? : boolean)`](#closepermanent--boolean)
     - [`.baseUrl`](#baseurl---string)
+    - [`.dependencies`]()
     - [`.imports`](#imports---key--string--any)
     - [`.id`](#id---string)
     - [`.children`](#children---imodule)
@@ -549,6 +550,12 @@ If `permanent` is true, it will also irrevocably delete the underlying `IModule`
 The directory the script file is in. Equal to `path.dirname(this.filename)`.
 
 So if `this.filename` was `"D:/code/my_script.js"`, `this.baseUrl` would be `"D:/code/"`.
+
+-----
+
+#####`.dependencies` -> `string[]`
+
+An array of dependencies specified by calling [`define`]() from within a module.
 
 -----
 
