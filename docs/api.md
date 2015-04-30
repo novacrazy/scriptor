@@ -54,7 +54,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.propagateEvents(enable? : boolean)`](#propagateeventsenable--boolean---boolean)
     - [`.close(permanent? : boolean)`](#closepermanent--boolean)
     - [`.baseUrl`](#baseurl---string)
-    - [`.dependencies`]()
+    - [`.dependencies`](#dependencies---string)
     - [`.imports`](#imports---key--string--any)
     - [`.id`](#id---string)
     - [`.children`](#children---imodule)
@@ -555,7 +555,7 @@ So if `this.filename` was `"D:/code/my_script.js"`, `this.baseUrl` would be `"D:
 
 #####`.dependencies` -> `string[]`
 
-An array of dependencies specified by calling [`define`]() from within a module.
+An array of dependencies specified by calling [`define`](#moduledefine-idefinefunction) from within a module.
 
 -----
 
