@@ -269,6 +269,8 @@ module Scriptor {
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
         protected _config : IAMDConfig = Common.normalizeAMDConfig( null );
 
+        protected _dependencies : string[] = [];
+
         public require : IRequireFunction;
         public define : IDefineFunction;
 
@@ -577,6 +579,8 @@ module Scriptor {
                 this._defineCache.set( id, define_args );
 
             } else {
+                this._dependencies = define_args[1];
+
                 var result = this._runFactory.apply( this, define_args );
 
                 //Allows for main factory to not return anything.
@@ -587,6 +591,10 @@ module Scriptor {
 
                 return result;
             }
+        }
+
+        get dependencies() : string[] {
+            return this._dependencies;
         }
 
         public config( config? : IAMDConfig ) : IAMDConfig {

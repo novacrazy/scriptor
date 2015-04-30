@@ -321,6 +321,8 @@ module Scriptor {
         protected _resolver : Promise<any>;
         protected _config : IAMDConfig = Common.normalizeAMDConfig( null );
 
+        protected _dependencies : string[] = [];
+
         public require : IRequireFunction;
         public define : IDefineFunction;
 
@@ -667,6 +669,8 @@ module Scriptor {
                 this._defineCache.set( id, define_args );
 
             } else {
+                this._dependencies = define_args[1];
+
                 this._resolver = this._runFactory.apply( this, define_args ).then( ( result ) => {
                     //To match AMDefine, don't export the result unless there is one.
                     //Null is allowed, since it would have to have been returned explicitly.
@@ -679,6 +683,10 @@ module Scriptor {
                     return this._script.exports;
                 } );
             }
+        }
+
+        get dependencies() : string[] {
+            return this._dependencies;
         }
 
         public config( config? : IAMDConfig ) : IAMDConfig {

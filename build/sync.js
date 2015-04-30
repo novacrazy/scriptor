@@ -295,6 +295,7 @@ var Scriptor;
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
             this._config = Common.normalizeAMDConfig( null );
+            this._dependencies = [];
             this._init();
         }
 
@@ -542,6 +543,7 @@ var Scriptor;
                 this._defineCache.set( id, define_args );
             }
             else {
+                this._dependencies = define_args[1];
                 var result = this._runFactory.apply( this, define_args );
                 //Allows for main factory to not return anything.
                 //for use with require(['exports']) and so forth, nothing is returned
@@ -551,6 +553,13 @@ var Scriptor;
                 return result;
             }
         };
+        Object.defineProperty( AMDScript.prototype, "dependencies", {
+            get:          function() {
+                return this._dependencies;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         AMDScript.prototype.config = function(config) {
             if( config !== void 0 && config !== null ) {
                 this._config = Common.normalizeAMDConfig( config );
