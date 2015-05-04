@@ -61,6 +61,7 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.parent`](#parent---imodule)
     - [`.loaded`](#loaded---boolean)
     - [`.pending`](#pending---boolean)
+    - [`.loading`](#loading---boolean)
     - [`.watched`](#watched---boolean)
     - [`.filename`](#filename---string)
     - [`.maxRecursion`](#maxrecursion---number)
@@ -618,6 +619,12 @@ Equal to true if the script has been loaded and has finished evaluating.
 #####`.pending` -> `boolean`
 
 If the script is being loaded asynchronously, then this is true if the loading and evaluation has been initiated, but hasn't actually finished.
+
+-----
+
+#####`.loading` -> `boolean`
+
+If the script is being loaded asynchronously, then this is true if the file is still being read from disk and the evaluation has not been initiated yet.
 
 -----
 
