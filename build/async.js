@@ -1186,7 +1186,12 @@ var Scriptor;
             return new JoinedTransformReference( left, right, transform );
         };
         Reference.resolve = function(value) {
-            return new ResolvedReference( value );
+            if( value instanceof ReferenceBase ) {
+                return value;
+            }
+            else {
+                return new ResolvedReference( value );
+            }
         };
         //Creates a binary tree (essentially) of joins from an array of References using a single transform
         Reference.join_all = function(refs, transform) {

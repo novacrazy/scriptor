@@ -1044,7 +1044,12 @@ var Scriptor;
             configurable: true
         } );
         Reference.resolve = function(value) {
-            return new ResolvedReference( value );
+            if( value instanceof ReferenceBase ) {
+                return value;
+            }
+            else {
+                return new ResolvedReference( value );
+            }
         };
         Reference.join = function(left, right, transform) {
             return new JoinedTransformReference( left, right, transform );

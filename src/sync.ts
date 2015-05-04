@@ -1117,7 +1117,12 @@ module Scriptor {
         }
 
         static resolve( value : any ) : IReference {
-            return new ResolvedReference( value );
+            if( value instanceof ReferenceBase ) {
+                return value;
+
+            } else {
+                return new ResolvedReference( value );
+            }
         }
 
         static join( left : IReference, right : IReference, transform? : ITransformFunction ) : IReference {
