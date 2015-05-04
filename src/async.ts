@@ -319,6 +319,7 @@ module Scriptor {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
         protected _resolver : Promise<any>;
+        protected _loader : Promise<any>;
         protected _config : IAMDConfig = Common.normalizeAMDConfig( null );
 
         protected _dependencies : string[] = [];
@@ -390,6 +391,10 @@ module Scriptor {
 
         get pending() : boolean {
             return isThenable( this._resolver ) && this._resolver.isPending();
+        }
+
+        get loading() : boolean {
+            return isThenable( this._loader ) && this._loader.isPending();
         }
 
         protected _runFactory( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : Promise<any> {
@@ -767,14 +772,21 @@ module Scriptor {
 
                 //Use custom extension if available
                 if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
-                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                    if( !this.loading ) {
 
-                    return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
-                        this._source = src;
-                        this._script.loaded = true;
+                        this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                        this.emit( 'loaded', this.loaded );
-                    } );
+                        this._loader = tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
+                            this._source = src;
+                            this._script.loaded = true;
+
+                            delete this._loader;
+
+                            this.emit( 'loaded', this.loaded );
+                        } );
+                    }
+
+                    return this._loader;
 
                 } else {
                     if( !Module.Module._extensions.hasOwnProperty( ext ) ) {

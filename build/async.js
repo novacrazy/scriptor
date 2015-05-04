@@ -396,6 +396,13 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        Object.defineProperty( AMDScript.prototype, "loading", {
+            get:          function() {
+                return isThenable( this._loader ) && this._loader.isPending();
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         AMDScript.prototype._runFactory = function(id, deps, factory) {
             var _this = this;
             if( id !== void 0 ) {
@@ -707,12 +714,17 @@ var Scriptor;
                 var ext = path.extname( this.filename ) || '.js';
                 //Use custom extension if available
                 if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
-                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                    return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
-                        _this._source = src;
-                        _this._script.loaded = true;
-                        _this.emit( 'loaded', _this.loaded );
-                    } );
+                    if( !this.loading ) {
+                        this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                        this._loader =
+                            tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
+                                _this._source = src;
+                                _this._script.loaded = true;
+                                delete _this._loader;
+                                _this.emit( 'loaded', _this.loaded );
+                            } );
+                    }
+                    return this._loader;
                 }
                 else {
                     if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
