@@ -69,7 +69,7 @@ function tryPromise(value) {
 function isGenerator(obj) {
     return 'function' === typeof obj.next && 'function' === typeof obj.throw;
 }
-//Taken from tj/co pr#198
+//Taken from tj/co
 function isGeneratorFunction(obj) {
     if( !obj.constructor ) {
         return false;
@@ -391,7 +391,7 @@ var Scriptor;
         };
         Object.defineProperty( AMDScript.prototype, "pending", {
             get:          function() {
-                return this._resolver !== void 0 && this._resolver.isPending();
+                return isThenable( this._resolver ) && this._resolver.isPending();
             },
             enumerable:   true,
             configurable: true
@@ -657,7 +657,7 @@ var Scriptor;
             //unload also clears defines and requires
             this._defineCache.clear();
             this._loadCache.clear();
-            if( this._resolver !== void 0 ) {
+            if( this.pending ) {
                 if( this._resolver.isCancellable() ) {
                     this._resolver.cancel();
                 }
