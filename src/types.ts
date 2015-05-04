@@ -51,14 +51,24 @@ module ScriptorTypes {
         define : IDefineFunction<T, TArray>;
     }
 
+    export type IAMDConfigDeps = string[] | ISimpleMap<string>;
+
+    export interface IAMDConfigShim {
+        exports?: string;
+        deps: IAMDConfigDeps;
+    }
+
     export interface IAMDConfig {
-        paths: ISimpleMap<string>;
+        baseUrl?: string;
+        paths?: ISimpleMap<string>;
+        deps?: IAMDConfigDeps;
+        shim?: ISimpleMap<IAMDConfigShim>;
     }
 
     export interface IAMDScriptBase<T, TArray> {
         require : IRequireFunction<T, TArray>;
         define : IDefineFunction<T, TArray>;
-        config( value? : IAMDConfig ) : IAMDConfig;
+        config( config? : IAMDConfig ) : IAMDConfig;
     }
 
     export interface IReference<T> extends NodeJS.EventEmitter {
