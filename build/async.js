@@ -53,7 +53,7 @@ var Promise = require( 'bluebird' );
 var _ = require( 'lodash' );
 var co = require( 'co' );
 var readFile = Promise.promisify( fs.readFile );
-var posix_path = path['posix'];
+var posix_path = path.posix;
 function isThenable(obj) {
     return (obj !== void 0 && obj !== null) && (obj instanceof Promise || typeof obj.then === 'function');
 }
@@ -338,7 +338,7 @@ var Scriptor;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
-            this._config = Common.normalizeAMDConfig( null );
+            this._config = Common.normalizeConfig( null );
             this._dependencies = [];
             this._init();
         }
@@ -593,8 +593,11 @@ var Scriptor;
                         } );
                     }
                     else if( this._config.paths.hasOwnProperty( id ) ) {
-                        var p = path.resolve( this.baseUrl, this._config.paths[id] );
-                        return this.require( p );
+                        var filepath = this._config.paths[id];
+                        if( filepath.charAt( 0 ) === '.' ) {
+                            filepath = path.resolve( this.baseUrl, filepath );
+                        }
+                        return this.require( filepath );
                     }
                     else {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
@@ -655,7 +658,7 @@ var Scriptor;
         } );
         AMDScript.prototype.config = function(config) {
             if( config !== void 0 && config !== null ) {
-                this._config = Common.normalizeAMDConfig( config );
+                this._config = Common.normalizeConfig( config );
             }
             return this._config;
         };
@@ -1503,7 +1506,7 @@ var Scriptor;
         } );
         Manager.prototype.config = function(config) {
             if( config !== void 0 && config !== null ) {
-                this._config = Common.normalizeAMDConfig( config );
+                this._config = Common.normalizeConfig( config );
             }
             return this._config;
         };

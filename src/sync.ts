@@ -17,7 +17,7 @@ import Types = require('./types');
 
 import _ = require('lodash');
 
-var posix_path : any = path['posix'];
+import posix_path = path.posix;
 
 module Scriptor {
     export var this_module : Module.IModule = <any>module;
@@ -267,7 +267,7 @@ module Scriptor {
     class AMDScript extends ScriptBase implements IAMDScriptBase {
         protected _defineCache : Map<string, any[]> = MapAdapter.createMap<any[]>();
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
-        protected _config : IAMDConfig = Common.normalizeAMDConfig( null );
+        protected _config : IAMDConfig = Common.normalizeConfig( null );
 
         protected _dependencies : string[] = [];
 
@@ -533,9 +533,13 @@ module Scriptor {
                         this._loadCache.set( id, result );
 
                     } else if( this._config.paths.hasOwnProperty( id ) ) {
-                        var p = path.resolve( this.baseUrl, this._config.paths[id] );
+                        var filepath = this._config.paths[id];
 
-                        return this.require( p );
+                        if( filepath.charAt( 0 ) === '.' ) {
+                            filepath = path.resolve( this.baseUrl, filepath );
+                        }
+
+                        return this.require( filepath );
 
                     } else {
                         //In a closure so the try-catch block doesn't prevent optimization of the rest of the function
@@ -599,7 +603,7 @@ module Scriptor {
 
         public config( config? : IAMDConfig ) : IAMDConfig {
             if( config !== void 0 && config !== null ) {
-                this._config = Common.normalizeAMDConfig( config );
+                this._config = Common.normalizeConfig( config );
             }
 
             return this._config;
@@ -1421,7 +1425,7 @@ module Scriptor {
 
         public config( config? : IAMDConfig ) : IAMDConfig {
             if( config !== void 0 && config !== null ) {
-                this._config = Common.normalizeAMDConfig( config );
+                this._config = Common.normalizeConfig( config );
             }
 
             return this._config;
