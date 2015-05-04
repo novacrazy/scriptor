@@ -184,7 +184,7 @@ module ScriptorCommon {
                     if( typeof p !== 'string' ) {
                         delete config.paths[it];
 
-                    } else if( typeof baseUrl === 'string' ) {
+                    } else if( typeof baseUrl === 'string' && p.charAt( 0 ) === '.' ) {
                         config.paths[it] = path.resolve( baseUrl, p );
                     }
                 }
