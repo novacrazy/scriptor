@@ -1,6 +1,10 @@
 Scriptor Changelog
 ==================
 
+#####2.4.0
+* Upgraded the pseudo-RequireJS config normalization functions
+* Only resolve paths relative to baseUrl when the path is relative (e.g., begins with a dot "./test.js")
+
 #####2.3.2
 * Fixed race condition mentioned in issue #6
 * Added `.loading` value to scripts
