@@ -27,6 +27,7 @@
  * Created by novacrazy on 1/18/2015.
  */
 var path = require( 'path' );
+var posix_path = path.posix;
 var _ = require( 'lodash' );
 var ScriptorCommon;
 (function(ScriptorCommon) {
@@ -177,38 +178,89 @@ var ScriptorCommon;
     ScriptorCommon.default_debounceMaxWait = 50; //50ms
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
-    ScriptorCommon.default_AMDConfig = {
-        paths: {}
-    };
-    function normalizeAMDConfig(config, baseUrl) {
-        var isObject = _.isObject( config ) && !Array.isArray( config );
-        if( isObject ) {
-            config = _.defaults( _.cloneDeep( config ), ScriptorCommon.default_AMDConfig );
+    function parseConfigDeps(deps, paths) {
+        if( _.isObject( deps ) && !_.isArray( deps ) ) {
+            return _.map( deps, function(v, k) {
+                //If deps have a specified path, use that instead, but only if it hasn't already been defined
+                if( !paths[k] ) {
+                    paths[k] = v;
+                }
+                return k;
+            } );
+        }
+        else if( !_.isArray( deps ) ) {
+            return [];
         }
         else {
-            return _.cloneDeep( ScriptorCommon.default_AMDConfig );
+            return deps;
+        }
+    }
+
+    ScriptorCommon.parseConfigDeps = parseConfigDeps;
+    function isNull(value) {
+        return value === null || value === void 0;
+    }
+
+    ScriptorCommon.isNull = isNull;
+    function toPosix(filepath) {
+        return filepath.replace( '\\', '/' );
+    }
+
+    ScriptorCommon.toPosix = toPosix;
+    function normalizeConfig(config) {
+        var isObject = _.isObject( config ) && !Array.isArray( config );
+        var defaultConfig = {
+            baseUrl: '.' + posix_path.sep,
+            paths:   {},
+            deps:    [],
+            shim:    {} //Object
+        };
+        if( isObject ) {
+            config = _.defaults( config, defaultConfig );
+        }
+        else {
+            return defaultConfig;
+        }
+        //Normalize baseUrl
+        if( typeof config.baseUrl === 'string' ) {
+            config.baseUrl = posix_path.normalize( toPosix( config.baseUrl ) );
+        }
+        else {
+            config.baseUrl = defaultConfig.baseUrl;
         }
         //Make sure paths is an object
         if( !_.isObject( config.paths ) || Array.isArray( config.paths ) ) {
-            config.paths = ScriptorCommon.default_AMDConfig.paths;
+            config.paths = defaultConfig.paths;
         }
-        else {
-            //Normalize paths
-            for( var it in config.paths ) {
-                if( config.paths.hasOwnProperty( it ) ) {
-                    var p = config.paths[it];
-                    if( typeof p !== 'string' ) {
-                        delete config.paths[it];
-                    }
-                    else if( typeof baseUrl === 'string' && p.charAt( 0 ) === '.' ) {
-                        config.paths[it] = path.resolve( baseUrl, p );
-                    }
-                }
+        //Make sure shim is an object
+        if( !_.isObject( config.shim ) || Array.isArray( config.shim ) ) {
+            config.shim = defaultConfig.shim;
+        }
+        //Normalize deps
+        config.deps = parseConfigDeps( config.deps, config.paths );
+        //Normalize shims, also I hate having to use so many <any> casts
+        config.shim = _( _.mapValues( config.shim, function(shim) {
+            if( Array.isArray( shim ) ) {
+                return {
+                    deps: parseConfigDeps( shim, config.paths )
+                };
             }
-        }
+            else if( _.isObject( shim ) && typeof shim.exports === 'string' ) {
+                return {
+                    deps:    parseConfigDeps( shim.deps, config.paths ),
+                    exports: shim.exports
+                };
+            }
+        } ) ).omit( isNull ).value();
+        //Normalize paths
+        config.paths = _( _.mapValues( config.paths, function(p) {
+            if( _.isString( p ) ) {
+                return p;
+            }
+        } ) ).omit( isNull ).value();
         return config;
     }
 
-    ScriptorCommon.normalizeAMDConfig = normalizeAMDConfig;
+    ScriptorCommon.normalizeConfig = normalizeConfig;
 })( ScriptorCommon || (ScriptorCommon = {}) );
 module.exports = ScriptorCommon;

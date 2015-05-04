@@ -6,6 +6,8 @@ import Module = require('./Module');
 import Types = require('./types');
 import path = require('path');
 
+import posix_path = path.posix;
+
 import _ = require('lodash');
 
 module ScriptorCommon {
@@ -155,41 +157,97 @@ module ScriptorCommon {
     export var default_dependencies : string[] = ['require', 'exports', 'module', 'imports'];
 
     export type IAMDConfig = Types.IAMDConfig;
+    export type IAMDConfigDeps = Types.IAMDConfigDeps;
 
-    export var default_AMDConfig : IAMDConfig = {
-        paths: {}
-    };
+    export function parseConfigDeps( deps : IAMDConfigDeps, paths : Types.ISimpleMap<string> ) : string[] {
+        if( _.isObject( deps ) && !_.isArray( deps ) ) {
+            return _.map( <Types.ISimpleMap<string>>deps, function( v : string, k : string ) {
 
-    export function normalizeAMDConfig( config : IAMDConfig, baseUrl? : string ) : IAMDConfig {
-        var isObject = _.isObject( config ) && !Array.isArray( config );
+                //If deps have a specified path, use that instead, but only if it hasn't already been defined
+                if( !paths[k] ) {
+                    paths[k] = v;
+                }
 
-        if( isObject ) {
-            config = _.defaults<IAMDConfig, IAMDConfig>( _.cloneDeep( config ), default_AMDConfig );
+                return k;
+            } );
+
+        } else if( !_.isArray( deps ) ) {
+            return [/*No valid dependencies*/];
 
         } else {
-            return _.cloneDeep( default_AMDConfig );
+            return <string[]>deps;
+        }
+    }
+
+    export function isNull( value ) {
+        return value === null || value === void 0;
+    }
+
+    export function toPosix( filepath ) {
+        return filepath.replace( '\\', '/' );
+    }
+
+    export function normalizeConfig( config : IAMDConfig ) : IAMDConfig {
+        var isObject = _.isObject( config ) && !Array.isArray( config );
+
+        var defaultConfig : IAMDConfig = {
+            baseUrl: '.' + posix_path.sep, //String
+            paths:   {},   //Object
+            deps:    [],   //Array
+            shim:    {}    //Object
+        };
+
+        if( isObject ) {
+            config = _.defaults( config, defaultConfig );
+
+        } else {
+            return defaultConfig;
         }
 
+        //Normalize baseUrl
+        if( typeof config.baseUrl === 'string' ) {
+            config.baseUrl = posix_path.normalize( toPosix( config.baseUrl ) );
+
+        } else {
+            config.baseUrl = defaultConfig.baseUrl;
+        }
 
         //Make sure paths is an object
         if( !_.isObject( config.paths ) || Array.isArray( config.paths ) ) {
-            config.paths = default_AMDConfig.paths;
-
-        } else {
-            //Normalize paths
-            for( let it in config.paths ) {
-                if( config.paths.hasOwnProperty( it ) ) {
-                    let p = config.paths[it];
-
-                    if( typeof p !== 'string' ) {
-                        delete config.paths[it];
-
-                    } else if( typeof baseUrl === 'string' && p.charAt( 0 ) === '.' ) {
-                        config.paths[it] = path.resolve( baseUrl, p );
-                    }
-                }
-            }
+            config.paths = defaultConfig.paths;
         }
+
+        //Make sure shim is an object
+        if( !_.isObject( config.shim ) || Array.isArray( config.shim ) ) {
+            config.shim = defaultConfig.shim;
+        }
+
+        //Normalize deps
+        config.deps = parseConfigDeps( config.deps, config.paths );
+
+        //Normalize shims, also I hate having to use so many <any> casts
+        config.shim = <any>_( _.mapValues( <any>config.shim, function( shim ) {
+            if( Array.isArray( shim ) ) {
+                return {
+                    deps: parseConfigDeps( shim, config.paths )
+                };
+
+            } else if( _.isObject( shim ) && typeof shim.exports === 'string' ) {
+                return {
+                    deps:    parseConfigDeps( shim.deps, config.paths ),
+                    exports: shim.exports
+                };
+            }
+
+        } ) ).omit( isNull ).value();
+
+        //Normalize paths
+        config.paths = <any>_( _.mapValues( config.paths, function( p ) {
+            if( _.isString( p ) ) {
+                return p;
+            }
+
+        } ) ).omit( isNull ).value();
 
         return config;
     }
