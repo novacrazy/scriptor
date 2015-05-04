@@ -18,7 +18,7 @@ declare module _ {
          * explicitly included in the build.
          *
          * The chainable wrapper functions are:
-         * after, assign, bind, bindAll, bindKey, chain, compact, compose, concat, countBy,
+         * after, assign, bind, bindAll, bindKey, chain, chunk, compact, compose, concat, countBy,
          * createCallback, curry, debounce, defaults, defer, delay, difference, filter, flatten,
          * forEach, forEachRight, forIn, forInRight, forOwn, forOwnRight, functions, groupBy,
          * indexBy, initial, intersection, invert, invoke, keys, map, max, memoize, merge, min,
@@ -257,7 +257,31 @@ declare module _ {
      * Arrays *
      **********/
 
-        //_.compact
+        //_.chunk
+    interface LoDashStatic {
+        /**
+         * Creates an array of elements split into groups the length of size. If collection can’t be
+         * split evenly, the final chunk will be the remaining elements.
+         * @param array The array to process.
+         * @param size The length of each chunk.
+         * @return Returns the new array containing chunks.
+         **/
+        chunk<T>( array : Array<T>, size? : number ): T[][];
+
+        /**
+         * @see _.chunk
+         **/
+        chunk<T>( array : List<T>, size? : number ): T[][];
+    }
+
+    interface LoDashArrayWrapper<T> {
+        /**
+         * @see _.chunk
+         **/
+        chunk( size? : number ): LoDashArrayWrapper<T>;
+    }
+
+    //_.compact
     interface LoDashStatic {
         /**
          * Returns a copy of the array with all falsy values removed. In JavaScript, false, null, 0, "",
