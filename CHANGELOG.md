@@ -1,6 +1,10 @@
 Scriptor Changelog
 ==================
 
+#####2.3.2
+* Fixed race condition mentioned in issue #6
+* Added `.loading` value to scripts
+
 #####2.3.1
 * Added `.dependencies` to view script dependencies specified via `define`
 
