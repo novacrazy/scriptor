@@ -51,7 +51,6 @@ var Common = require( './common' );
 var MapAdapter = require( './map' );
 var Promise = require( 'bluebird' );
 var _ = require( 'lodash' );
-var co = require( 'co' );
 var readFile = Promise.promisify( fs.readFile );
 var posix_path = path.posix;
 function isThenable(obj) {
@@ -81,6 +80,9 @@ function isGeneratorFunction(obj) {
     else {
         return isGenerator( obj.constructor.prototype );
     }
+}
+function makeCoroutine(fn) {
+    return Promise.coroutine( fn );
 }
 var Scriptor;
 (function(Scriptor) {
@@ -410,7 +412,7 @@ var Scriptor;
             }
             if( typeof factory === 'function' ) {
                 if( isGeneratorFunction( factory ) ) {
-                    factory = co.wrap( factory );
+                    factory = makeCoroutine( factory );
                 }
                 return this._require( deps ).then( function(resolvedDeps) {
                     return factory.apply( _this._script.exports, resolvedDeps );
@@ -796,7 +798,7 @@ var Scriptor;
                 return this.exports().then( function(main) {
                     if( typeof main === 'function' ) {
                         if( isGeneratorFunction( main ) ) {
-                            main = co.wrap( main );
+                            main = makeCoroutine( main );
                         }
                         return _this._callWrapper( main, null, args );
                     }
@@ -1251,7 +1253,7 @@ var Scriptor;
             assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             if( isGeneratorFunction( _transform ) ) {
-                this._transform = co.wrap( _transform );
+                this._transform = makeCoroutine( _transform );
             }
             this._onChange = function(event, filename) {
                 _this.emit( 'change', event, filename );
@@ -1336,7 +1338,7 @@ var Scriptor;
             assert.notEqual( _left, _right, 'Cannot join to self' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             if( isGeneratorFunction( _transform ) ) {
-                this._transform = co.wrap( _transform );
+                this._transform = makeCoroutine( _transform );
             }
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this

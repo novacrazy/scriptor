@@ -19,8 +19,6 @@ import Promise = require('bluebird');
 
 import _ = require('lodash');
 
-var co : any = require( 'co' );
-
 var readFile = Promise.promisify( fs.readFile );
 
 import posix_path = path.posix;
@@ -53,6 +51,10 @@ function isGeneratorFunction( obj : any ) : boolean {
     } else {
         return isGenerator( obj.constructor.prototype );
     }
+}
+
+function makeCoroutine<T>( fn : T ) : T {
+    return <any>Promise.coroutine( <any>fn );
 }
 
 module Scriptor {
@@ -404,7 +406,7 @@ module Scriptor {
 
             if( typeof factory === 'function' ) {
                 if( isGeneratorFunction( factory ) ) {
-                    factory = co.wrap( factory );
+                    factory = makeCoroutine( factory );
                 }
 
                 return this._require( deps ).then( ( resolvedDeps : any[] ) => {
@@ -850,7 +852,7 @@ module Scriptor {
                 return this.exports().then( ( main : any ) => {
                     if( typeof main === 'function' ) {
                         if( isGeneratorFunction( main ) ) {
-                            main = co.wrap( main );
+                            main = makeCoroutine( main );
                         }
 
                         return this._callWrapper( main, null, args );
@@ -1330,7 +1332,7 @@ module Scriptor {
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
             if( isGeneratorFunction( _transform ) ) {
-                this._transform = co.wrap( _transform );
+                this._transform = makeCoroutine( _transform );
             }
 
             this._onChange = ( event : string, filename : string ) => {
@@ -1412,7 +1414,7 @@ module Scriptor {
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
 
             if( isGeneratorFunction( _transform ) ) {
-                this._transform = co.wrap( _transform );
+                this._transform = makeCoroutine( _transform );
             }
 
             //This has to be a closure because the two emitters down below
