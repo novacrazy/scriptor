@@ -1,6 +1,11 @@
 Scriptor Changelog
 ==================
 
+#####2.5.0
+Breaking changes:
+* Moved from tj/co to bluebird coroutines
+    * Bluebird coroutines are much less opinionated and allow better stack traces for complex code paths
+
 #####2.4.0
 * Upgraded the pseudo-RequireJS config normalization functions
 * Only resolve paths relative to baseUrl when the path is relative (e.g., begins with a dot "./test.js")
