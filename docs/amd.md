@@ -45,7 +45,7 @@ define(['promisify!fs'], function*(fs, require) {
 
 Using coroutines makes asynchronous code look much better while retaining much of the same performance as normal asynchronous code.
 
-Internally, Scriptor uses [tj/co](https://github.com/tj/co) for coroutine handling, so all the things that can be yielded for that can also be yielded in Scriptor factories, transform functions and even `main` functions returned from the factory. It's all automatic.
+Internally, Scriptor uses Bluebird coroutines for asynchronous coroutine handling, so all the things that can be yielded for that can also be yielded in Scriptor factories, transform functions and even `main` functions returned from the factory. It's all automatic.
 
 Scriptor's AMD implementation supports named submodules withing modules, any amount of dependencies, integration with Scriptor and Scriptor Managers, synchronous and asynchronous dependency resolution and plugins, and really anything requirejs does. However, if there is a feature missing or that you'd like to request, please post an issue about it and it will be reviewed and added post-haste.
 

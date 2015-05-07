@@ -421,7 +421,7 @@ This will attempt to find the absolute location of a file path given as `id` rel
 
 It supports AMD-ish plugins, relative file dependencies, and for the asynchronous build full support for asynchronous dependency resolution and asynchronous plugins.
 
-Additionally in the asynchronous build, the factory function can be a coroutine, passed to [tj/co] internally for evaluation. This allows for some simpler control flow in some cases.
+Additionally in the asynchronous build, the factory function can be a coroutine, passed to bluebird internally for asynchronous evaluation. This allows for some simpler control flow in some cases.
 
 Even more, it is fully integrated into Scriptor, with built-in plugins for script imports (using the `import` plugin) and promisification via bluebird's `Promise.promisify` and `Promise.promisifyAll` using the `promisify` plugin, automatically cloning objects so modules like `fs` aren't cluttered with `*Async` functions elsewhere in your programs.
 
