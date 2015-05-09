@@ -1,6 +1,9 @@
 Scriptor Changelog
 ==================
 
+#####2.5.2
+* Support exports['default'] AMD syntax, commonly used with ES6 modules.
+
 #####2.5.1
 * Prevent potential memory leaks caused by adding and calling many non-existent scripts to a Manager instance. For example, when serving scripts on a server, a DDoS could be possible just trying to access thousands of non-existent scripts, which although resulting in a 404, could create many unused Script instances in the Manager that are never used or cleared. This patch removes Script instances from Managers if an error is thrown while calling them.
 
