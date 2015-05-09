@@ -1431,7 +1431,14 @@ var Scriptor;
             return this.apply( filename, args );
         };
         Manager.prototype.apply = function(filename, args) {
-            return this.add( filename, false ).apply( args );
+            var script = this.add( filename, false );
+            try {
+                return script.apply( args );
+            }
+            catch( err ) {
+                this.remove( filename, true );
+                throw err;
+            }
         };
         Manager.prototype.reference = function(filename) {
             var args = [];

@@ -1530,7 +1530,16 @@ module Scriptor {
         }
 
         public apply( filename : string, args : any[] ) : any {
-            return this.add( filename, false ).apply( args );
+            var script : ScriptAdapter = this.add( filename, false );
+
+            try {
+                return script.apply( args );
+
+            } catch( err ) {
+                this.remove( filename, true );
+
+                throw err;
+            }
         }
 
         public reference( filename : string, ...args : any[] ) : Reference {
