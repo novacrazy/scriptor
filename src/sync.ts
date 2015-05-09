@@ -725,7 +725,13 @@ module Scriptor {
                 //This will ensure it is loaded (safely) and return the exports
                 var main : any = this.exports();
 
-                if( typeof main === 'function' ) {
+                if( typeof main === 'function' ||
+                    (main !== void 0 && main !== null && typeof main['default'] === 'function') ) {
+
+                    if( typeof main['default'] === 'function' ) {
+                        main = main['default'];
+                    }
+
                     return this._callWrapper( main, null, args );
 
                 } else {

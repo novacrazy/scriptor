@@ -850,7 +850,13 @@ module Scriptor {
         public apply( args : any[] ) : Promise<any> {
             if( !this.textMode ) {
                 return this.exports().then( ( main : any ) => {
-                    if( typeof main === 'function' ) {
+                    if( typeof main === 'function' ||
+                        (main !== void 0 && main !== null && typeof main['default'] === 'function') ) {
+
+                        if( typeof main['default'] === 'function' ) {
+                            main = main['default'];
+                        }
+
                         if( isGeneratorFunction( main ) ) {
                             main = makeCoroutine( main );
                         }
