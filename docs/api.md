@@ -119,6 +119,8 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.reference_apply(filename : string, args : any[])`](#reference_applyfilename--string-args--any---reference)
     - [`.clear(close? : boolean)`](#clearclose--boolean)
     - [`.propagateEvents(enable? : boolean)`](#propagateeventsenable--boolean)
+    - [`.setMaxListeners(value : number)`]()
+    - [`.getMaxListeners()`]()
     - [`.parent`](#parent---imodule-1)
     - [`.scripts`](#scripts---mapscript)
 
@@ -1163,6 +1165,18 @@ Removes all scripts from the Manager, making it a clean slate to add more. If `c
 Will enable or disable event propagation in any current and future scripts managed by the Manager instance.
 
 `enable` defaults to true.
+
+-----
+
+#####`.setMaxListeners(value : number)`
+
+If set, this will assign the number of max listeners given to each new script added to the Manager.
+
+-----
+
+#####`.getMaxListeners()` -> `number`
+
+Gets the number of max listeners that are assigned to new scripts added.
 
 -----
 
