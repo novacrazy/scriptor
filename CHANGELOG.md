@@ -1,6 +1,9 @@
 Scriptor Changelog
 ==================
 
+#####2.5.3
+* Added `Manager.setMaxListeners` and `Manager.getMaxListeners` to control the maximum number of listeners on new scripts added to the Manager instance.
+
 #####2.5.2
 * Support exports['default'] AMD syntax, commonly used with ES6 modules.
 
