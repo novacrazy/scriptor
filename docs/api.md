@@ -119,8 +119,8 @@ Using custom extension handlers (of which `.js` and `.json` are included), Scrip
     - [`.reference_apply(filename : string, args : any[])`](#reference_applyfilename--string-args--any---reference)
     - [`.clear(close? : boolean)`](#clearclose--boolean)
     - [`.propagateEvents(enable? : boolean)`](#propagateeventsenable--boolean)
-    - [`.setMaxListeners(value : number)`]()
-    - [`.getMaxListeners()`]()
+    - [`.setMaxListeners(value : number)`](#setmaxlistenersvalue--number)
+    - [`.getMaxListeners()`](#getmaxlisteners---number)
     - [`.parent`](#parent---imodule-1)
     - [`.scripts`](#scripts---mapscript)
 
