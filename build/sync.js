@@ -1310,6 +1310,7 @@ var Scriptor;
     var Manager = (function() {
         function Manager(grandParent) {
             this._debounceMaxWait = null; //set to null if it shouldn't set it at all
+            this._maxListeners = null; //set to null if it shouldn't set it at all
             this._config = null;
             this._scripts = MapAdapter.createMap();
             this._cwd = process.cwd();
@@ -1340,6 +1341,18 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
+        Manager.prototype.setMaxListeners = function(value) {
+            if( value !== null && value !== void 0 ) {
+                this._maxListeners = Math.floor( value );
+                assert( !isNaN( this._maxListeners ), 'setMaxListeners must be passed a number' );
+            }
+            else {
+                this._maxListeners = null;
+            }
+        };
+        Manager.prototype.getMaxListeners = function() {
+            return this._maxListeners;
+        };
         Manager.prototype.config = function(config) {
             if( config !== void 0 && config !== null ) {
                 this._config = Common.normalizeConfig( config );
@@ -1396,6 +1409,9 @@ var Scriptor;
                 }
                 if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
                     script.debounceMaxWait = this.debounceMaxWait;
+                }
+                if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
+                    script.setMaxListeners( this._maxListeners );
                 }
                 if( this._config !== void 0 && this._config !== null ) {
                     script.config( this._config );

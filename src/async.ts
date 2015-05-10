@@ -1565,6 +1565,8 @@ module Scriptor {
     export class Manager {
         private _debounceMaxWait : number = null; //set to null if it shouldn't set it at all
 
+        private _maxListeners : number = null; //set to null if it shouldn't set it at all
+
         private _config : IAMDConfig = null;
 
         private _scripts : Map<string, ScriptAdapter> = MapAdapter.createMap<ScriptAdapter>();
@@ -1594,6 +1596,22 @@ module Scriptor {
 
         get debounceMaxWait() : number {
             return this._debounceMaxWait;
+        }
+
+        public setMaxListeners( value : number ) {
+            if( value !== null && value !== void 0 ) {
+
+                this._maxListeners = Math.floor( value );
+
+                assert( !isNaN( this._maxListeners ), 'setMaxListeners must be passed a number' );
+
+            } else {
+                this._maxListeners = null;
+            }
+        }
+
+        public getMaxListeners() : number {
+            return this._maxListeners;
         }
 
         public config( config? : IAMDConfig ) : IAMDConfig {
@@ -1658,6 +1676,10 @@ module Scriptor {
 
                 if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
                     script.debounceMaxWait = this.debounceMaxWait;
+                }
+
+                if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
+                    script.setMaxListeners( this._maxListeners );
                 }
 
                 if( this._config !== void 0 && this._config !== null ) {
