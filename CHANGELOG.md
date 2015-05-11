@@ -1,6 +1,9 @@
 Scriptor Changelog
 ==================
 
+#####2.5.4
+* Added `--max_listeners <n>` command line option to set max listeners on the host Manager
+
 #####2.5.3
 * Added `Manager.setMaxListeners` and `Manager.getMaxListeners` to control the maximum number of listeners on new scripts added to the Manager instance.
 
