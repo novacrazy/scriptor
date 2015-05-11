@@ -88,6 +88,7 @@ options
     'Wait n milliseconds for debounce on file watching events (default: ' +
     ScriptorCommon.default_debounceMaxWait + 'ms)' )
     .option( '--use_strict', 'Enforce strict mode' )
+    .option( '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' )
     .option( '--max_recursion <n>', 'Set the maximum recursion depth of scripts (default: ' +
                                     ScriptorCommon.default_max_recursion + ')' )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
@@ -229,6 +230,18 @@ module.exports = function(argv) {
 
         if( typeof options.debounce === 'string' ) {
             debounce = manager.debounceMaxWait = toMilliseconds( options.debounce );
+        }
+
+        if( typeof options.max_listeners === 'string' ) {
+            var maxListeners = parseInt( options.max_listeners );
+
+            if( isFinite( maxListeners ) ) {
+                manager.setMaxListeners( maxListeners );
+
+            } else {
+                logger.error( 'Not a finite Number value for option --max_listeners' );
+                process.exit( EXIT_FAILURE );
+            }
         }
 
         //Basically, if both max_recursion and concurrency are set, they have to play along
