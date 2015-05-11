@@ -24,6 +24,7 @@ $scriptor -h
      -u, --unique             Only run unique scripts (will ignore duplicates in file arguments)
      --debounce <n>           Wait n milliseconds for debounce on file watching events (default: 50ms)
      --use_strict             Enforce strict mode
+     --max_listeners <n>      Set the maximum number of listeners on any particular script
      --max_recursion <n>      Set the maximum recursion depth of scripts (default: 9)
      -v, --verbose [n]        Print out extra status information (0 - normal, 1 - info, 2 - verbose)
      --cork                   Cork stdout before calling scripts
