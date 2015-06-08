@@ -578,6 +578,8 @@ module Scriptor {
                     if( this.isManaged() ) {
                         script = this.include( id );
 
+                        script.textMode = false;
+
                     } else {
                         script = Scriptor.load( id, this.watched, this._script );
 
