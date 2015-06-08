@@ -1,6 +1,9 @@
 Scriptor Changelog
 ==================
 
+#####2.5.5
+* Force textMode to false on require.
+
 #####2.5.4
 * Added `--max_listeners <n>` command line option to set max listeners on the host Manager
 
