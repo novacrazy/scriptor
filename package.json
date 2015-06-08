@@ -43,9 +43,9 @@
     "test": "mocha -Cb test"
   },
   "dependencies": {
-    "bluebird": "^2.9.25",
+    "bluebird": "^2.9.27",
     "commander": "^2.8.1",
-    "glob": "^5.0.5",
-    "lodash": "^3.7.0"
+    "glob": "^5.0.10",
+    "lodash": "^3.9.3"
   }
 }
