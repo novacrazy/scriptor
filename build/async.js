@@ -84,6 +84,28 @@ function isGeneratorFunction(obj) {
 function makeCoroutine(fn) {
     return Promise.coroutine( fn );
 }
+function makeEventPromise(emitter, resolve_event, reject_event) {
+    return new Promise( function(resolve, reject) {
+        var resolve_handler = function(reject_handler) {
+            var args = [];
+            for( var _i = 1; _i < arguments.length; _i++ ) {
+                args[_i - 1] = arguments[_i];
+            }
+            emitter.removeListener( reject_event, reject_handler );
+            resolve.apply( void 0, args );
+        };
+        var reject_handler = function(resolve_handler) {
+            var args = [];
+            for( var _i = 1; _i < arguments.length; _i++ ) {
+                args[_i - 1] = arguments[_i];
+            }
+            emitter.removeListener( resolve_event, resolve_handler );
+            reject.apply( void 0, args );
+        };
+        emitter.once( resolve_event, resolve_handler.bind( null, reject_handler ) );
+        emitter.once( reject_event, reject_handler.bind( null, resolve_handler ) );
+    } );
+}
 var Scriptor;
 (function(Scriptor) {
     Scriptor.this_module = module;
@@ -393,14 +415,14 @@ var Scriptor;
         };
         Object.defineProperty( AMDScript.prototype, "pending", {
             get:          function() {
-                return isThenable( this._resolver ) && this._resolver.isPending();
+                return this._pending;
             },
             enumerable:   true,
             configurable: true
         } );
         Object.defineProperty( AMDScript.prototype, "loading", {
             get:          function() {
-                return isThenable( this._loader ) && this._loader.isPending();
+                return this._loading;
             },
             enumerable:   true,
             configurable: true
@@ -641,14 +663,18 @@ var Scriptor;
             }
             else {
                 this._dependencies = define_args[1];
-                this._resolver = this._runFactory.apply( this, define_args ).then( function(result) {
+                this._pending = true;
+                this._runFactory.apply( this, define_args ).then( function(result) {
                     //To match AMDefine, don't export the result unless there is one.
                     //Null is allowed, since it would have to have been returned explicitly.
                     if( result !== void 0 ) {
                         _this._script.exports = result;
                     }
-                    delete _this._resolver;
-                    return _this._script.exports;
+                    _this._pending = false;
+                    _this.emit( 'exports', _this._script.exports );
+                } ).catch( function(err) {
+                    _this._pending = false;
+                    _this.emit( 'exports_error', err );
                 } );
             }
         };
@@ -671,10 +697,14 @@ var Scriptor;
             this._defineCache.clear();
             this._loadCache.clear();
             if( this.pending ) {
-                if( this._resolver.isCancellable() ) {
-                    this._resolver.cancel();
-                }
-                delete this._resolver;
+                this.removeAllListeners( 'exports' );
+                this.removeAllListeners( 'exports_error' );
+                this._pending = false;
+            }
+            if( this.loading ) {
+                this.removeAllListeners( 'loaded' );
+                this.removeAllListeners( 'loading_error' );
+                this._loading = false;
             }
             return res;
         };
@@ -722,15 +752,17 @@ var Scriptor;
                 if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
                     if( !this.loading ) {
                         this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                        this._loader =
-                            tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
-                                _this._source = src;
-                                _this._script.loaded = true;
-                                delete _this._loader;
-                                _this.emit( 'loaded', _this.loaded );
-                            } );
+                        this._loading = true;
+                        tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
+                            _this._source = src;
+                            _this._script.loaded = true;
+                            _this._loading = false;
+                            _this.emit( 'loaded', _this._script.exports );
+                        } ).catch( function(err) {
+                            _this._loading = false;
+                            _this.emit( 'loading_error', err );
+                        } );
                     }
-                    return this._loader;
                 }
                 else {
                     if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
@@ -738,15 +770,28 @@ var Scriptor;
                             util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
                                 this.filename ) );
                     }
-                    this._script.load( this._script.filename );
-                    this.emit( 'loaded', this.loaded );
+                    this._loading = true;
+                    try {
+                        this._script.load( this._script.filename );
+                        this.emit( 'loaded', this.loaded );
+                    }
+                    catch( err ) {
+                        this.emit( 'loading_error', err );
+                    }
+                    finally {
+                        this._loading = false;
+                    }
                 }
             }
             else {
                 return readFile( this.filename ).then( function(src) {
                     _this._script.exports = _this._source = src;
                     _this._script.loaded = true;
+                    _this._loading = false;
                     _this.emit( 'loaded', _this.loaded );
+                } ).catch( function(err) {
+                    _this._loading = false;
+                    _this.emit( 'loading_error', err );
                 } );
             }
         };
@@ -764,25 +809,31 @@ var Scriptor;
                 }
             }
             else {
-                return this._callWrapper( this.do_load ).then( function() {
+                //Just in case it uses the synchronous load function, set up the event handlers first
+                var result = makeEventPromise( this, 'loaded', 'loading_error' ).then( function() {
                     return _this.source( encoding );
                 } );
+                this._callWrapper( this.do_load );
+                return result;
             }
         };
         Script.prototype.exports = function() {
             var _this = this;
             if( this.loaded ) {
                 if( this.pending ) {
-                    return this._resolver;
+                    return makeEventPromise( this, 'exports', 'exports_error' ).tap( console.log );
                 }
                 else {
                     return Promise.resolve( this._script.exports );
                 }
             }
             else {
-                return this._callWrapper( this.do_load ).then( function() {
+                //Just in case it uses the synchronous load function, set up the event handlers first
+                var result = makeEventPromise( this, 'loaded', 'loading_error' ).then( function() {
                     return _this.exports();
                 } );
+                this._callWrapper( this.do_load );
+                return result;
             }
         };
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block
