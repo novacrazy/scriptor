@@ -742,12 +742,12 @@ module Scriptor {
             this._loadCache.clear();
 
             if( this.pending ) {
-                this.emit( 'exports_error', new Error( 'cancelled' ) );
+                this.emit( 'exports_error', new Error( 'cancelled ' + this.filename ) );
                 this._pending = false;
             }
 
             if( this.loading ) {
-                this.emit( 'loading_error', new Error( 'cancelled' ) );
+                this.emit( 'loading_error', new Error( 'cancelled ' + this.filename ) );
                 this._loading = false;
             }
 
