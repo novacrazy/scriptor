@@ -807,12 +807,12 @@ var Scriptor;
                 }
             }
             else {
-                //Just in case it uses the synchronous load function, set up the event handlers first
-                var result = makeEventPromise( this, 'loaded', 'loading_error' ).then( function() {
+                var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+                return this._callWrapper( this.do_load ).then( function() {
+                    return waiting;
+                } ).then( function() {
                     return _this.source( encoding );
                 } );
-                this._callWrapper( this.do_load );
-                return result;
             }
         };
         Script.prototype.exports = function() {
@@ -826,12 +826,12 @@ var Scriptor;
                 }
             }
             else {
-                //Just in case it uses the synchronous load function, set up the event handlers first
-                var result = makeEventPromise( this, 'loaded', 'loading_error' ).then( function() {
+                var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+                return this._callWrapper( this.do_load ).then( function() {
+                    return waiting;
+                } ).then( function() {
                     return _this.exports();
                 } );
-                this._callWrapper( this.do_load );
-                return result;
             }
         };
         //simply abuses TypeScript's variable arguments feature and gets away from the try-catch block

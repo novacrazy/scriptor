@@ -874,14 +874,15 @@ module Scriptor {
                 }
 
             } else {
-                //Just in case it uses the synchronous load function, set up the event handlers first
-                let result = makeEventPromise( this, 'loaded', 'loading_error' ).then( () => {
+                //Add the event listeners first
+                let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+
+                return this._callWrapper( this.do_load ).then( () => {
+                    return waiting;
+
+                } ).then( () => {
                     return this.source( encoding );
                 } );
-
-                this._callWrapper( this.do_load );
-
-                return result;
             }
         }
 
@@ -895,14 +896,15 @@ module Scriptor {
                 }
 
             } else {
-                //Just in case it uses the synchronous load function, set up the event handlers first
-                let result = makeEventPromise( this, 'loaded', 'loading_error' ).then( () => {
+                //Add the event listeners first
+                let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+
+                return this._callWrapper( this.do_load ).then( () => {
+                    return waiting;
+
+                } ).then( () => {
                     return this.exports();
                 } );
-
-                this._callWrapper( this.do_load );
-
-                return result;
             }
         }
 
