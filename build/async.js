@@ -697,11 +697,11 @@ var Scriptor;
             this._defineCache.clear();
             this._loadCache.clear();
             if( this.pending ) {
-                this.emit( 'exports_error', new Error( 'cancelled ' + this.filename ) );
+                //this.emit( 'exports_error', new Error( 'cancelled ' + this.filename ) );
                 this._pending = false;
             }
             if( this.loading ) {
-                this.emit( 'loading_error', new Error( 'cancelled ' + this.filename ) );
+                //this.emit( 'loading_error', new Error( 'cancelled ' + this.filename ) );
                 this._loading = false;
             }
             return res;
@@ -807,6 +807,7 @@ var Scriptor;
                 }
             }
             else {
+                //Add the event listeners first
                 var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
                 return this._callWrapper( this.do_load ).then( function() {
                     return waiting;
@@ -826,6 +827,7 @@ var Scriptor;
                 }
             }
             else {
+                //Add the event listeners first
                 var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
                 return this._callWrapper( this.do_load ).then( function() {
                     return waiting;
