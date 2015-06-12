@@ -742,14 +742,12 @@ module Scriptor {
             this._loadCache.clear();
 
             if( this.pending ) {
-                this.removeAllListeners( 'exports' );
-                this.removeAllListeners( 'exports_error' );
+                this.emit( 'exports_error', new Error( 'cancelled' ) );
                 this._pending = false;
             }
 
             if( this.loading ) {
-                this.removeAllListeners( 'loaded' );
-                this.removeAllListeners( 'loading_error' );
+                this.emit( 'loading_error', new Error( 'cancelled' ) );
                 this._loading = false;
             }
 
