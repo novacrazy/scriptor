@@ -460,14 +460,12 @@ var Scriptor;
             if( Array.isArray( id ) ) {
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids = id;
-                console.log( "requires: [%s]", ids );
                 result = Promise.map( ids, function(id) {
                     return _this._require( id );
                 } );
             }
             else {
                 assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
-                console.log( "require: %s", id );
                 //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
                     //modules to be loaded through an AMD loader transform
@@ -700,12 +698,8 @@ var Scriptor;
             //unload also clears defines and requires
             this._defineCache.clear();
             this._loadCache.clear();
-            if( this.pending ) {
-                this._pending = false;
-            }
-            if( this.loading ) {
-                this._loading = false;
-            }
+            this._pending = false;
+            this._loading = false;
             return res;
         };
         return AMDScript;
