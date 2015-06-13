@@ -458,14 +458,10 @@ module Scriptor {
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids : string[] = id;
 
-                console.log( "requires: [%s]", ids );
-
                 result = Promise.map( ids, id => this._require( id ) );
 
             } else {
                 assert.strictEqual( typeof id, 'string', 'require id must be a string or array of strings' );
-
-                console.log( "require: %s", id );
 
                 //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
