@@ -747,13 +747,8 @@ module Scriptor {
             this._defineCache.clear();
             this._loadCache.clear();
 
-            if( this.pending ) {
-                this._pending = false;
-            }
-
-            if( this.loading ) {
-                this._loading = false;
-            }
+            this._pending = false;
+            this._loading = false;
 
             return res;
         }
