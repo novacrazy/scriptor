@@ -708,15 +708,17 @@ module Scriptor {
                 this._pending = true;
 
                 this._runFactory.apply( this, define_args ).then( ( result ) => {
-                    //To match AMDefine, don't export the result unless there is one.
-                    //Null is allowed, since it would have to have been returned explicitly.
-                    if( result !== void 0 ) {
-                        this._script.exports = result;
+                    if( this._pending ) {
+                        //To match AMDefine, don't export the result unless there is one.
+                        //Null is allowed, since it would have to have been returned explicitly.
+                        if( result !== void 0 ) {
+                            this._script.exports = result;
+                        }
+
+                        this._pending = false;
+
+                        this.emit( 'exports', this._script.exports );
                     }
-
-                    this._pending = false;
-
-                    this.emit( 'exports', this._script.exports );
 
                 } ).catch( err => {
                     this._pending = false;
@@ -746,12 +748,10 @@ module Scriptor {
             this._loadCache.clear();
 
             if( this.pending ) {
-                //this.emit( 'exports_error', new Error( 'cancelled ' + this.filename ) );
                 this._pending = false;
             }
 
             if( this.loading ) {
-                //this.emit( 'loading_error', new Error( 'cancelled ' + this.filename ) );
                 this._loading = false;
             }
 
@@ -817,12 +817,14 @@ module Scriptor {
                         this._loading = true;
 
                         return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
-                            this._source = src;
-                            this._script.loaded = true;
+                            if( this._loading ) {
+                                this._source = src;
+                                this._script.loaded = true;
 
-                            this._loading = false;
+                                this._loading = false;
 
-                            this.emit( 'loaded', this._script.exports );
+                                this.emit( 'loaded', this._script.exports );
+                            }
 
                         } ).catch( err => {
                             this._loading = false;
@@ -840,7 +842,9 @@ module Scriptor {
                         try {
                             this._script.load( this._script.filename );
 
-                            this.emit( 'loaded', this.loaded );
+                            if( this._loading ) {
+                                this.emit( 'loaded', this.loaded );
+                            }
 
                         } catch( err ) {
                             this.emit( 'loading_error', err );
@@ -854,13 +858,14 @@ module Scriptor {
                     this._loading = true;
 
                     return readFile( this.filename ).then( ( src : Buffer ) => {
-                        this._script.exports = this._source = src;
-                        this._script.loaded = true;
+                        if( this._loading ) {
+                            this._script.exports = this._source = src;
+                            this._script.loaded = true;
 
-                        this._loading = false;
+                            this._loading = false;
 
-                        this.emit( 'loaded', this.loaded );
-
+                            this.emit( 'loaded', this.loaded );
+                        }
                     } ).catch( err => {
                         this._loading = false;
 
@@ -895,7 +900,7 @@ module Scriptor {
         public exports() : Promise<any> {
             if( this.loaded ) {
                 if( this.pending ) {
-                    return makeEventPromise( this, 'exports', 'exports_error' ).tap( console.log );
+                    return makeEventPromise( this, 'exports', 'exports_error' );
 
                 } else {
                     return Promise.resolve( this._script.exports );
