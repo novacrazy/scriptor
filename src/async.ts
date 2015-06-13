@@ -704,15 +704,17 @@ module Scriptor {
                 this._pending = true;
 
                 this._runFactory.apply( this, define_args ).then( ( result ) => {
-                    //To match AMDefine, don't export the result unless there is one.
-                    //Null is allowed, since it would have to have been returned explicitly.
-                    if( result !== void 0 ) {
-                        this._script.exports = result;
+                    if( this._pending ) {
+                        //To match AMDefine, don't export the result unless there is one.
+                        //Null is allowed, since it would have to have been returned explicitly.
+                        if( result !== void 0 ) {
+                            this._script.exports = result;
+                        }
+
+                        this._pending = false;
+
+                        this.emit( 'exports', this._script.exports );
                     }
-
-                    this._pending = false;
-
-                    this.emit( 'exports', this._script.exports );
 
                 } ).catch( err => {
                     this._pending = false;
@@ -741,15 +743,8 @@ module Scriptor {
             this._defineCache.clear();
             this._loadCache.clear();
 
-            if( this.pending ) {
-                this.emit( 'exports_error', new Error( 'cancelled ' + this.filename ) );
-                this._pending = false;
-            }
-
-            if( this.loading ) {
-                this.emit( 'loading_error', new Error( 'cancelled ' + this.filename ) );
-                this._loading = false;
-            }
+            this._pending = false;
+            this._loading = false;
 
             return res;
         }
@@ -797,70 +792,77 @@ module Scriptor {
         protected do_load() : Promise<any> {
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
-            this.unload();
+            if( !this.loading ) {
+                this.unload();
 
-            if( !this.textMode ) {
-                this.do_setup();
+                if( !this.textMode ) {
+                    this.do_setup();
 
-                var ext = path.extname( this.filename ) || '.js';
+                    var ext = path.extname( this.filename ) || '.js';
 
-                //Use custom extension if available
-                if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
-                    if( !this.loading ) {
+                    //Use custom extension if available
+                    if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
 
                         this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
                         this._loading = true;
 
-                        tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
-                            this._source = src;
-                            this._script.loaded = true;
+                        return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
+                            if( this._loading ) {
+                                this._source = src;
+                                this._script.loaded = true;
 
-                            this._loading = false;
+                                this._loading = false;
 
-                            this.emit( 'loaded', this._script.exports );
+                                this.emit( 'loaded', this._script.exports );
+                            }
 
                         } ).catch( err => {
                             this._loading = false;
 
                             this.emit( 'loading_error', err );
                         } );
+
+                    } else {
+                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                            this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                        }
+
+                        this._loading = true;
+
+                        try {
+                            this._script.load( this._script.filename );
+
+                            if( this._loading ) {
+                                this.emit( 'loaded', this.loaded );
+                            }
+
+                        } catch( err ) {
+                            this.emit( 'loading_error', err );
+
+                        } finally {
+                            this._loading = false;
+                        }
                     }
 
                 } else {
-                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
-                    }
-
                     this._loading = true;
 
-                    try {
-                        this._script.load( this._script.filename );
+                    return readFile( this.filename ).then( ( src : Buffer ) => {
+                        if( this._loading ) {
+                            this._script.exports = this._source = src;
+                            this._script.loaded = true;
 
-                        this.emit( 'loaded', this.loaded );
+                            this._loading = false;
 
-                    } catch( err ) {
-                        this.emit( 'loading_error', err );
-
-                    } finally {
+                            this.emit( 'loaded', this.loaded );
+                        }
+                    } ).catch( err => {
                         this._loading = false;
-                    }
+
+                        this.emit( 'loading_error', err );
+                    } );
                 }
-
-            } else {
-                return readFile( this.filename ).then( ( src : Buffer ) => {
-                    this._script.exports = this._source = src;
-                    this._script.loaded = true;
-
-                    this._loading = false;
-
-                    this.emit( 'loaded', this.loaded );
-
-                } ).catch( err => {
-                    this._loading = false;
-
-                    this.emit( 'loading_error', err );
-                } );
             }
         }
 
@@ -889,7 +891,7 @@ module Scriptor {
         public exports() : Promise<any> {
             if( this.loaded ) {
                 if( this.pending ) {
-                    return makeEventPromise( this, 'exports', 'exports_error' ).tap( console.log );
+                    return makeEventPromise( this, 'exports', 'exports_error' );
 
                 } else {
                     return Promise.resolve( this._script.exports );
