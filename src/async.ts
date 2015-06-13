@@ -801,22 +801,22 @@ module Scriptor {
         protected do_load() : Promise<any> {
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
-            this.unload();
+            if( !this.loading ) {
+                this.unload();
 
-            if( !this.textMode ) {
-                this.do_setup();
+                if( !this.textMode ) {
+                    this.do_setup();
 
-                var ext = path.extname( this.filename ) || '.js';
+                    var ext = path.extname( this.filename ) || '.js';
 
-                //Use custom extension if available
-                if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
-                    if( !this.loading ) {
+                    //Use custom extension if available
+                    if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
 
                         this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
                         this._loading = true;
 
-                        tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
+                        return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
                             this._source = src;
                             this._script.loaded = true;
 
@@ -829,42 +829,44 @@ module Scriptor {
 
                             this.emit( 'loading_error', err );
                         } );
+
+                    } else {
+                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                            this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                        }
+
+                        this._loading = true;
+
+                        try {
+                            this._script.load( this._script.filename );
+
+                            this.emit( 'loaded', this.loaded );
+
+                        } catch( err ) {
+                            this.emit( 'loading_error', err );
+
+                        } finally {
+                            this._loading = false;
+                        }
                     }
 
                 } else {
-                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
-                    }
-
                     this._loading = true;
 
-                    try {
-                        this._script.load( this._script.filename );
+                    return readFile( this.filename ).then( ( src : Buffer ) => {
+                        this._script.exports = this._source = src;
+                        this._script.loaded = true;
+
+                        this._loading = false;
 
                         this.emit( 'loaded', this.loaded );
 
-                    } catch( err ) {
-                        this.emit( 'loading_error', err );
-
-                    } finally {
+                    } ).catch( err => {
                         this._loading = false;
-                    }
+
+                        this.emit( 'loading_error', err );
+                    } );
                 }
-
-            } else {
-                return readFile( this.filename ).then( ( src : Buffer ) => {
-                    this._script.exports = this._source = src;
-                    this._script.loaded = true;
-
-                    this._loading = false;
-
-                    this.emit( 'loaded', this.loaded );
-
-                } ).catch( err => {
-                    this._loading = false;
-
-                    this.emit( 'loading_error', err );
-                } );
             }
         }
 

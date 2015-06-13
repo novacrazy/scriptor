@@ -744,16 +744,17 @@ var Scriptor;
         Script.prototype.do_load = function() {
             var _this = this;
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
-            this.unload();
-            if( !this.textMode ) {
-                this.do_setup();
-                var ext = path.extname( this.filename ) || '.js';
-                //Use custom extension if available
-                if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
-                    if( !this.loading ) {
+            if( !this.loading ) {
+                this.unload();
+                if( !this.textMode ) {
+                    this.do_setup();
+                    var ext = path.extname( this.filename ) || '.js';
+                    //Use custom extension if available
+                    if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
                         this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
                         this._loading = true;
-                        tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
+                        return tryPromise( Scriptor.extensions[ext]( this._script,
+                            this.filename ) ).then( function(src) {
                             _this._source = src;
                             _this._script.loaded = true;
                             _this._loading = false;
@@ -763,36 +764,37 @@ var Scriptor;
                             _this.emit( 'loading_error', err );
                         } );
                     }
+                    else {
+                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                            this.emit( 'warning',
+                                util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                    this.filename ) );
+                        }
+                        this._loading = true;
+                        try {
+                            this._script.load( this._script.filename );
+                            this.emit( 'loaded', this.loaded );
+                        }
+                        catch( err ) {
+                            this.emit( 'loading_error', err );
+                        }
+                        finally {
+                            this._loading = false;
+                        }
+                    }
                 }
                 else {
-                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning',
-                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
-                                this.filename ) );
-                    }
                     this._loading = true;
-                    try {
-                        this._script.load( this._script.filename );
-                        this.emit( 'loaded', this.loaded );
-                    }
-                    catch( err ) {
-                        this.emit( 'loading_error', err );
-                    }
-                    finally {
-                        this._loading = false;
-                    }
+                    return readFile( this.filename ).then( function(src) {
+                        _this._script.exports = _this._source = src;
+                        _this._script.loaded = true;
+                        _this._loading = false;
+                        _this.emit( 'loaded', _this.loaded );
+                    } ).catch( function(err) {
+                        _this._loading = false;
+                        _this.emit( 'loading_error', err );
+                    } );
                 }
-            }
-            else {
-                return readFile( this.filename ).then( function(src) {
-                    _this._script.exports = _this._source = src;
-                    _this._script.loaded = true;
-                    _this._loading = false;
-                    _this.emit( 'loaded', _this.loaded );
-                } ).catch( function(err) {
-                    _this._loading = false;
-                    _this.emit( 'loading_error', err );
-                } );
             }
         };
         Script.prototype.source = function(encoding) {
