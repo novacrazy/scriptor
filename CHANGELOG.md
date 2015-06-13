@@ -1,6 +1,10 @@
 Scriptor Changelog
 ==================
 
+#####2.6.0
+* Refactored all loading and pending promises to use the event system underneath. This should prevent leaky promises.
+* In conjunction with the top, the unloading process has been changed somewhat and all loading operations are not allowed when it's already loading.
+
 #####2.5.5
 * Force textMode to false on require.
 
