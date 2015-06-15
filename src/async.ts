@@ -738,7 +738,7 @@ module Scriptor {
 
                 this._pending = true;
 
-                this._runFactory.apply( this, define_args ).then( ( result ) => {
+                this._runFactory( define_args[0], define_args[1], define_args[2] ).then( ( result ) => {
                     if( this._pending ) {
                         //To match AMDefine, don't export the result unless there is one.
                         //Null is allowed, since it would have to have been returned explicitly.
@@ -751,8 +751,8 @@ module Scriptor {
                         this.emit( 'exports', this._script.exports );
                     }
 
-                } ).catch( err => {
-                    this._pending = false;
+                }, err => {
+                    this.unload();
 
                     this.emit( 'exports_error', err );
                 } );

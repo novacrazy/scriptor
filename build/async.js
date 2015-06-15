@@ -703,7 +703,7 @@ var Scriptor;
             else {
                 this._dependencies = define_args[1];
                 this._pending = true;
-                this._runFactory.apply( this, define_args ).then( function(result) {
+                this._runFactory( define_args[0], define_args[1], define_args[2] ).then( function(result) {
                     if( _this._pending ) {
                         //To match AMDefine, don't export the result unless there is one.
                         //Null is allowed, since it would have to have been returned explicitly.
@@ -713,8 +713,8 @@ var Scriptor;
                         _this._pending = false;
                         _this.emit( 'exports', _this._script.exports );
                     }
-                } ).catch( function(err) {
-                    _this._pending = false;
+                }, function(err) {
+                    _this.unload();
                     _this.emit( 'exports_error', err );
                 } );
             }
