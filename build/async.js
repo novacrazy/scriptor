@@ -502,7 +502,7 @@ var Scriptor;
             }
         };
         //Implementation, and holy crap is it huge
-        AMDScript.prototype._require = function(id, cb, errcb) {
+        AMDScript.prototype._require = function(id) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
             var result;
@@ -690,16 +690,6 @@ var Scriptor;
             if( !isThenable( result ) ) {
                 result = Promise.resolve( result );
             }
-            if( typeof cb === 'function' ) {
-                result.then( function(resolvedResult) {
-                    if( Array.isArray( resolvedResult ) ) {
-                        cb.apply( null, resolvedResult );
-                    }
-                    else {
-                        cb.call( null, resolvedResult );
-                    }
-                }, typeof errcb === 'function' ? errcb : this.require['onError'] );
-            }
             return result;
         };
         AMDScript.prototype._define = function() {
@@ -802,7 +792,7 @@ var Scriptor;
                             _this._loading = false;
                             _this.emit( 'loaded', _this._script.exports );
                         }
-                    } ).catch( function(err) {
+                    }, function(err) {
                         _this._loading = false;
                         _this.emit( 'loading_error', err );
                     } );
@@ -837,7 +827,7 @@ var Scriptor;
                         _this._loading = false;
                         _this.emit( 'loaded_src', _this.loaded );
                     }
-                } ).catch( function(err) {
+                }, function(err) {
                     _this._loading = false;
                     _this.emit( 'loading_src_error', err );
                 } );

@@ -369,7 +369,7 @@ describe( 'Advanced Script with asynchronous plugin', function() {
 
             script.require.undef( 'meaning of life' );
 
-            script.require( 'meaning of life', function() {
+            script.require( 'meaning of life' ).then( function() {
                 assert( false, "undef should have removed this id" );
                 done();
 

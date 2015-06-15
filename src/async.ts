@@ -492,11 +492,11 @@ module Scriptor {
 
         //Overloads, which can differ from Module.IModule
         protected _require( path : string ) : any;
-        protected _require( id : string[], cb? : ( deps : any[] ) => any, ecb? : ( err : any ) => any ) : Promise<any>;
-        protected _require( id : string, cb? : ( deps : any ) => any, ecb? : ( err : any ) => any ) : Promise<any>;
+        protected _require( id : string[] ) : Promise<any[]>;
+        protected _require( id : string ) : Promise<any>;
 
         //Implementation, and holy crap is it huge
-        protected _require( id : any, cb? : ( deps : any ) => any, errcb? : ( err : any ) => any ) : any {
+        protected _require( id : any ) : any {
             var normalize = path.resolve.bind( null, this.baseUrl );
 
             var result : any;
@@ -720,18 +720,6 @@ module Scriptor {
                 result = Promise.resolve( result );
             }
 
-            if( typeof cb === 'function' ) {
-                result.then( ( resolvedResult : any ) => {
-                    if( Array.isArray( resolvedResult ) ) {
-                        cb.apply( null, resolvedResult );
-
-                    } else {
-                        cb.call( null, resolvedResult );
-                    }
-
-                }, typeof errcb === 'function' ? errcb : this.require['onError'] );
-            }
-
             return result;
         }
 
@@ -863,7 +851,7 @@ module Scriptor {
                             this.emit( 'loaded', this._script.exports );
                         }
 
-                    } ).catch( err => {
+                    }, err => {
                         this._loading = false;
 
                         this.emit( 'loading_error', err );
@@ -904,7 +892,7 @@ module Scriptor {
                         this.emit( 'loaded_src', this.loaded );
                     }
 
-                } ).catch( err => {
+                }, err => {
                     this._loading = false;
 
                     this.emit( 'loading_src_error', err );
