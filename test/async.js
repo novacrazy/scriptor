@@ -443,14 +443,8 @@ describe( 'Text Scripts', function() {
     } );
 
     it( 'should load the file upon calling it (lazy evaluation)', function(done) {
-        script.exports().then( function() {
+        script.source().then( function() {
             assert( script.loaded );
-        } ).then( done );
-    } );
-
-    it( 'should have exported the result', function(done) {
-        script.exports().then( function(script_exports) {
-            assert( Buffer.isBuffer( script_exports ) );
         } ).then( done );
     } );
 
