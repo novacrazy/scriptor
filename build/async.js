@@ -86,24 +86,73 @@ function makeCoroutine(fn) {
 }
 function makeEventPromise(emitter, resolve_event, reject_event) {
     return new Promise( function(resolve, reject) {
-        var resolve_handler = function(reject_handler) {
+        function resolve_handler() {
             var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
+            for( var _i = 0; _i < arguments.length; _i++ ) {
+                args[_i - 0] = arguments[_i];
             }
             emitter.removeListener( reject_event, reject_handler );
             resolve.apply( void 0, args );
-        };
-        var reject_handler = function(resolve_handler) {
+        }
+
+        function reject_handler() {
             var args = [];
-            for( var _i = 1; _i < arguments.length; _i++ ) {
-                args[_i - 1] = arguments[_i];
+            for( var _i = 0; _i < arguments.length; _i++ ) {
+                args[_i - 0] = arguments[_i];
             }
             emitter.removeListener( resolve_event, resolve_handler );
             reject.apply( void 0, args );
-        };
-        emitter.once( resolve_event, resolve_handler.bind( null, reject_handler ) );
-        emitter.once( reject_event, reject_handler.bind( null, resolve_handler ) );
+        }
+
+        emitter.once( resolve_event, resolve_handler );
+        emitter.once( reject_event, reject_handler );
+    } );
+}
+/*
+ * This is a more generic version of the above, but also costs more to run.
+ * */
+function makeMultiEventPromise(emitter, resolve_events, reject_events) {
+    return new Promise( function(resolve, reject) {
+        function resolve_handler() {
+            var args = [];
+            for( var _i = 0; _i < arguments.length; _i++ ) {
+                args[_i - 0] = arguments[_i];
+            }
+            for( var it in reject_events ) {
+                if( reject_events.hasOwnProperty( it ) ) {
+                    var event_1 = reject_events[it];
+                    emitter.removeListener( event_1, reject_handler );
+                }
+            }
+            resolve.apply( void 0, args );
+        }
+
+        function reject_handler() {
+            var args = [];
+            for( var _i = 0; _i < arguments.length; _i++ ) {
+                args[_i - 0] = arguments[_i];
+            }
+            for( var it in resolve_events ) {
+                if( resolve_events.hasOwnProperty( it ) ) {
+                    var event_2 = resolve_events[it];
+                    emitter.removeListener( event_2, resolve_handler );
+                }
+            }
+            reject.apply( void 0, args );
+        }
+
+        for( var it in resolve_events ) {
+            if( resolve_events.hasOwnProperty( it ) ) {
+                var event_3 = resolve_events[it];
+                emitter.once( event_3, resolve_handler );
+            }
+        }
+        for( var it in reject_events ) {
+            if( reject_events.hasOwnProperty( it ) ) {
+                var event_4 = reject_events[it];
+                emitter.once( event_4, reject_handler );
+            }
+        }
     } );
 }
 var Scriptor;
@@ -738,63 +787,60 @@ var Scriptor;
         Script.prototype.do_load = function() {
             var _this = this;
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
-            if( !this.loading ) {
-                this.unload();
-                if( !this.textMode ) {
-                    this.do_setup();
-                    var ext = path.extname( this.filename ) || '.js';
-                    //Use custom extension if available
-                    if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
-                        this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
-                        this._loading = true;
-                        return tryPromise( Scriptor.extensions[ext]( this._script,
-                            this.filename ) ).then( function(src) {
-                            if( _this._loading ) {
-                                _this._source = src;
-                                _this._script.loaded = true;
-                                _this._loading = false;
-                                _this.emit( 'loaded', _this._script.exports );
-                            }
-                        } ).catch( function(err) {
-                            _this._loading = false;
-                            _this.emit( 'loading_error', err );
-                        } );
-                    }
-                    else {
-                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                            this.emit( 'warning',
-                                util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
-                                    this.filename ) );
-                        }
-                        this._loading = true;
-                        try {
-                            this._script.load( this._script.filename );
-                            if( this._loading ) {
-                                this.emit( 'loaded', this.loaded );
-                            }
-                        }
-                        catch( err ) {
-                            this.emit( 'loading_error', err );
-                        }
-                        finally {
-                            this._loading = false;
-                        }
-                    }
-                }
-                else {
+            this.unload();
+            if( !this.textMode ) {
+                this.do_setup();
+                var ext = path.extname( this.filename ) || '.js';
+                //Use custom extension if available
+                if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
+                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
                     this._loading = true;
-                    return readFile( this.filename ).then( function(src) {
+                    return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
                         if( _this._loading ) {
-                            _this._script.exports = _this._source = src;
+                            _this._source = src;
                             _this._script.loaded = true;
                             _this._loading = false;
-                            _this.emit( 'loaded', _this.loaded );
+                            _this.emit( 'loaded', _this._script.exports );
                         }
                     } ).catch( function(err) {
                         _this._loading = false;
                         _this.emit( 'loading_error', err );
                     } );
                 }
+                else {
+                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                        this.emit( 'warning',
+                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                this.filename ) );
+                    }
+                    this._loading = true;
+                    try {
+                        this._script.load( this._script.filename );
+                        if( this._loading ) {
+                            this.emit( 'loaded', this.loaded );
+                        }
+                    }
+                    catch( err ) {
+                        this.emit( 'loading_error', err );
+                    }
+                    finally {
+                        this._loading = false;
+                    }
+                }
+            }
+            else {
+                this._loading = true;
+                return readFile( this.filename ).then( function(src) {
+                    if( _this._loading ) {
+                        _this._source = src;
+                        _this._script.loaded = true;
+                        _this._loading = false;
+                        _this.emit( 'loaded_src', _this.loaded );
+                    }
+                } ).catch( function(err) {
+                    _this._loading = false;
+                    _this.emit( 'loading_src_error', err );
+                } );
             }
         };
         Script.prototype.source = function(encoding) {
@@ -811,8 +857,11 @@ var Scriptor;
                 }
             }
             else {
-                //Add the event listeners first
-                var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+                /*
+                 * This is a special one were it doesn't matter which event triggers first.
+                 * */
+                var waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'],
+                    ['loading_error', 'loading_src_error'] );
                 return this._callWrapper( this.do_load ).then( function() {
                     return waiting;
                 } ).then( function() {

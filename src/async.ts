@@ -59,18 +59,65 @@ function makeCoroutine<T>( fn : T ) : T {
 
 function makeEventPromise( emitter : events.EventEmitter, resolve_event : string, reject_event : string ) {
     return new Promise( ( resolve : any, reject : any ) => {
-        let resolve_handler = ( reject_handler, ...args : any[] ) => {
+        function resolve_handler( ...args : any[] ) {
             emitter.removeListener( reject_event, reject_handler );
             resolve( ...args );
-        };
+        }
 
-        let reject_handler = ( resolve_handler, ...args : any[] ) => {
+        function reject_handler( ...args : any[] ) {
             emitter.removeListener( resolve_event, resolve_handler );
             reject( ...args );
-        };
+        }
 
-        emitter.once( resolve_event, resolve_handler.bind( null, reject_handler ) );
-        emitter.once( reject_event, reject_handler.bind( null, resolve_handler ) );
+        emitter.once( resolve_event, resolve_handler );
+        emitter.once( reject_event, reject_handler );
+    } );
+}
+
+/*
+ * This is a more generic version of the above, but also costs more to run.
+ * */
+function makeMultiEventPromise( emitter : events.EventEmitter, resolve_events : string[], reject_events : string[] ) {
+    return new Promise( ( resolve : any, reject : any ) => {
+        function resolve_handler( ...args : any[] ) {
+            for( let it in reject_events ) {
+                if( reject_events.hasOwnProperty( it ) ) {
+                    let event = reject_events[it];
+
+                    emitter.removeListener( event, reject_handler );
+                }
+            }
+
+            resolve( ...args );
+        }
+
+        function reject_handler( ...args : any[] ) {
+            for( let it in resolve_events ) {
+                if( resolve_events.hasOwnProperty( it ) ) {
+                    let event = resolve_events[it];
+
+                    emitter.removeListener( event, resolve_handler );
+                }
+            }
+
+            reject( ...args );
+        }
+
+        for( let it in resolve_events ) {
+            if( resolve_events.hasOwnProperty( it ) ) {
+                let event = resolve_events[it];
+
+                emitter.once( event, resolve_handler );
+            }
+        }
+
+        for( let it in reject_events ) {
+            if( reject_events.hasOwnProperty( it ) ) {
+                let event = reject_events[it];
+
+                emitter.once( event, reject_handler );
+            }
+        }
     } );
 }
 
@@ -792,77 +839,76 @@ module Scriptor {
         protected do_load() : Promise<any> {
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
-            if( !this.loading ) {
-                this.unload();
+            this.unload();
 
-                if( !this.textMode ) {
-                    this.do_setup();
+            if( !this.textMode ) {
+                this.do_setup();
 
-                    var ext = path.extname( this.filename ) || '.js';
+                var ext = path.extname( this.filename ) || '.js';
 
-                    //Use custom extension if available
-                    if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
+                //Use custom extension if available
+                if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
 
-                        this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
-                        this._loading = true;
-
-                        return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
-                            if( this._loading ) {
-                                this._source = src;
-                                this._script.loaded = true;
-
-                                this._loading = false;
-
-                                this.emit( 'loaded', this._script.exports );
-                            }
-
-                        } ).catch( err => {
-                            this._loading = false;
-
-                            this.emit( 'loading_error', err );
-                        } );
-
-                    } else {
-                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                            this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
-                        }
-
-                        this._loading = true;
-
-                        try {
-                            this._script.load( this._script.filename );
-
-                            if( this._loading ) {
-                                this.emit( 'loaded', this.loaded );
-                            }
-
-                        } catch( err ) {
-                            this.emit( 'loading_error', err );
-
-                        } finally {
-                            this._loading = false;
-                        }
-                    }
-
-                } else {
                     this._loading = true;
 
-                    return readFile( this.filename ).then( ( src : Buffer ) => {
+                    return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
                         if( this._loading ) {
-                            this._script.exports = this._source = src;
+                            this._source = src;
                             this._script.loaded = true;
 
                             this._loading = false;
 
-                            this.emit( 'loaded', this.loaded );
+                            this.emit( 'loaded', this._script.exports );
                         }
+
                     } ).catch( err => {
                         this._loading = false;
 
                         this.emit( 'loading_error', err );
                     } );
+
+                } else {
+                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                        this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                    }
+
+                    this._loading = true;
+
+                    try {
+                        this._script.load( this._script.filename );
+
+                        if( this._loading ) {
+                            this.emit( 'loaded', this.loaded );
+                        }
+
+                    } catch( err ) {
+                        this.emit( 'loading_error', err );
+
+                    } finally {
+                        this._loading = false;
+                    }
                 }
+
+            } else {
+                this._loading = true;
+
+                return readFile( this.filename ).then( ( src : Buffer ) => {
+                    if( this._loading ) {
+                        this._source = src;
+                        this._script.loaded = true;
+
+                        this._loading = false;
+
+                        this.emit( 'loaded_src', this.loaded );
+                    }
+
+                } ).catch( err => {
+                    this._loading = false;
+
+                    this.emit( 'loading_src_error', err );
+                } );
             }
         }
 
@@ -876,12 +922,15 @@ module Scriptor {
                 }
 
             } else {
-                //Add the event listeners first
-                let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+                /*
+                 * This is a special one were it doesn't matter which event triggers first.
+                 * */
+                let waiting = makeMultiEventPromise( this,
+                    ['loaded', 'loaded_src'],
+                    ['loading_error', 'loading_src_error'] );
 
                 return this._callWrapper( this.do_load ).then( () => {
                     return waiting;
-
                 } ).then( () => {
                     return this.source( encoding );
                 } );
