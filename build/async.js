@@ -862,9 +862,7 @@ var Scriptor;
                  * */
                 var waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'],
                     ['loading_error', 'loading_src_error'] );
-                return this._callWrapper( this.do_load ).then( function() {
-                    return waiting;
-                } ).then( function() {
+                return Promise.all( [this._callWrapper( this.do_load ), waiting] ).then( function() {
                     return _this.source( encoding );
                 } );
             }
@@ -882,9 +880,7 @@ var Scriptor;
             else {
                 //Add the event listeners first
                 var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
-                return this._callWrapper( this.do_load ).then( function() {
-                    return waiting;
-                } ).then( function() {
+                return Promise.all( [this._callWrapper( this.do_load ), waiting] ).then( function() {
                     return _this.exports();
                 } );
             }

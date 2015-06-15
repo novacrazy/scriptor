@@ -929,9 +929,7 @@ module Scriptor {
                     ['loaded', 'loaded_src'],
                     ['loading_error', 'loading_src_error'] );
 
-                return this._callWrapper( this.do_load ).then( () => {
-                    return waiting;
-                } ).then( () => {
+                return Promise.all( [this._callWrapper( this.do_load ), waiting] ).then( () => {
                     return this.source( encoding );
                 } );
             }
@@ -950,10 +948,7 @@ module Scriptor {
                 //Add the event listeners first
                 let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
 
-                return this._callWrapper( this.do_load ).then( () => {
-                    return waiting;
-
-                } ).then( () => {
+                return Promise.all( [this._callWrapper( this.do_load ), waiting] ).then( () => {
                     return this.exports();
                 } );
             }
