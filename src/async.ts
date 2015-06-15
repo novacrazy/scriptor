@@ -242,7 +242,7 @@ module Scriptor {
 
                     resolve( func.apply( this_arg, args ) );
 
-                } ).catch( SyntaxError, ( e ) => {
+                } ).catch( e  => {
                         this.unload();
 
                         return Promise.reject( e );

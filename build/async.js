@@ -258,7 +258,7 @@ var Scriptor;
                 return new Promise( function(resolve, reject) {
                     _this._recursion++;
                     resolve( func.apply( this_arg, args ) );
-                } ).catch( SyntaxError, function(e) {
+                } ).catch( function(e) {
                         _this.unload();
                         return Promise.reject( e );
                     } ).finally( function() {
