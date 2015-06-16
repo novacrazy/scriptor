@@ -213,6 +213,7 @@ module Scriptor {
         protected _maxRecursion : number = default_max_recursion;
         protected _debounceMaxWait : number = Common.default_debounceMaxWait;
         protected _textMode : boolean = false;
+        protected _factory : ( ...deps : any[] ) => any;
 
         protected _watcher : fs.FSWatcher;
 
@@ -386,6 +387,8 @@ module Scriptor {
         protected _loadCache : Map<string, any> = MapAdapter.createMap<any>();
         protected _pending : boolean;
         protected _loading : boolean;
+        protected _loadingText : boolean;
+        protected _runningFactory : boolean = false;
         protected _config : IAMDConfig = Common.normalizeConfig( null );
 
         protected _dependencies : string[] = [];
@@ -464,7 +467,7 @@ module Scriptor {
         }
 
         protected _runFactory( id : string, deps : string[], factory : ( ...deps : any[] ) => any ) : Promise<any> {
-            if( id !== void 0 ) {
+            if( id !== void 0 && id !== null ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
 
@@ -486,6 +489,33 @@ module Scriptor {
                     } else {
                         return resolvedFactory;
                     }
+                } );
+            }
+        }
+
+        protected _runMainFactory() : Promise<any> {
+            if( !this._runningFactory ) {
+                this._runningFactory = true;
+                this._pending = true;
+
+                return this._runFactory( null, this._dependencies, this._factory ).then( ( result ) => {
+                    if( this._pending ) {
+                        //To match AMDefine, don't export the result unless there is one.
+                        //Null is allowed, since it would have to have been returned explicitly.
+                        if( result !== void 0 ) {
+                            this._script.exports = result;
+                        }
+
+                        this._pending = false;
+                        this._runningFactory = false;
+
+                        this.emit( 'exports', this._script.exports );
+                    }
+
+                }, err => {
+                    this._runningFactory = false;
+
+                    this.emit( 'exports_error', err );
                 } );
             }
         }
@@ -737,27 +767,9 @@ module Scriptor {
 
             } else {
                 this._dependencies = define_args[1];
+                this._factory = define_args[2];
 
-                this._pending = true;
-
-                this._runFactory( define_args[0], define_args[1], define_args[2] ).then( ( result ) => {
-                    if( this._pending ) {
-                        //To match AMDefine, don't export the result unless there is one.
-                        //Null is allowed, since it would have to have been returned explicitly.
-                        if( result !== void 0 ) {
-                            this._script.exports = result;
-                        }
-
-                        this._pending = false;
-
-                        this.emit( 'exports', this._script.exports );
-                    }
-
-                }, err => {
-                    this.unload();
-
-                    this.emit( 'exports_error', err );
-                } );
+                this._runMainFactory();
             }
         }
 
@@ -781,7 +793,9 @@ module Scriptor {
             this._loadCache.clear();
 
             this._pending = false;
+            this._runningFactory = false;
             this._loading = false;
+            this._loadingText = false;
 
             return res;
         }
@@ -829,76 +843,80 @@ module Scriptor {
         protected do_load() : Promise<any> {
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
-            this.unload();
+            if( !this.loading || (this._loadingText && !this.textMode) ) {
+                this.unload();
 
-            if( !this.textMode ) {
-                this.do_setup();
+                if( !this.textMode ) {
+                    this.do_setup();
 
-                var ext = path.extname( this.filename ) || '.js';
+                    var ext = path.extname( this.filename ) || '.js';
 
-                //Use custom extension if available
-                if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
+                    //Use custom extension if available
+                    if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
 
-                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                        this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
 
+                        this._loading = true;
+                        this._loadingText = false;
+
+                        return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
+                            if( this._loading ) {
+                                this._source = src;
+                                this._script.loaded = true;
+
+                                this._loading = false;
+
+                                this.emit( 'loaded', this._script.exports );
+                            }
+
+                        }, err => {
+                            this._loading = false;
+
+                            this.emit( 'loading_error', err );
+                        } );
+
+                    } else {
+                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                            this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                        }
+
+                        this._loading = true;
+
+                        try {
+                            this._script.load( this._script.filename );
+
+                            if( this._loading ) {
+                                this.emit( 'loaded', this.loaded );
+                            }
+
+                        } catch( err ) {
+                            this.emit( 'loading_error', err );
+
+                        } finally {
+                            this._loading = false;
+                        }
+                    }
+
+                } else {
                     this._loading = true;
+                    this._loadingText = true;
 
-                    return tryPromise( extensions[ext]( this._script, this.filename ) ).then( ( src : Buffer ) => {
-                        if( this._loading ) {
+                    return readFile( this.filename ).then( ( src : Buffer ) => {
+                        if( this._loading && this._loadingText ) {
                             this._source = src;
                             this._script.loaded = true;
 
                             this._loading = false;
 
-                            this.emit( 'loaded', this._script.exports );
+                            this.emit( 'loaded_src', this.loaded );
                         }
 
                     }, err => {
                         this._loading = false;
 
-                        this.emit( 'loading_error', err );
+                        this.emit( 'loading_src_error', err );
                     } );
-
-                } else {
-                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
-                    }
-
-                    this._loading = true;
-
-                    try {
-                        this._script.load( this._script.filename );
-
-                        if( this._loading ) {
-                            this.emit( 'loaded', this.loaded );
-                        }
-
-                    } catch( err ) {
-                        this.emit( 'loading_error', err );
-
-                    } finally {
-                        this._loading = false;
-                    }
                 }
-
-            } else {
-                this._loading = true;
-
-                return readFile( this.filename ).then( ( src : Buffer ) => {
-                    if( this._loading ) {
-                        this._source = src;
-                        this._script.loaded = true;
-
-                        this._loading = false;
-
-                        this.emit( 'loaded_src', this.loaded );
-                    }
-
-                }, err => {
-                    this._loading = false;
-
-                    this.emit( 'loading_src_error', err );
-                } );
             }
         }
 
@@ -928,7 +946,13 @@ module Scriptor {
         public exports() : Promise<any> {
             if( this.loaded ) {
                 if( this.pending ) {
-                    return makeEventPromise( this, 'exports', 'exports_error' );
+
+                    //Add the event listeners first
+                    let waiting = makeEventPromise( this, 'exports', 'exports_error' );
+
+                    this._runMainFactory();
+
+                    return waiting;
 
                 } else {
                     return Promise.resolve( this._script.exports );

@@ -411,6 +411,7 @@ var Scriptor;
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
+            this._runningFactory = false;
             this._config = Common.normalizeConfig( null );
             this._dependencies = [];
             this._init();
@@ -478,7 +479,7 @@ var Scriptor;
         } );
         AMDScript.prototype._runFactory = function(id, deps, factory) {
             var _this = this;
-            if( id !== void 0 ) {
+            if( id !== void 0 && id !== null ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
             if( typeof factory === 'function' ) {
@@ -498,6 +499,28 @@ var Scriptor;
                     else {
                         return resolvedFactory;
                     }
+                } );
+            }
+        };
+        AMDScript.prototype._runMainFactory = function() {
+            var _this = this;
+            if( !this._runningFactory ) {
+                this._runningFactory = true;
+                this._pending = true;
+                return this._runFactory( null, this._dependencies, this._factory ).then( function(result) {
+                    if( _this._pending ) {
+                        //To match AMDefine, don't export the result unless there is one.
+                        //Null is allowed, since it would have to have been returned explicitly.
+                        if( result !== void 0 ) {
+                            _this._script.exports = result;
+                        }
+                        _this._pending = false;
+                        _this._runningFactory = false;
+                        _this.emit( 'exports', _this._script.exports );
+                    }
+                }, function(err) {
+                    _this._runningFactory = false;
+                    _this.emit( 'exports_error', err );
                 } );
             }
         };
@@ -695,7 +718,6 @@ var Scriptor;
             return result;
         };
         AMDScript.prototype._define = function() {
-            var _this = this;
             var define_args = Common.parseDefine.apply( null, arguments );
             var id = define_args[0];
             if( id !== void 0 ) {
@@ -704,21 +726,8 @@ var Scriptor;
             }
             else {
                 this._dependencies = define_args[1];
-                this._pending = true;
-                this._runFactory( define_args[0], define_args[1], define_args[2] ).then( function(result) {
-                    if( _this._pending ) {
-                        //To match AMDefine, don't export the result unless there is one.
-                        //Null is allowed, since it would have to have been returned explicitly.
-                        if( result !== void 0 ) {
-                            _this._script.exports = result;
-                        }
-                        _this._pending = false;
-                        _this.emit( 'exports', _this._script.exports );
-                    }
-                }, function(err) {
-                    _this.unload();
-                    _this.emit( 'exports_error', err );
-                } );
+                this._factory = define_args[2];
+                this._runMainFactory();
             }
         };
         Object.defineProperty( AMDScript.prototype, "dependencies", {
@@ -740,7 +749,9 @@ var Scriptor;
             this._defineCache.clear();
             this._loadCache.clear();
             this._pending = false;
+            this._runningFactory = false;
             this._loading = false;
+            this._loadingText = false;
             return res;
         };
         return AMDScript;
@@ -779,60 +790,65 @@ var Scriptor;
         Script.prototype.do_load = function() {
             var _this = this;
             assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
-            this.unload();
-            if( !this.textMode ) {
-                this.do_setup();
-                var ext = path.extname( this.filename ) || '.js';
-                //Use custom extension if available
-                if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
-                    this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+            if( !this.loading || (this._loadingText && !this.textMode) ) {
+                this.unload();
+                if( !this.textMode ) {
+                    this.do_setup();
+                    var ext = path.extname( this.filename ) || '.js';
+                    //Use custom extension if available
+                    if( Scriptor.extensions_enabled && Scriptor.extensions.hasOwnProperty( ext ) ) {
+                        this._script.paths = Module.Module._nodeModulePaths( path.dirname( this.filename ) );
+                        this._loading = true;
+                        this._loadingText = false;
+                        return tryPromise( Scriptor.extensions[ext]( this._script,
+                            this.filename ) ).then( function(src) {
+                            if( _this._loading ) {
+                                _this._source = src;
+                                _this._script.loaded = true;
+                                _this._loading = false;
+                                _this.emit( 'loaded', _this._script.exports );
+                            }
+                        }, function(err) {
+                            _this._loading = false;
+                            _this.emit( 'loading_error', err );
+                        } );
+                    }
+                    else {
+                        if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
+                            this.emit( 'warning',
+                                util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                    this.filename ) );
+                        }
+                        this._loading = true;
+                        try {
+                            this._script.load( this._script.filename );
+                            if( this._loading ) {
+                                this.emit( 'loaded', this.loaded );
+                            }
+                        }
+                        catch( err ) {
+                            this.emit( 'loading_error', err );
+                        }
+                        finally {
+                            this._loading = false;
+                        }
+                    }
+                }
+                else {
                     this._loading = true;
-                    return tryPromise( Scriptor.extensions[ext]( this._script, this.filename ) ).then( function(src) {
-                        if( _this._loading ) {
+                    this._loadingText = true;
+                    return readFile( this.filename ).then( function(src) {
+                        if( _this._loading && _this._loadingText ) {
                             _this._source = src;
                             _this._script.loaded = true;
                             _this._loading = false;
-                            _this.emit( 'loaded', _this._script.exports );
+                            _this.emit( 'loaded_src', _this.loaded );
                         }
                     }, function(err) {
                         _this._loading = false;
-                        _this.emit( 'loading_error', err );
+                        _this.emit( 'loading_src_error', err );
                     } );
                 }
-                else {
-                    if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning',
-                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
-                                this.filename ) );
-                    }
-                    this._loading = true;
-                    try {
-                        this._script.load( this._script.filename );
-                        if( this._loading ) {
-                            this.emit( 'loaded', this.loaded );
-                        }
-                    }
-                    catch( err ) {
-                        this.emit( 'loading_error', err );
-                    }
-                    finally {
-                        this._loading = false;
-                    }
-                }
-            }
-            else {
-                this._loading = true;
-                return readFile( this.filename ).then( function(src) {
-                    if( _this._loading ) {
-                        _this._source = src;
-                        _this._script.loaded = true;
-                        _this._loading = false;
-                        _this.emit( 'loaded_src', _this.loaded );
-                    }
-                }, function(err) {
-                    _this._loading = false;
-                    _this.emit( 'loading_src_error', err );
-                } );
             }
         };
         Script.prototype.source = function(encoding) {
@@ -863,7 +879,10 @@ var Scriptor;
             var _this = this;
             if( this.loaded ) {
                 if( this.pending ) {
-                    return makeEventPromise( this, 'exports', 'exports_error' );
+                    //Add the event listeners first
+                    var waiting = makeEventPromise( this, 'exports', 'exports_error' );
+                    this._runMainFactory();
+                    return waiting;
                 }
                 else {
                     return Promise.resolve( this._script.exports );
