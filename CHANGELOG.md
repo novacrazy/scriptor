@@ -1,6 +1,11 @@
 Scriptor Changelog
 ==================
 
+#####3.0.0-alpha.1
+* (SEMVER MAJOR) Factory function passed to define will be re-run if an error is thrown.
+    * This prevents subtle errors where a script is fully loaded, but since the factory function failed the module was not properly exported.
+* Normal scripts take explicit precedence over normal scripts. If a script is loading in text mode and it's needed in normal mode, it will load anyway and cancel the other load.
+
 #####2.6.0
 * Refactored all loading and pending promises to use the event system underneath. This should prevent leaky promises.
 * In conjunction with the top, the unloading process has been changed somewhat and all loading operations are not allowed when it's already loading.
