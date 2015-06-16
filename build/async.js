@@ -504,6 +504,8 @@ var Scriptor;
         //Implementation, and holy crap is it huge
         AMDScript.prototype._require = function(id) {
             var _this = this;
+            assert.strictEqual( arguments.length, 1,
+                'The async build uses promises for the require function instead of callbacks. Please use then/catch instead of individual callbacks.' );
             var normalize = path.resolve.bind( null, this.baseUrl );
             var result;
             if( Array.isArray( id ) ) {

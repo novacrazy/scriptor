@@ -497,6 +497,8 @@ module Scriptor {
 
         //Implementation, and holy crap is it huge
         protected _require( id : any ) : any {
+            assert.strictEqual( arguments.length, 1, 'The async build uses promises for the require function instead of callbacks. Please use then/catch instead of individual callbacks.' );
+
             var normalize = path.resolve.bind( null, this.baseUrl );
 
             var result : any;
