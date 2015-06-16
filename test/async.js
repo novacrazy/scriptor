@@ -169,7 +169,6 @@ describe( 'new Script() with filename and module', function() {
 
         touch( name );
     } );
-
 } );
 
 describe( 'A simple MD5 script with AMD exporting', function() {
@@ -460,6 +459,50 @@ describe( 'Text Scripts', function() {
         script.call( 'utf-8' ).then( function(result) {
             assert.notEqual( result, null );
             assert.strictEqual( result, fs.readFileSync( name, 'utf-8' ) );
+
+        } ).then( done );
+    } );
+} );
+
+describe( 'Using a script with a failing factory function', function() {
+    var script, name = './test/scripts/async_fail.js';
+
+    it( 'should create a new Script instance', function() {
+        script = new Scriptor.Script( name, module );
+
+        assert( script instanceof Scriptor.Script );
+    } );
+
+    it( 'should use provided module as parent', function() {
+        assert.strictEqual( script.parent, module );
+    } );
+
+    it( 'should not be loaded', function() {
+        assert( !script.loaded );
+    } );
+
+    it( 'should be watching the file', function() {
+        assert( script.watched );
+    } );
+
+    it( 'the export should fail the first time and pass the second', function(done) {
+        script.exports().catch( function(err) {
+            console.log( err );
+
+            assert( err instanceof Error );
+            assert.deepEqual( script._script.exports, {} );
+            assert( script.loaded );
+            assert( script.pending );
+
+        } ).then( function() {
+
+            return script.exports().then( function(script_exports) {
+                assert.deepEqual( script_exports, {
+                    test: 42
+                } );
+                assert( script.loaded );
+                assert( !script.pending );
+            } );
 
         } ).then( done );
     } );
