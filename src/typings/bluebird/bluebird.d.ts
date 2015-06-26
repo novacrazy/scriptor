@@ -16,8 +16,7 @@
 
 // TODO verify support to have no return statement in handlers to get a Promise<void> (more overloads?)
 
-declare
-class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
+declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     /**
      * Create a new promise. The passed in function will receive functions `resolve` and `reject` as its arguments which can be called to seal the fate of the created promise.
      */
@@ -28,17 +27,9 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     /**
      * Promises/A+ `.then()` with progress handler. Returns a new promise chained from this promise. The new promise will be rejected or resolved dedefer on the passed `fulfilledHandler`, `rejectedHandler` and the state of this promise.
      */
-    then<U>( onFulfill : ( value : R ) => Promise.Thenable<U>,
-             onReject : ( error : any ) => Promise.Thenable<U>,
+    then<U>( onFulfill : ( value : R ) => U|Promise.Thenable<U>, onReject : ( error : any ) => Promise.Thenable<U>,
              onProgress? : ( note : any ) => any ) : Promise<U>;
-    then<U>( onFulfill : ( value : R ) => Promise.Thenable<U>,
-             onReject? : ( error : any ) => U,
-             onProgress? : ( note : any ) => any ) : Promise<U>;
-    then<U>( onFulfill : ( value : R ) => U,
-             onReject : ( error : any ) => Promise.Thenable<U>,
-             onProgress? : ( note : any ) => any ) : Promise<U>;
-    then<U>( onFulfill? : ( value : R ) => U,
-             onReject? : ( error : any ) => U,
+    then<U>( onFulfill : ( value : R ) => U|Promise.Thenable<U>, onReject? : ( error : any ) => U,
              onProgress? : ( note : any ) => any ) : Promise<U>;
 
     /**
@@ -102,17 +93,13 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     /**
      * Like `.then()`, but any unhandled rejection that ends up here will be thrown as an error.
      */
-    done<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>,
-             onRejected : ( error : any ) => Promise.Thenable<U>,
+    done<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>, onRejected : ( error : any ) => Promise.Thenable<U>,
              onProgress? : ( note : any ) => any ) : void;
-    done<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>,
-             onRejected? : ( error : any ) => U,
+    done<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>, onRejected? : ( error : any ) => U,
              onProgress? : ( note : any ) => any ) : void;
-    done<U>( onFulfilled : ( value : R ) => U,
-             onRejected : ( error : any ) => Promise.Thenable<U>,
+    done<U>( onFulfilled : ( value : R ) => U, onRejected : ( error : any ) => Promise.Thenable<U>,
              onProgress? : ( note : any ) => any ) : void;
-    done<U>( onFulfilled? : ( value : R ) => U,
-             onRejected? : ( error : any ) => U,
+    done<U>( onFulfilled? : ( value : R ) => U, onRejected? : ( error : any ) => U,
              onProgress? : ( note : any ) => any ) : void;
 
     /**
@@ -165,17 +152,13 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     /**
      * Like `.then()`, but cancellation of the the returned promise or any of its descendant will not propagate cancellation to this promise or this promise's ancestors.
      */
-    fork<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>,
-             onRejected : ( error : any ) => Promise.Thenable<U>,
+    fork<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>, onRejected : ( error : any ) => Promise.Thenable<U>,
              onProgress? : ( note : any ) => any ) : Promise<U>;
-    fork<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>,
-             onRejected? : ( error : any ) => U,
+    fork<U>( onFulfilled : ( value : R ) => Promise.Thenable<U>, onRejected? : ( error : any ) => U,
              onProgress? : ( note : any ) => any ) : Promise<U>;
-    fork<U>( onFulfilled : ( value : R ) => U,
-             onRejected : ( error : any ) => Promise.Thenable<U>,
+    fork<U>( onFulfilled : ( value : R ) => U, onRejected : ( error : any ) => Promise.Thenable<U>,
              onProgress? : ( note : any ) => any ) : Promise<U>;
-    fork<U>( onFulfilled? : ( value : R ) => U,
-             onRejected? : ( error : any ) => U,
+    fork<U>( onFulfilled? : ( value : R ) => U, onRejected? : ( error : any ) => U,
              onProgress? : ( note : any ) => any ) : Promise<U>;
 
     /**
@@ -367,8 +350,7 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * Same as calling ``Promise.filter(thisPromise, filterer)``. With the exception that if this promise is bound to a value, the returned promise is bound to that value too.
      */
     // TODO type inference from array-resolving promise?
-    filter<U>( filterer : ( item : U,
-                            index : number,
+    filter<U>( filterer : ( item : U, index : number,
                             arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<U[]>;
     filter<U>( filterer : ( item : U, index : number, arrayLength : number ) => boolean ) : Promise<U[]>;
 
@@ -451,30 +433,16 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
                              receiver? : any ) : ( arg1 : A1 ) => Promise<T>;
     static promisify<T, A1, A2>( func : ( arg1 : A1, arg2 : A2, callback : ( err : any, result : T ) => void ) => void,
                                  receiver? : any ) : ( arg1 : A1, arg2 : A2 ) => Promise<T>;
-    static promisify<T, A1, A2, A3>( func : ( arg1 : A1,
-                                              arg2 : A2,
-                                              arg3 : A3,
+    static promisify<T, A1, A2, A3>( func : ( arg1 : A1, arg2 : A2, arg3 : A3,
                                               callback : ( err : any, result : T ) => void ) => void,
                                      receiver? : any ) : ( arg1 : A1, arg2 : A2, arg3 : A3 ) => Promise<T>;
-    static promisify<T, A1, A2, A3, A4>( func : ( arg1 : A1,
-                                                  arg2 : A2,
-                                                  arg3 : A3,
-                                                  arg4 : A4,
+    static promisify<T, A1, A2, A3, A4>( func : ( arg1 : A1, arg2 : A2, arg3 : A3, arg4 : A4,
                                                   callback : ( err : any, result : T ) => void ) => void,
-                                         receiver? : any ) : ( arg1 : A1,
-                                                               arg2 : A2,
-                                                               arg3 : A3,
+                                         receiver? : any ) : ( arg1 : A1, arg2 : A2, arg3 : A3,
                                                                arg4 : A4 ) => Promise<T>;
-    static promisify<T, A1, A2, A3, A4, A5>( func : ( arg1 : A1,
-                                                      arg2 : A2,
-                                                      arg3 : A3,
-                                                      arg4 : A4,
-                                                      arg5 : A5,
+    static promisify<T, A1, A2, A3, A4, A5>( func : ( arg1 : A1, arg2 : A2, arg3 : A3, arg4 : A4, arg5 : A5,
                                                       callback : ( err : any, result : T ) => void ) => void,
-                                             receiver? : any ) : ( arg1 : A1,
-                                                                   arg2 : A2,
-                                                                   arg3 : A3,
-                                                                   arg4 : A4,
+                                             receiver? : any ) : ( arg1 : A1, arg2 : A2, arg3 : A3, arg4 : A4,
                                                                    arg5 : A5 ) => Promise<T>;
     static promisify( nodeFunction : Function, receiver? : any ) : Function;
 
@@ -610,34 +578,26 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * *The original array is not modified.*
      */
     // promise of array with promises of value
-    static map<R, U>( values : Promise.Thenable<Promise.Thenable<R>[]>,
-                      mapper : ( item : R,
-                                 index : number,
-                                 arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
+    static map<R, U>( values : Promise.Thenable<Promise.Thenable<R>[]>, mapper : ( item : R, index : number,
+                                                                                   arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
     static map<R, U>( values : Promise.Thenable<Promise.Thenable<R>[]>,
                       mapper : ( item : R, index : number, arrayLength : number ) => U ) : Promise<U[]>;
 
     // promise of array with values
-    static map<R, U>( values : Promise.Thenable<R[]>,
-                      mapper : ( item : R,
-                                 index : number,
-                                 arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
+    static map<R, U>( values : Promise.Thenable<R[]>, mapper : ( item : R, index : number,
+                                                                 arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
     static map<R, U>( values : Promise.Thenable<R[]>,
                       mapper : ( item : R, index : number, arrayLength : number ) => U ) : Promise<U[]>;
 
     // array with promises of value
-    static map<R, U>( values : Promise.Thenable<R>[],
-                      mapper : ( item : R,
-                                 index : number,
-                                 arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
+    static map<R, U>( values : Promise.Thenable<R>[], mapper : ( item : R, index : number,
+                                                                 arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
     static map<R, U>( values : Promise.Thenable<R>[],
                       mapper : ( item : R, index : number, arrayLength : number ) => U ) : Promise<U[]>;
 
     // array with values
-    static map<R, U>( values : R[],
-                      mapper : ( item : R,
-                                 index : number,
-                                 arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
+    static map<R, U>( values : R[], mapper : ( item : R, index : number,
+                                               arrayLength : number ) => Promise.Thenable<U> ) : Promise<U[]>;
     static map<R, U>( values : R[], mapper : ( item : R, index : number, arrayLength : number ) => U ) : Promise<U[]>;
 
     /**
@@ -649,46 +609,33 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      */
     // promise of array with promises of value
     static reduce<R, U>( values : Promise.Thenable<Promise.Thenable<R>[]>,
-                         reducer : ( total : U,
-                                     current : R,
-                                     index : number,
-                                     arrayLength : number ) => Promise.Thenable<U>,
-                         initialValue? : U ) : Promise<U>;
+                         reducer : ( total : U, current : R, index : number,
+                                     arrayLength : number ) => Promise.Thenable<U>, initialValue? : U ) : Promise<U>;
     static reduce<R, U>( values : Promise.Thenable<Promise.Thenable<R>[]>,
                          reducer : ( total : U, current : R, index : number, arrayLength : number ) => U,
                          initialValue? : U ) : Promise<U>;
 
     // promise of array with values
-    static reduce<R, U>( values : Promise.Thenable<R[]>,
-                         reducer : ( total : U,
-                                     current : R,
-                                     index : number,
-                                     arrayLength : number ) => Promise.Thenable<U>,
+    static reduce<R, U>( values : Promise.Thenable<R[]>, reducer : ( total : U, current : R, index : number,
+                                                                     arrayLength : number ) => Promise.Thenable<U>,
                          initialValue? : U ) : Promise<U>;
     static reduce<R, U>( values : Promise.Thenable<R[]>,
                          reducer : ( total : U, current : R, index : number, arrayLength : number ) => U,
                          initialValue? : U ) : Promise<U>;
 
     // array with promises of value
-    static reduce<R, U>( values : Promise.Thenable<R>[],
-                         reducer : ( total : U,
-                                     current : R,
-                                     index : number,
-                                     arrayLength : number ) => Promise.Thenable<U>,
+    static reduce<R, U>( values : Promise.Thenable<R>[], reducer : ( total : U, current : R, index : number,
+                                                                     arrayLength : number ) => Promise.Thenable<U>,
                          initialValue? : U ) : Promise<U>;
     static reduce<R, U>( values : Promise.Thenable<R>[],
                          reducer : ( total : U, current : R, index : number, arrayLength : number ) => U,
                          initialValue? : U ) : Promise<U>;
 
     // array with values
-    static reduce<R, U>( values : R[],
-                         reducer : ( total : U,
-                                     current : R,
-                                     index : number,
-                                     arrayLength : number ) => Promise.Thenable<U>,
+    static reduce<R, U>( values : R[], reducer : ( total : U, current : R, index : number,
+                                                   arrayLength : number ) => Promise.Thenable<U>,
                          initialValue? : U ) : Promise<U>;
-    static reduce<R, U>( values : R[],
-                         reducer : ( total : U, current : R, index : number, arrayLength : number ) => U,
+    static reduce<R, U>( values : R[], reducer : ( total : U, current : R, index : number, arrayLength : number ) => U,
                          initialValue? : U ) : Promise<U>;
 
     /**
@@ -699,34 +646,26 @@ class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
      * *The original array is not modified.
      */
     // promise of array with promises of value
-    static filter<R>( values : Promise.Thenable<Promise.Thenable<R>[]>,
-                      filterer : ( item : R,
-                                   index : number,
-                                   arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
+    static filter<R>( values : Promise.Thenable<Promise.Thenable<R>[]>, filterer : ( item : R, index : number,
+                                                                                     arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
     static filter<R>( values : Promise.Thenable<Promise.Thenable<R>[]>,
                       filterer : ( item : R, index : number, arrayLength : number ) => boolean ) : Promise<R[]>;
 
     // promise of array with values
-    static filter<R>( values : Promise.Thenable<R[]>,
-                      filterer : ( item : R,
-                                   index : number,
-                                   arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
+    static filter<R>( values : Promise.Thenable<R[]>, filterer : ( item : R, index : number,
+                                                                   arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
     static filter<R>( values : Promise.Thenable<R[]>,
                       filterer : ( item : R, index : number, arrayLength : number ) => boolean ) : Promise<R[]>;
 
     // array with promises of value
-    static filter<R>( values : Promise.Thenable<R>[],
-                      filterer : ( item : R,
-                                   index : number,
-                                   arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
+    static filter<R>( values : Promise.Thenable<R>[], filterer : ( item : R, index : number,
+                                                                   arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
     static filter<R>( values : Promise.Thenable<R>[],
                       filterer : ( item : R, index : number, arrayLength : number ) => boolean ) : Promise<R[]>;
 
     // array with values
-    static filter<R>( values : R[],
-                      filterer : ( item : R,
-                                   index : number,
-                                   arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
+    static filter<R>( values : R[], filterer : ( item : R, index : number,
+                                                 arrayLength : number ) => Promise.Thenable<boolean> ) : Promise<R[]>;
     static filter<R>( values : R[],
                       filterer : ( item : R, index : number, arrayLength : number ) => boolean ) : Promise<R[]>;
 }
@@ -763,10 +702,9 @@ declare module Promise {
     export function OperationalError() : OperationalError;
 
     export interface Thenable<R> {
-        then<U>( onFulfilled : ( value : R ) => Thenable<U>, onRejected : ( error : any ) => Thenable<U> ): Thenable<U>;
-        then<U>( onFulfilled : ( value : R ) => Thenable<U>, onRejected? : ( error : any ) => U ): Thenable<U>;
-        then<U>( onFulfilled : ( value : R ) => U, onRejected : ( error : any ) => Thenable<U> ): Thenable<U>;
-        then<U>( onFulfilled? : ( value : R ) => U, onRejected? : ( error : any ) => U ): Thenable<U>;
+        then<U>( onFulfilled : ( value : R ) => U|Thenable<U>,
+                 onRejected : ( error : any ) => Thenable<U> ): Thenable<U>;
+        then<U>( onFulfilled : ( value : R ) => U|Thenable<U>, onRejected? : ( error : any ) => U ): Thenable<U>;
     }
 
     export interface Resolver<R> {

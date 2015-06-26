@@ -6,13 +6,13 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "node/node.d.ts": {
-      "commit": "f3244190e20af6901e865f4cc58127d19216baa1"
+      "commit": "e1182d56ccb192379eade6055d9ba3fb6a0bacc4"
     },
     "bluebird/bluebird.d.ts": {
-      "commit": "f3244190e20af6901e865f4cc58127d19216baa1"
+      "commit": "e1182d56ccb192379eade6055d9ba3fb6a0bacc4"
     },
     "lodash/lodash.d.ts": {
-      "commit": "f3244190e20af6901e865f4cc58127d19216baa1"
+      "commit": "e1182d56ccb192379eade6055d9ba3fb6a0bacc4"
     }
   }
 }
