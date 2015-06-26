@@ -36,6 +36,15 @@ function tryPromise( value : any ) : Promise<any> {
     }
 }
 
+function tryReject( func, context, ...args ) : Promise<any> {
+    try {
+        return tryPromise( func.apply( context, args ) );
+
+    } catch( err ) {
+        return Promise.reject( err );
+    }
+}
+
 //Taken from tj/co
 function isGenerator( obj : any ) : boolean {
     return 'function' === typeof obj.next && 'function' === typeof obj.throw;
@@ -133,7 +142,7 @@ module Scriptor {
     export type ScriptorExtensionMap = Types.ISimpleMap<Types.ScriptorExtension<Promise<Buffer>>>;
 
     export var default_extensions : ScriptorExtensionMap = {
-        '.js':   ( module : Module.IModule, filename : string ) => {
+        '.js': ( module : Module.IModule, filename : string ) => {
             return readFile( filename ).then( Common.stripBOM ).then( ( content : Buffer ) => {
                 module._compile( (<Buffer>Common.injectAMD( content, null )).toString( 'utf-8' ), filename );
 
@@ -235,7 +244,8 @@ module Scriptor {
 
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
-                return Promise.reject( new RangeError( util.format( 'Script recursion limit reached at %d for script %s', this._recursion, this.filename ) ) );
+                return Promise.reject( new RangeError( util.format( 'Script recursion limit reached at %d for script %s',
+                    this._recursion, this.filename ) ) );
 
             } else {
                 return new Promise( ( resolve, reject ) => {
@@ -527,7 +537,8 @@ module Scriptor {
 
         //Implementation, and holy crap is it huge
         protected _require( id : any ) : any {
-            assert.strictEqual( arguments.length, 1, 'The async build uses promises for the require function instead of callbacks. Please use then/catch instead of individual callbacks.' );
+            assert.strictEqual( arguments.length, 1,
+                'The async build uses promises for the require function instead of callbacks. Please use then/catch instead of individual callbacks.' );
 
             var normalize = path.resolve.bind( null, this.baseUrl );
 
@@ -607,7 +618,7 @@ module Scriptor {
                             normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
                                 return defaultNormalize( id );
                             },
-                            load:      ( id, require, _onLoad, config ) => {
+                            load: ( id, require, _onLoad, config ) => {
                                 try {
                                     var script = this.include( id );
 
@@ -877,7 +888,9 @@ module Scriptor {
 
                     } else {
                         if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                            this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                            this.emit( 'warning',
+                                util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                    this.filename ) );
                         }
 
                         this._loading = true;
@@ -1146,7 +1159,8 @@ module Scriptor {
             if( this._source instanceof ReferenceBase ) {
                 srcPromise = this._source.value().then( ( src : string | Buffer ) => {
                     if( !Buffer.isBuffer( src ) ) {
-                        assert.strictEqual( typeof src, 'string', 'Reference source must return string or Buffer as value' );
+                        assert.strictEqual( typeof src, 'string',
+                            'Reference source must return string or Buffer as value' );
                     }
 
                     return src;
@@ -1343,6 +1357,32 @@ module Scriptor {
         protected _onChange : ( event : string, filename : string ) => any;
         protected _value : any = void 0;
         protected _ran : boolean = false;
+        protected _running : boolean = false;
+
+        protected _run() : void {
+            this.emit( 'value_error', new Error( 'Cannot get value from ReferenceBase' ) );
+        }
+
+        get ran() : boolean {
+            return this._ran;
+        }
+
+        get running() : boolean {
+            return this._running;
+        }
+
+        public value() : Promise<any> {
+            if( this._ran ) {
+                return Promise.resolve( this._value );
+
+            } else {
+                let waiting = makeEventPromise( this, 'value', 'value_error' );
+
+                this._run();
+
+                return waiting;
+            }
+        }
     }
 
     export class Reference extends ReferenceBase implements IReference {
@@ -1361,9 +1401,11 @@ module Scriptor {
             this._script.on( 'change', this._onChange );
         }
 
-        public value() : Promise<any> {
-            if( !this._ran ) {
-                return this._script.apply( this._args ).then( ( value )=> {
+        protected _run() : void {
+            if( !this._running ) {
+                this._running = true;
+
+                this._script.apply( this._args ).then( ( value )=> {
                     if( typeof this._value === 'object' ) {
                         this._value = Object.freeze( this._value );
 
@@ -1372,17 +1414,16 @@ module Scriptor {
                     }
 
                     this._ran = true;
+                    this._running = false;
 
-                    return this._value;
+                    this.emit( 'value', this._value );
+
+                } ).catch( err => {
+                    this._running = false;
+
+                    this.emit( 'value_error', err );
                 } );
-
-            } else {
-                return Promise.resolve( this._value );
             }
-        }
-
-        get ran() : boolean {
-            return this._ran;
         }
 
         get closed() : boolean {
@@ -1476,9 +1517,11 @@ module Scriptor {
             this._ref.on( 'change', this._onChange );
         }
 
-        public value() : Promise<any> {
-            if( !this._ran ) {
-                return tryPromise( this._transform( this._ref, null ) ).then( ( value ) => {
+        protected _run() : void {
+            if( !this._running ) {
+                this._running = true;
+
+                tryReject( this._transform, this._ref, null ).then( ( value ) => {
                     if( typeof value === 'object' ) {
                         this._value = Object.freeze( value );
 
@@ -1487,17 +1530,17 @@ module Scriptor {
                     }
 
                     this._ran = true;
+                    this._running = false;
 
-                    return this._value;
+                    this.emit( 'value', this._value );
+
+                } ).catch( err => {
+                    this._running = false;
+
+                    this.emit( 'value_error', err );
                 } );
 
-            } else {
-                return Promise.resolve( this._value );
             }
-        }
-
-        get ran() : boolean {
-            return this._ran;
         }
 
         get closed() : boolean {
@@ -1561,9 +1604,11 @@ module Scriptor {
             _right.on( 'change', this._onChange );
         }
 
-        public value() : Promise<any> {
-            if( !this._ran ) {
-                return tryPromise( this._transform( this._left, this._right ) ).then( ( value ) => {
+        protected _run() : void {
+            if( !this._running ) {
+                this._running = true;
+
+                tryReject( this._transform, this._left, this._right ).then( ( value ) => {
                     if( typeof value === 'object' ) {
                         this._value = Object.freeze( value );
 
@@ -1572,17 +1617,16 @@ module Scriptor {
                     }
 
                     this._ran = true;
+                    this._running = false;
 
-                    return this._value;
+                    this.emit( 'value', this._value );
+
+                } ).catch( err => {
+                    this._running = false;
+
+                    this.emit( 'value_error', err );
                 } );
-
-            } else {
-                return Promise.resolve( this._value );
             }
-        }
-
-        get ran() : boolean {
-            return this._ran;
         }
 
         get closed() : boolean {
