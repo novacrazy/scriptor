@@ -1673,37 +1673,38 @@ module Scriptor {
         constructor( value : any ) {
             super();
 
-            this._resolver = tryPromise( value ).then( ( result ) => {
-                if( typeof result === 'object' ) {
-                    this._value = Object.freeze( result );
+            this._value = value;
 
-                } else {
-                    this._value = result;
-                }
+            this._run();
+        }
 
-                this._ran = true;
+        protected _run() : void {
+            if( !this._running ) {
+                this._running = true;
 
-                delete this._resolver;
+                tryPromise( this._value ).then( ( result ) => {
+                    if( typeof result === 'object' ) {
+                        this._value = Object.freeze( result );
 
-                return this._value;
-            } );
+                    } else {
+                        this._value = result;
+                    }
+
+                    this._ran = true;
+                    this._running = false;
+
+                    this.emit( 'value', this._value );
+
+                } ).catch( err => {
+                    this._running = false;
+
+                    this.emit( 'value_error', err );
+                } );
+            }
         }
 
         get closed() : boolean {
-            return this._resolver === void 0 && !this._ran;
-        }
-
-        get ran() : boolean {
-            return this._ran;
-        }
-
-        public value() : Promise<any> {
-            if( this._resolver !== void 0 && !this._ran ) {
-                return this._resolver;
-
-            } else {
-                return Promise.resolve( this._value );
-            }
+            return !this._running && !this._ran;
         }
 
         public join( ref : IReference, transform? : ITransformFunction ) : IReference {

@@ -1558,43 +1558,38 @@ var Scriptor;
     var ResolvedReference = (function( _super ) {
         __extends( ResolvedReference, _super );
         function ResolvedReference( value ) {
-            var _this = this;
             _super.call( this );
-            this._resolver = tryPromise( value ).then( function( result ) {
-                if( typeof result === 'object' ) {
-                    _this._value = Object.freeze( result );
-                }
-                else {
-                    _this._value = result;
-                }
-                _this._ran = true;
-                delete _this._resolver;
-                return _this._value;
-            } );
+            this._value = value;
+            this._run();
         }
 
-        Object.defineProperty( ResolvedReference.prototype, "closed", {
-            get:          function() {
-                return this._resolver === void 0 && !this._ran;
-            },
-            enumerable:   true,
-            configurable: true
-        } );
-        Object.defineProperty( ResolvedReference.prototype, "ran", {
-            get:          function() {
-                return this._ran;
-            },
-            enumerable:   true,
-            configurable: true
-        } );
-        ResolvedReference.prototype.value = function() {
-            if( this._resolver !== void 0 && !this._ran ) {
-                return this._resolver;
-            }
-            else {
-                return Promise.resolve( this._value );
+        ResolvedReference.prototype._run = function() {
+            var _this = this;
+            if( !this._running ) {
+                this._running = true;
+                tryPromise( this._value ).then( function( result ) {
+                    if( typeof result === 'object' ) {
+                        _this._value = Object.freeze( result );
+                    }
+                    else {
+                        _this._value = result;
+                    }
+                    _this._ran = true;
+                    _this._running = false;
+                    _this.emit( 'value', _this._value );
+                } ).catch( function( err ) {
+                    _this._running = false;
+                    _this.emit( 'value_error', err );
+                } );
             }
         };
+        Object.defineProperty( ResolvedReference.prototype, "closed", {
+            get:          function() {
+                return !this._running && !this._ran;
+            },
+            enumerable:   true,
+            configurable: true
+        } );
         ResolvedReference.prototype.join = function( ref, transform ) {
             return Reference.join( this, ref, transform );
         };
