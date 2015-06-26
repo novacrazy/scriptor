@@ -39,7 +39,7 @@
     "mocha": "^2.2.5",
     "touch": "0.0.3",
     "treeify": "^1.0.1",
-    "typescript": "^1.5.0-beta"
+    "typescript": "^1.5.0-alpha"
   },
   "scripts": {
     "test": "mocha -Cb test"
@@ -48,7 +48,6 @@
     "bluebird": "^2.9.30",
     "commander": "^2.8.1",
     "glob": "^5.0.10",
-    "lodash": "^3.9.3",
-    "typescript": "^1.5.0-alpha"
+    "lodash": "^3.9.3"
   }
 }
