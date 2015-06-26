@@ -27,7 +27,7 @@
  * Created by novacrazy on 1/14/2015.
  */
 var MapAdapter;
-(function(MapAdapter) {
+(function( MapAdapter ) {
     var ObjectMap = (function() {
         function ObjectMap() {
             this._map = {};
@@ -43,7 +43,7 @@ var MapAdapter;
         ObjectMap.prototype.clear = function() {
             this._map = Object.create( null );
         };
-        ObjectMap.prototype.delete = function(key) {
+        ObjectMap.prototype.delete = function( key ) {
             return delete this._map[key];
         };
         ObjectMap.prototype.entries = function() {
@@ -55,23 +55,23 @@ var MapAdapter;
             }
             return result;
         };
-        ObjectMap.prototype.forEach = function(cb, thisArg) {
+        ObjectMap.prototype.forEach = function( cb, thisArg ) {
             for( var i in this._map ) {
                 if( this._map.hasOwnProperty( i ) ) {
                     cb.call( thisArg, this._map[i], i, this );
                 }
             }
         };
-        ObjectMap.prototype.get = function(key) {
+        ObjectMap.prototype.get = function( key ) {
             if( this._map.hasOwnProperty( key ) ) {
                 return this._map[key];
             }
             return void 0;
         };
-        ObjectMap.prototype.has = function(key) {
+        ObjectMap.prototype.has = function( key ) {
             return this._map.hasOwnProperty( key );
         };
-        ObjectMap.prototype.set = function(key, value) {
+        ObjectMap.prototype.set = function( key, value ) {
             this._map[key] = value;
             return this;
         };

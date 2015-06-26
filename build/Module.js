@@ -57,7 +57,7 @@
  *
  * */
 var Module;
-(function(Module_1) {
+(function( Module_1 ) {
     //Also happens to match the backwards compatibility in the 'module' module
     Module_1.Module = require( 'module' );
 })( Module || (Module = {}) );

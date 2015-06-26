@@ -26,7 +26,7 @@
 /**
  * Created by novacrazy on 3/2/2015.
  */
-var __extends = this.__extends || function(d, b) {
+var __extends = this.__extends || function( d, b ) {
         for( var p in b ) {
             if( b.hasOwnProperty( p ) ) {
                 d[p] = b[p];
@@ -52,8 +52,8 @@ var _ = require( 'lodash' );
  *
  * */
 var ScriptorBase;
-(function(ScriptorBase) {
-    function hasPropagationHandler(emitter, event, target) {
+(function( ScriptorBase ) {
+    function hasPropagationHandler( emitter, event, target ) {
         var listeners = emitter.listeners( event );
         for( var it in listeners ) {
             if( listeners.hasOwnProperty( it ) ) {
@@ -66,14 +66,14 @@ var ScriptorBase;
         return false;
     }
 
-    var EventPropagator = (function(_super) {
+    var EventPropagator = (function( _super ) {
         __extends( EventPropagator, _super );
         function EventPropagator() {
             _super.apply( this, arguments );
             this._propagateEvents = false;
         }
 
-        EventPropagator.prototype.propagateEvents = function(enable) {
+        EventPropagator.prototype.propagateEvents = function( enable ) {
             if( enable === void 0 ) {
                 enable = true;
             }
@@ -81,7 +81,7 @@ var ScriptorBase;
             this._propagateEvents = enable;
             return wasPropagating;
         };
-        EventPropagator.prototype._addPropagationHandler = function(emitter, event, handler, target) {
+        EventPropagator.prototype._addPropagationHandler = function( emitter, event, handler, target ) {
             var _this = this;
             if( target === void 0 ) {
                 target = this;

@@ -30,8 +30,8 @@ var path = require( 'path' );
 var posix_path = path.posix;
 var _ = require( 'lodash' );
 var ScriptorCommon;
-(function(ScriptorCommon) {
-    function isAbsolutePath(filepath) {
+(function( ScriptorCommon ) {
+    function isAbsolutePath( filepath ) {
         if( typeof path.isAbsolute === 'function' ) {
             return path.isAbsolute( filepath );
         }
@@ -42,7 +42,7 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.isAbsolutePath = isAbsolutePath;
-    function isAbsoluteOrRelative(filepath) {
+    function isAbsoluteOrRelative( filepath ) {
         return filepath.charAt( 0 ) === '.' || isAbsolutePath( filepath );
     }
 
@@ -50,7 +50,7 @@ var ScriptorCommon;
     //Helper function to bind a function to an object AND retain any attached values
     //Also bounds a variable number of arguments to the function, which is neat.
     //The 'to' arguments is in ...args
-    function bind(func) {
+    function bind( func ) {
         var args = [];
         for( var _a = 1; _a < arguments.length; _a++ ) {
             args[_a - 1] = arguments[_a];
@@ -67,7 +67,7 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.bind = bind;
-    function parseDefine(id, deps, factory) {
+    function parseDefine( id, deps, factory ) {
         //This argument parsing code is taken from amdefine
         if( Array.isArray( id ) ) {
             factory = deps;
@@ -92,7 +92,7 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.parseDefine = parseDefine;
-    function normalizeError(id, type, err) {
+    function normalizeError( id, type, err ) {
         if( err === void 0 ) {
             err = {};
         }
@@ -110,7 +110,7 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.normalizeError = normalizeError;
-    function removeFromParent(script) {
+    function removeFromParent( script ) {
         var parent = script.parent;
         if( parent !== void 0 && parent !== null ) {
             for( var _i in parent.children ) {
@@ -125,7 +125,7 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.removeFromParent = removeFromParent;
-    function stripBOM(content) {
+    function stripBOM( content ) {
         // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
         // because the buffer-to-string conversion in `fs.readFileSync()`
         // translates it to FEFF, the UTF-16 BOM.
@@ -142,7 +142,7 @@ var ScriptorCommon;
     ScriptorCommon.stripBOM = stripBOM;
     ScriptorCommon.AMD_Header =
         new Buffer( "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}" );
-    function injectAMD(content, encoding) {
+    function injectAMD( content, encoding ) {
         if( encoding === void 0 ) {
             encoding = 'utf-8';
         }
@@ -158,12 +158,12 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.injectAMD = injectAMD;
-    function injectAMDAndStripBOM(content) {
+    function injectAMDAndStripBOM( content ) {
         return injectAMD( stripBOM( content ) );
     }
 
     ScriptorCommon.injectAMDAndStripBOM = injectAMDAndStripBOM;
-    function shallowCloneObject(obj) {
+    function shallowCloneObject( obj ) {
         var newObj = Object.create( null );
         for( var it in obj ) {
             if( obj.hasOwnProperty( it ) ) {
@@ -178,9 +178,9 @@ var ScriptorCommon;
     ScriptorCommon.default_debounceMaxWait = 50; //50ms
     //These *could* be changed is someone really wanted to, but there isn't a reason for it
     ScriptorCommon.default_dependencies = ['require', 'exports', 'module', 'imports'];
-    function parseConfigDeps(deps, paths) {
+    function parseConfigDeps( deps, paths ) {
         if( _.isObject( deps ) && !_.isArray( deps ) ) {
-            return _.map( deps, function(v, k) {
+            return _.map( deps, function( v, k ) {
                 //If deps have a specified path, use that instead, but only if it hasn't already been defined
                 if( !paths[k] ) {
                     paths[k] = v;
@@ -197,17 +197,17 @@ var ScriptorCommon;
     }
 
     ScriptorCommon.parseConfigDeps = parseConfigDeps;
-    function isNull(value) {
+    function isNull( value ) {
         return value === null || value === void 0;
     }
 
     ScriptorCommon.isNull = isNull;
-    function toPosix(filepath) {
+    function toPosix( filepath ) {
         return filepath.replace( '\\', '/' );
     }
 
     ScriptorCommon.toPosix = toPosix;
-    function normalizeConfig(config) {
+    function normalizeConfig( config ) {
         var isObject = _.isObject( config ) && !Array.isArray( config );
         var defaultConfig = {
             baseUrl: '.' + posix_path.sep,
@@ -239,7 +239,7 @@ var ScriptorCommon;
         //Normalize deps
         config.deps = parseConfigDeps( config.deps, config.paths );
         //Normalize shims, also I hate having to use so many <any> casts
-        config.shim = _( _.mapValues( config.shim, function(shim) {
+        config.shim = _( _.mapValues( config.shim, function( shim ) {
             if( Array.isArray( shim ) ) {
                 return {
                     deps: parseConfigDeps( shim, config.paths )
@@ -253,7 +253,7 @@ var ScriptorCommon;
             }
         } ) ).omit( isNull ).value();
         //Normalize paths
-        config.paths = _( _.mapValues( config.paths, function(p) {
+        config.paths = _( _.mapValues( config.paths, function( p ) {
             if( _.isString( p ) ) {
                 return p;
             }

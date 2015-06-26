@@ -26,7 +26,7 @@
 /**
  * Created by novacrazy on 12/25/2014.
  */
-var __extends = this.__extends || function(d, b) {
+var __extends = this.__extends || function( d, b ) {
         for( var p in b ) {
             if( b.hasOwnProperty( p ) ) {
                 d[p] = b[p];
@@ -52,13 +52,13 @@ var MapAdapter = require( './map' );
 var _ = require( 'lodash' );
 var posix_path = path.posix;
 var Scriptor;
-(function(Scriptor) {
+(function( Scriptor ) {
     Scriptor.this_module = module;
     Scriptor.common = Common;
     Scriptor.default_dependencies = Common.default_dependencies;
     Scriptor.default_max_recursion = Common.default_max_recursion;
     Scriptor.default_extensions = {
-        '.js': function(module, filename) {
+        '.js': function( module, filename ) {
             var content = Common.stripBOM( fs.readFileSync( filename ) );
             module._compile( Common.injectAMD( content ).toString( 'utf-8' ), filename );
             return content;
@@ -67,7 +67,7 @@ var Scriptor;
     Scriptor.extensions = {};
     Scriptor.extensions_enabled = false;
     Scriptor.scriptCache = MapAdapter.createMap();
-    function installCustomExtensions(enable) {
+    function installCustomExtensions( enable ) {
         if( enable === void 0 ) {
             enable = true;
         }
@@ -89,11 +89,11 @@ var Scriptor;
     }
 
     Scriptor.disableCustomExtensions = disableCustomExtensions;
-    function closeCachedScripts(permemant) {
+    function closeCachedScripts( permemant ) {
         if( permemant === void 0 ) {
             permemant = true;
         }
-        Scriptor.scriptCache.forEach( function(script) {
+        Scriptor.scriptCache.forEach( function( script ) {
             script.close( permemant );
         } );
     }
@@ -102,9 +102,9 @@ var Scriptor;
     //Basically, ScriptBase is an abstraction to allow better 'multiple' inheritance
     //Since single inheritance is the only thing supported, a mixin has to be put into the chain, rather than,
     //well, mixed in. So ScriptBase just handles the most basic Script functions
-    var ScriptBase = (function(_super) {
+    var ScriptBase = (function( _super ) {
         __extends( ScriptBase, _super );
-        function ScriptBase(parent) {
+        function ScriptBase( parent ) {
             _super.call( this );
             this._recursion = 0;
             this._maxRecursion = Scriptor.default_max_recursion;
@@ -123,7 +123,7 @@ var Scriptor;
         } );
         //Wrap it before you tap it.
         //No, but really, it's important to protect against errors in a generic way
-        ScriptBase.prototype._callWrapper = function(func, this_arg, args) {
+        ScriptBase.prototype._callWrapper = function( func, this_arg, args ) {
             if( this_arg === void 0 ) {
                 this_arg = this;
             }
@@ -133,7 +133,7 @@ var Scriptor;
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
                 throw new RangeError( util.format( 'Script recursion limit reached at %d for script %s',
-                    this._recursion, this.filename ) );
+                                                   this._recursion, this.filename ) );
             }
             try {
                 //This is placed in the try-block so the release is mirrored in the finally block
@@ -159,7 +159,7 @@ var Scriptor;
             get:          function() {
                 return this._script.id;
             },
-            set:          function(value) {
+            set: function( value ) {
                 this._script.id = value;
             },
             enumerable:   true,
@@ -217,7 +217,7 @@ var Scriptor;
             get:          function() {
                 return this._maxRecursion;
             },
-            set:          function(value) {
+            set: function( value ) {
                 //JSHint doesn't like bitwise operators
                 this._maxRecursion = Math.floor( value );
                 assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
@@ -229,7 +229,7 @@ var Scriptor;
             get:          function() {
                 return this._debounceMaxWait;
             },
-            set:          function(time) {
+            set: function( time ) {
                 this._debounceMaxWait = Math.floor( time );
                 assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
             },
@@ -240,7 +240,7 @@ var Scriptor;
             get:          function() {
                 return this._textMode;
             },
-            set:          function(value) {
+            set: function( value ) {
                 this._textMode = !!value;
             },
             enumerable:   true,
@@ -266,7 +266,7 @@ var Scriptor;
         ScriptBase.prototype.unwatch = function() {
             return false;
         };
-        ScriptBase.prototype.close = function(permanent) {
+        ScriptBase.prototype.close = function( permanent ) {
             if( permanent === void 0 ) {
                 permanent = true;
             }
@@ -283,14 +283,14 @@ var Scriptor;
                 this._script.filename = null;
             }
         };
-        ScriptBase.prototype.include = function(filename) {
+        ScriptBase.prototype.include = function( filename ) {
             throw new Error( 'Cannot include script "' + filename + '"from an unmanaged script' );
         };
         return ScriptBase;
     })( Base.EventPropagator );
-    var AMDScript = (function(_super) {
+    var AMDScript = (function( _super ) {
         __extends( AMDScript, _super );
-        function AMDScript(parent) {
+        function AMDScript( parent ) {
             _super.call( this, parent );
             this._defineCache = MapAdapter.createMap();
             this._loadCache = MapAdapter.createMap();
@@ -303,7 +303,7 @@ var Scriptor;
             var _this = this;
             var require = this._require.bind( this );
             var define = this._define.bind( this );
-            require.toUrl = function(filepath) {
+            require.toUrl = function( filepath ) {
                 if( filepath === void 0 ) {
                     filepath = _this.filename;
                 }
@@ -316,24 +316,24 @@ var Scriptor;
                     return filepath;
                 }
             };
-            require.defined = function(id) {
+            require.defined = function( id ) {
                 return _this._loadCache.has( posix_path.normalize( id ) );
             };
-            require.specified = function(id) {
+            require.specified = function( id ) {
                 return _this._defineCache.has( posix_path.normalize( id ) );
             };
-            require.undef = function(id) {
+            require.undef = function( id ) {
                 id = posix_path.normalize( id );
                 _this._loadCache.delete( id );
                 _this._defineCache.delete( id );
                 return _this;
             };
             //This is not an anonymous so stack traces make a bit more sense
-            require.onError = function onErrorDefault(err) {
+            require.onError = function onErrorDefault( err ) {
                 throw err; //default error
             };
             //This is almost exactly like the normal require.resolve, but it's relative to this.baseUrl
-            require.resolve = function(id) {
+            require.resolve = function( id ) {
                 var relative = path.resolve( _this.baseUrl, id );
                 return Module.Module._resolveFilename( relative, _this._script );
             };
@@ -353,7 +353,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        AMDScript.prototype._runFactory = function(id, deps, factory) {
+        AMDScript.prototype._runFactory = function( id, deps, factory ) {
             if( id !== void 0 ) {
                 this._loadCache.delete( id ); //clear before running. Will remained cleared in the event of error
             }
@@ -365,11 +365,11 @@ var Scriptor;
             }
         };
         //Implementation, and holy crap is it huge
-        AMDScript.prototype._require = function(id, cb, errcb) {
+        AMDScript.prototype._require = function( id, cb, errcb ) {
             var _this = this;
             var normalize = path.resolve.bind( null, this.baseUrl );
             var had_error = false;
-            var onError = function(_id, type, err) {
+            var onError = function( _id, type, err ) {
                 err = Common.normalizeError( _id, type, err );
                 had_error = true;
                 if( typeof errcb === 'function' ) {
@@ -384,7 +384,7 @@ var Scriptor;
                 //We know it's an array, so just cast it to one to appease TypeScript
                 var ids = id;
                 //Love this line
-                result = ids.map( function(_id) {
+                result = ids.map( function( _id ) {
                     return _this._require( _id );
                 } );
             }
@@ -398,10 +398,10 @@ var Scriptor;
                     var plugin;
                     if( plugin_id === 'include' ) {
                         plugin = {
-                            normalize: function(id, defaultNormalize) {
+                            normalize: function( id, defaultNormalize ) {
                                 return defaultNormalize( id );
                             },
-                            load:      function(id, require, _onLoad, config) {
+                            load:      function( id, require, _onLoad, config ) {
                                 try {
                                     var script = _this.include( id );
                                     script.textMode = false;
@@ -415,10 +415,10 @@ var Scriptor;
                     }
                     else if( plugin_id === 'text' ) {
                         plugin = {
-                            normalize: function(id, defaultNormalize) {
+                            normalize: function( id, defaultNormalize ) {
                                 return defaultNormalize( id );
                             },
-                            load:      function(id, require, _onLoad, config) {
+                            load:      function( id, require, _onLoad, config ) {
                                 try {
                                     var script = _this.include( id );
                                     script.textMode = true;
@@ -443,13 +443,13 @@ var Scriptor;
                     }
                     if( !this._loadCache.has( id ) ) {
                         assert.strictEqual( typeof plugin.load, 'function', '.load function on AMD plugin not found' );
-                        var onLoad = function(value) {
+                        var onLoad = function( value ) {
                             _this._loadCache.set( id, value );
                             if( typeof cb === 'function' ) {
                                 cb( value );
                             }
                         };
-                        onLoad.fromText = function(text) {
+                        onLoad.fromText = function( text ) {
                             //Exploit Scriptor as much as possible
                             onLoad( Scriptor.compile( text ).exports() );
                         };
@@ -563,7 +563,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        AMDScript.prototype.config = function(config) {
+        AMDScript.prototype.config = function( config ) {
             if( config !== void 0 && config !== null ) {
                 this._config = Common.normalizeConfig( config );
             }
@@ -578,9 +578,9 @@ var Scriptor;
         };
         return AMDScript;
     })( ScriptBase );
-    var Script = (function(_super) {
+    var Script = (function( _super ) {
         __extends( Script, _super );
-        function Script(filename, parent) {
+        function Script( filename, parent ) {
             if( parent === void 0 || parent === null ) {
                 if( filename instanceof Module.Module ) {
                     parent = filename;
@@ -603,7 +603,7 @@ var Scriptor;
             this._script.imports = Object.freeze( this.imports );
             this._script.define = Common.bind( this.define, this );
             this._script.include = this.include.bind( this );
-            this._script.on = this._script.addListener = this._script.once = function(event, cb) {
+            this._script.on = this._script.addListener = this._script.once = function( event, cb ) {
                 assert.equal( event, 'unload', 'modules can only listen for the unload event' );
                 return _this.once( event, cb );
             };
@@ -623,8 +623,8 @@ var Scriptor;
                 else {
                     if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
                         this.emit( 'warning',
-                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
-                                this.filename ) );
+                                   util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                                this.filename ) );
                     }
                     this._script.load( this._script.filename );
                 }
@@ -636,7 +636,7 @@ var Scriptor;
             }
             this.emit( 'loaded', this.loaded );
         };
-        Script.prototype.source = function(encoding) {
+        Script.prototype.source = function( encoding ) {
             if( encoding === void 0 ) {
                 encoding = null;
             }
@@ -664,7 +664,7 @@ var Scriptor;
             }
             return this.apply( args );
         };
-        Script.prototype.apply = function(args) {
+        Script.prototype.apply = function( args ) {
             if( !this.textMode ) {
                 //This will ensure it is loaded (safely) and return the exports
                 var main = this.exports();
@@ -690,10 +690,10 @@ var Scriptor;
             }
             return this.reference_apply( args );
         };
-        Script.prototype.reference_apply = function(args) {
+        Script.prototype.reference_apply = function( args ) {
             return new Reference( this, args );
         };
-        Script.prototype.load = function(filename, watch) {
+        Script.prototype.load = function( filename, watch ) {
             if( watch === void 0 ) {
                 watch = true;
             }
@@ -707,7 +707,7 @@ var Scriptor;
             this.emit( 'change', 'change', this.filename );
             return this;
         };
-        Script.prototype.watch = function(persistent) {
+        Script.prototype.watch = function( persistent ) {
             var _this = this;
             if( persistent === void 0 ) {
                 persistent = false;
@@ -723,18 +723,18 @@ var Scriptor;
                     throw Common.normalizeError( this.filename, 'nodefine', err );
                 }
                 //These are separated out so rename and change events can be debounced seperately.
-                var onChange = _.debounce( function(event, filename) {
+                var onChange = _.debounce( function( event, filename ) {
                     _this.unload();
                     _this.emit( 'change', event, filename );
                 }, this.debounceMaxWait );
-                var onRename = _.debounce( function(event, filename) {
+                var onRename = _.debounce( function( event, filename ) {
                     var old_filename = _this._script.filename;
                     //A simple rename doesn't change file content, so just change the filename
                     //and leave the script loaded
                     _this._script.filename = filename;
                     _this.emit( 'rename', old_filename, filename );
                 }, this.debounceMaxWait );
-                watcher.on( 'change', function(event, filename) {
+                watcher.on( 'change', function( event, filename ) {
                     //path.resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
                         //If filename is null, that is generally a bad sign, so just close the script (not permanently)
@@ -742,8 +742,10 @@ var Scriptor;
                     }
                     else {
                         //This is important because fs.watch 'change' event only returns things like 'script.js'
-                        //as a filename, which when resolved normally is relative to process.cwd(), not where the script
-                        //actually is. So we have to get the directory of the last filename and combine it with the new name
+                        //as a filename, which when resolved normally is relative to process.cwd(), not where the
+                        // script
+                        //actually is. So we have to get the directory of the last filename and combine it with the new
+                        // name
                         filename = path.resolve( _this.baseUrl, filename );
                         if( event === 'change' && _this.loaded ) {
                             onChange( event, filename );
@@ -753,7 +755,7 @@ var Scriptor;
                         }
                     }
                 } );
-                watcher.on( 'error', function(error) {
+                watcher.on( 'error', function( error ) {
                     //In the event of an error, unload and unwatch
                     _this.close( false );
                     //Would it be better to throw?
@@ -774,9 +776,9 @@ var Scriptor;
         return Script;
     })( AMDScript );
     Scriptor.Script = Script;
-    var TextScript = (function(_super) {
+    var TextScript = (function( _super ) {
         __extends( TextScript, _super );
-        function TextScript(filename, parent) {
+        function TextScript( filename, parent ) {
             _super.call( this, filename, parent );
         }
 
@@ -790,9 +792,9 @@ var Scriptor;
         return TextScript;
     })( Script );
     Scriptor.TextScript = TextScript;
-    var SourceScript = (function(_super) {
+    var SourceScript = (function( _super ) {
         __extends( SourceScript, _super );
-        function SourceScript(src, parent) {
+        function SourceScript( src, parent ) {
             if( parent === void 0 ) {
                 parent = Scriptor.this_module;
             }
@@ -806,7 +808,7 @@ var Scriptor;
             get:          function() {
                 return this._script.filename;
             },
-            set:          function(value) {
+            set: function( value ) {
                 this._script.filename = value;
             },
             enumerable:   true,
@@ -816,7 +818,7 @@ var Scriptor;
             get:          function() {
                 return path.dirname( this.filename );
             },
-            set:          function(value) {
+            set: function( value ) {
                 value = path.dirname( value );
                 this.filename = value + path.basename( this.filename );
             },
@@ -830,7 +832,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        SourceScript.prototype.source = function(encoding) {
+        SourceScript.prototype.source = function( encoding ) {
             if( encoding === void 0 ) {
                 encoding = null;
             }
@@ -839,7 +841,7 @@ var Scriptor;
                 src = this._source.value();
                 if( !Buffer.isBuffer( src ) ) {
                     assert.strictEqual( typeof src, 'string',
-                        'Reference source must return string or Buffer as value' );
+                                        'Reference source must return string or Buffer as value' );
                 }
             }
             else {
@@ -871,7 +873,7 @@ var Scriptor;
             this.do_setup();
             this.do_compile();
         };
-        SourceScript.prototype.load = function(src, watch) {
+        SourceScript.prototype.load = function( src, watch ) {
             if( watch === void 0 ) {
                 watch = true;
             }
@@ -887,7 +889,7 @@ var Scriptor;
         SourceScript.prototype.watch = function() {
             var _this = this;
             if( !this.watched && this._source instanceof ReferenceBase ) {
-                this._onChange = _.debounce( function(event, filename) {
+                this._onChange = _.debounce( function( event, filename ) {
                     _this.unload();
                     _this.emit( 'change', event, filename );
                 }, this.debounceMaxWait );
@@ -906,14 +908,14 @@ var Scriptor;
         return SourceScript;
     })( Script );
     Scriptor.SourceScript = SourceScript;
-    var ScriptAdapter = (function(_super) {
+    var ScriptAdapter = (function( _super ) {
         __extends( ScriptAdapter, _super );
-        function ScriptAdapter(_manager, filename, parent) {
+        function ScriptAdapter( _manager, filename, parent ) {
             _super.call( this, filename, parent );
             this._manager = _manager;
             //When a script is renamed, it should be reassigned in the manager
             //Otherwise, when it's accessed at the new location, the manager just creates a new script
-            this.on( 'rename', function(event, oldname, newname) {
+            this.on( 'rename', function( event, oldname, newname ) {
                 _manager.scripts.set( newname, _manager.scripts.get( oldname ) );
                 _manager.scripts.delete( oldname );
             } );
@@ -926,7 +928,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        ScriptAdapter.prototype.include = function(filename, load) {
+        ScriptAdapter.prototype.include = function( filename, load ) {
             var _this = this;
             if( load === void 0 ) {
                 load = false;
@@ -949,7 +951,7 @@ var Scriptor;
             script.maxRecursion = this.maxRecursion;
             return script;
         };
-        ScriptAdapter.prototype.close = function(permanent) {
+        ScriptAdapter.prototype.close = function( permanent ) {
             if( permanent ) {
                 delete this._manager;
             }
@@ -958,7 +960,7 @@ var Scriptor;
         return ScriptAdapter;
     })( Script );
 
-    function load(filename, watch, parent) {
+    function load( filename, watch, parent ) {
         if( watch === void 0 ) {
             watch = true;
         }
@@ -979,7 +981,7 @@ var Scriptor;
     }
 
     Scriptor.load = load;
-    function compile(src, watch, parent) {
+    function compile( src, watch, parent ) {
         if( watch === void 0 ) {
             watch = true;
         }
@@ -991,10 +993,10 @@ var Scriptor;
     }
 
     Scriptor.compile = compile;
-    Scriptor.identity = function(left, right) {
+    Scriptor.identity = function( left, right ) {
         return left.value();
     };
-    var ReferenceBase = (function(_super) {
+    var ReferenceBase = (function( _super ) {
         __extends( ReferenceBase, _super );
         function ReferenceBase() {
             _super.apply( this, arguments );
@@ -1004,9 +1006,9 @@ var Scriptor;
 
         return ReferenceBase;
     })( events.EventEmitter );
-    var Reference = (function(_super) {
+    var Reference = (function( _super ) {
         __extends( Reference, _super );
-        function Reference(_script, _args) {
+        function Reference( _script, _args ) {
             var _this = this;
             _super.call( this );
             this._script = _script;
@@ -1014,7 +1016,7 @@ var Scriptor;
             //Just mark this reference as not ran when a change occurs
             //other things are free to reference this script and evaluate it,
             //but this reference would still not be run
-            this._onChange = function(event, filename) {
+            this._onChange = function( event, filename ) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
             };
@@ -1050,7 +1052,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        Reference.resolve = function(value) {
+        Reference.resolve = function( value ) {
             if( value instanceof ReferenceBase ) {
                 return value;
             }
@@ -1058,11 +1060,11 @@ var Scriptor;
                 return new ResolvedReference( value );
             }
         };
-        Reference.join = function(left, right, transform) {
+        Reference.join = function( left, right, transform ) {
             return new JoinedTransformReference( left, right, transform );
         };
         //Creates a binary tree (essentially) of joins from an array of References using a single transform
-        Reference.join_all = function(refs, transform) {
+        Reference.join_all = function( refs, transform ) {
             assert( Array.isArray( refs ), 'join_all can only join arrays of References' );
             if( refs.length === 0 ) {
                 return null;
@@ -1080,13 +1082,13 @@ var Scriptor;
                 return Reference.join( left, right, transform );
             }
         };
-        Reference.transform = function(ref, transform) {
+        Reference.transform = function( ref, transform ) {
             return new TransformReference( ref, transform );
         };
-        Reference.prototype.join = function(ref, transform) {
+        Reference.prototype.join = function( ref, transform ) {
             return Reference.join( this, ref, transform );
         };
-        Reference.prototype.transform = function(transform) {
+        Reference.prototype.transform = function( transform ) {
             return Reference.transform( this, transform );
         };
         Reference.prototype.left = function() {
@@ -1106,16 +1108,16 @@ var Scriptor;
         return Reference;
     })( ReferenceBase );
     Scriptor.Reference = Reference;
-    var TransformReference = (function(_super) {
+    var TransformReference = (function( _super ) {
         __extends( TransformReference, _super );
-        function TransformReference(_ref, _transform) {
+        function TransformReference( _ref, _transform ) {
             var _this = this;
             _super.call( this );
             this._ref = _ref;
             this._transform = _transform;
             assert( _ref instanceof ReferenceBase, 'transform will only work on References' );
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
-            this._onChange = function(event, filename) {
+            this._onChange = function( event, filename ) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
             };
@@ -1147,10 +1149,10 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        TransformReference.prototype.join = function(ref, transform) {
+        TransformReference.prototype.join = function( ref, transform ) {
             return Reference.join( this, ref, transform );
         };
-        TransformReference.prototype.transform = function(transform) {
+        TransformReference.prototype.transform = function( transform ) {
             return Reference.transform( this, transform );
         };
         TransformReference.prototype.left = function() {
@@ -1159,7 +1161,7 @@ var Scriptor;
         TransformReference.prototype.right = function() {
             return null;
         };
-        TransformReference.prototype.close = function(recursive) {
+        TransformReference.prototype.close = function( recursive ) {
             if( recursive === void 0 ) {
                 recursive = false;
             }
@@ -1174,9 +1176,9 @@ var Scriptor;
         };
         return TransformReference;
     })( ReferenceBase );
-    var JoinedTransformReference = (function(_super) {
+    var JoinedTransformReference = (function( _super ) {
         __extends( JoinedTransformReference, _super );
-        function JoinedTransformReference(_left, _right, _transform) {
+        function JoinedTransformReference( _left, _right, _transform ) {
             var _this = this;
             if( _transform === void 0 ) {
                 _transform = Scriptor.identity;
@@ -1192,7 +1194,7 @@ var Scriptor;
             assert.strictEqual( typeof _transform, 'function', 'transform function must be a function' );
             //This has to be a closure because the two emitters down below
             //tend to call this with themselves as this
-            this._onChange = function(event, filename) {
+            this._onChange = function( event, filename ) {
                 _this.emit( 'change', event, filename );
                 _this._ran = false;
             };
@@ -1226,10 +1228,10 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        JoinedTransformReference.prototype.join = function(ref, transform) {
+        JoinedTransformReference.prototype.join = function( ref, transform ) {
             return Reference.join( this, ref, transform );
         };
-        JoinedTransformReference.prototype.transform = function(transform) {
+        JoinedTransformReference.prototype.transform = function( transform ) {
             return Reference.transform( this, transform );
         };
         JoinedTransformReference.prototype.left = function() {
@@ -1238,7 +1240,7 @@ var Scriptor;
         JoinedTransformReference.prototype.right = function() {
             return this._right;
         };
-        JoinedTransformReference.prototype.close = function(recursive) {
+        JoinedTransformReference.prototype.close = function( recursive ) {
             if( recursive === void 0 ) {
                 recursive = false;
             }
@@ -1256,9 +1258,9 @@ var Scriptor;
         };
         return JoinedTransformReference;
     })( ReferenceBase );
-    var ResolvedReference = (function(_super) {
+    var ResolvedReference = (function( _super ) {
         __extends( ResolvedReference, _super );
-        function ResolvedReference(value) {
+        function ResolvedReference( value ) {
             _super.call( this );
             if( typeof value === 'object' ) {
                 this._value = Object.freeze( value );
@@ -1286,10 +1288,10 @@ var Scriptor;
         ResolvedReference.prototype.value = function() {
             return this._value;
         };
-        ResolvedReference.prototype.join = function(ref, transform) {
+        ResolvedReference.prototype.join = function( ref, transform ) {
             return Reference.join( this, ref, transform );
         };
-        ResolvedReference.prototype.transform = function(transform) {
+        ResolvedReference.prototype.transform = function( transform ) {
             return Reference.transform( this, transform );
         };
         ResolvedReference.prototype.left = function() {
@@ -1308,7 +1310,7 @@ var Scriptor;
     })( ReferenceBase );
     /**** BEGIN SECTION MANAGER ****/
     var Manager = (function() {
-        function Manager(grandParent) {
+        function Manager( grandParent ) {
             this._debounceMaxWait = null; //set to null if it shouldn't set it at all
             this._maxListeners = null; //set to null if it shouldn't set it at all
             this._config = null;
@@ -1321,7 +1323,7 @@ var Scriptor;
         Manager.prototype.cwd = function() {
             return this._cwd;
         };
-        Manager.prototype.chdir = function(value) {
+        Manager.prototype.chdir = function( value ) {
             this._cwd = path.resolve( this.cwd(), value );
             return this._cwd;
         };
@@ -1329,7 +1331,7 @@ var Scriptor;
             get:          function() {
                 return this._debounceMaxWait;
             },
-            set:          function(time) {
+            set: function( time ) {
                 if( time !== null && time !== void 0 ) {
                     this._debounceMaxWait = Math.floor( time );
                     assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
@@ -1341,7 +1343,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        Manager.prototype.setMaxListeners = function(value) {
+        Manager.prototype.setMaxListeners = function( value ) {
             if( value !== null && value !== void 0 ) {
                 this._maxListeners = Math.floor( value );
                 assert( !isNaN( this._maxListeners ), 'setMaxListeners must be passed a number' );
@@ -1353,7 +1355,7 @@ var Scriptor;
         Manager.prototype.getMaxListeners = function() {
             return this._maxListeners;
         };
-        Manager.prototype.config = function(config) {
+        Manager.prototype.config = function( config ) {
             if( config !== void 0 && config !== null ) {
                 this._config = Common.normalizeConfig( config );
             }
@@ -1373,7 +1375,7 @@ var Scriptor;
             enumerable:   true,
             configurable: true
         } );
-        Manager.prototype.propagateEvents = function(enable) {
+        Manager.prototype.propagateEvents = function( enable ) {
             if( enable === void 0 ) {
                 enable = true;
             }
@@ -1381,12 +1383,12 @@ var Scriptor;
             this._propagateEvents = enable;
             if( wasPropagating && !enable ) {
                 //immediately disable propagation by pretending it's already been propagated
-                this._scripts.forEach( function(script) {
+                this._scripts.forEach( function( script ) {
                     script.propagateEvents( false );
                 } );
             }
             else if( !wasPropagating && enable ) {
-                this._scripts.forEach( function(script) {
+                this._scripts.forEach( function( script ) {
                     script.propagateEvents();
                 } );
             }
@@ -1396,7 +1398,7 @@ var Scriptor;
         //but this functions as a way to add and/or get a script in one fell swoop.
         //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
         //from watching a file.
-        Manager.prototype.add = function(filename, watch) {
+        Manager.prototype.add = function( filename, watch ) {
             if( watch === void 0 ) {
                 watch = true;
             }
@@ -1429,7 +1431,7 @@ var Scriptor;
         //Removes a script from the manager. But closing it permenantly is optional,
         //as it may sometimes make sense to move it out of a manager and use it independently.
         //However, that is quite rare so close defaults to true
-        Manager.prototype.remove = function(filename, close) {
+        Manager.prototype.remove = function( filename, close ) {
             if( close === void 0 ) {
                 close = true;
             }
@@ -1443,14 +1445,14 @@ var Scriptor;
             }
             return false;
         };
-        Manager.prototype.call = function(filename) {
+        Manager.prototype.call = function( filename ) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
             return this.apply( filename, args );
         };
-        Manager.prototype.apply = function(filename, args) {
+        Manager.prototype.apply = function( filename, args ) {
             var script = this.add( filename, false );
             try {
                 return script.apply( args );
@@ -1460,27 +1462,27 @@ var Scriptor;
                 throw err;
             }
         };
-        Manager.prototype.reference = function(filename) {
+        Manager.prototype.reference = function( filename ) {
             var args = [];
             for( var _i = 1; _i < arguments.length; _i++ ) {
                 args[_i - 1] = arguments[_i];
             }
             return this.reference_apply( filename, args );
         };
-        Manager.prototype.reference_apply = function(filename, args) {
+        Manager.prototype.reference_apply = function( filename, args ) {
             return this.add( filename, false ).reference( args );
         };
-        Manager.prototype.get = function(filename) {
+        Manager.prototype.get = function( filename ) {
             filename = path.resolve( this.cwd(), filename );
             return this._scripts.get( filename );
         };
         //Make closing optional for the same reason as .remove
-        Manager.prototype.clear = function(close) {
+        Manager.prototype.clear = function( close ) {
             if( close === void 0 ) {
                 close = true;
             }
             if( close ) {
-                this._scripts.forEach( function(script) {
+                this._scripts.forEach( function( script ) {
                     script.close();
                 } );
             }
