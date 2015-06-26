@@ -1419,7 +1419,7 @@ var Scriptor;
             var _this = this;
             if( !this._running ) {
                 this._running = true;
-                tryReject( this._transform, this._ref, null ).then( function( value ) {
+                tryReject( this._transform, null, this._ref, null ).then( function( value ) {
                     if( typeof value === 'object' ) {
                         _this._value = Object.freeze( value );
                     }
@@ -1502,7 +1502,7 @@ var Scriptor;
             var _this = this;
             if( !this._running ) {
                 this._running = true;
-                tryReject( this._transform, this._left, this._right ).then( function( value ) {
+                tryReject( this._transform, null, this._left, this._right ).then( function( value ) {
                     if( typeof value === 'object' ) {
                         _this._value = Object.freeze( value );
                     }

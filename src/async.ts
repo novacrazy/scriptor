@@ -1521,7 +1521,7 @@ module Scriptor {
             if( !this._running ) {
                 this._running = true;
 
-                tryReject( this._transform, this._ref, null ).then( ( value ) => {
+                tryReject( this._transform, null, this._ref, null ).then( ( value ) => {
                     if( typeof value === 'object' ) {
                         this._value = Object.freeze( value );
 
@@ -1608,7 +1608,7 @@ module Scriptor {
             if( !this._running ) {
                 this._running = true;
 
-                tryReject( this._transform, this._left, this._right ).then( ( value ) => {
+                tryReject( this._transform, null, this._left, this._right ).then( ( value ) => {
                     if( typeof value === 'object' ) {
                         this._value = Object.freeze( value );
 
