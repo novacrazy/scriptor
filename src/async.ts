@@ -1913,7 +1913,13 @@ module Scriptor {
         }
 
         public reference_apply( filename : string, args : any[] ) : Reference {
-            return this.add( filename, false ).reference( args );
+            let ref : Reference = this.add( filename, false ).reference( args );
+
+            if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
+                ref.setMaxListeners( this._maxListeners );
+            }
+
+            return ref;
         }
 
         public get( filename : string ) : ScriptAdapter {

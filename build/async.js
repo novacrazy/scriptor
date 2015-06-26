@@ -1772,7 +1772,11 @@ var Scriptor;
             return this.reference_apply( filename, args );
         };
         Manager.prototype.reference_apply = function( filename, args ) {
-            return this.add( filename, false ).reference( args );
+            var ref = this.add( filename, false ).reference( args );
+            if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
+                ref.setMaxListeners( this._maxListeners );
+            }
+            return ref;
         };
         Manager.prototype.get = function( filename ) {
             filename = path.resolve( this.cwd(), filename );
