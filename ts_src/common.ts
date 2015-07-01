@@ -192,9 +192,9 @@ module ScriptorCommon {
 
         var defaultConfig : IAMDConfig = {
             baseUrl: '.' + posix_path.sep, //String
-            paths:   {},   //Object
-            deps:    [],   //Array
-            shim:    {}    //Object
+            paths: {},   //Object
+            deps: [],   //Array
+            shim: {}    //Object
         };
 
         if( isObject ) {
@@ -234,7 +234,7 @@ module ScriptorCommon {
 
             } else if( _.isObject( shim ) && typeof shim.exports === 'string' ) {
                 return {
-                    deps:    parseConfigDeps( shim.deps, config.paths ),
+                    deps: parseConfigDeps( shim.deps, config.paths ),
                     exports: shim.exports
                 };
             }

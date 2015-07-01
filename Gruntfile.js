@@ -21,9 +21,9 @@ module.exports = function(grunt) {
                 removeComments: false
             },
             'build': {
-                src:       ['./src/**/*.ts'],
-                outDir:    './build/',
-                reference: './src/reference.ts'
+                src:       ['./ts_src/**/*.ts'],
+                outDir:    './ts_build/',
+                reference: './ts_src/reference.ts'
             }
         },
         usebanner: {
@@ -34,7 +34,7 @@ module.exports = function(grunt) {
                     linebreak: true
                 },
                 files:   {
-                    src: ['./build/**/*.js']
+                    src: ['./ts_build/**/*.js']
                 }
             },
             license:      {
@@ -44,13 +44,13 @@ module.exports = function(grunt) {
                     linebreak: true
                 },
                 files:   {
-                    src: ['./build/**/*.js']
+                    src: ['./ts_build/**/*.js']
                 }
             }
         },
         clean:     {
             build: {
-                src: ['./build']
+                src: ['./ts_build']
             }
         }
     } );

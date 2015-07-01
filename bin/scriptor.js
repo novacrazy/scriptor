@@ -8,8 +8,8 @@ var package_json = require( './../package.json' );
 
 var constants = process.binding( 'constants' );
 
-var ScriptorCommon = require( './../build/common.js' );
-var ScriptorCLI = require( './../build/cli.js' );
+var ScriptorCommon = require( '././common.js' );
+var ScriptorCLI = require( '././cli.js' );
 
 var _ = require( 'lodash' );
 
@@ -315,7 +315,8 @@ module.exports = function(argv) {
                     }
 
                     //Close on the next tick so close events can propagate.
-                    //Exit code for Ctrl-C signals is 128 + sig according to http://www.tldp.org/LDP/abs/html/exitcodes.html
+                    //Exit code for Ctrl-C signals is 128 + sig according to
+                    // http://www.tldp.org/LDP/abs/html/exitcodes.html
                     process.nextTick( process.exit.bind( null, 128 + signal ) );
 
                     closed = true;

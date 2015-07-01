@@ -114,7 +114,8 @@ module Scriptor {
         protected _callWrapper( func : Function, this_arg : any = this, args : any[] = [] ) : any {
             //Just in case, always use recursion protection
             if( this._recursion > this._maxRecursion ) {
-                throw new RangeError( util.format( 'Script recursion limit reached at %d for script %s', this._recursion, this.filename ) );
+                throw new RangeError( util.format( 'Script recursion limit reached at %d for script %s',
+                    this._recursion, this.filename ) );
             }
 
             try {
@@ -426,7 +427,7 @@ module Scriptor {
                             normalize: ( id : string, defaultNormalize : ( id : string ) => string ) => {
                                 return defaultNormalize( id );
                             },
-                            load:      ( id, require, _onLoad, config ) => {
+                            load: ( id, require, _onLoad, config ) => {
                                 try {
                                     var script = this.include( id );
 
@@ -678,7 +679,9 @@ module Scriptor {
 
                 } else {
                     if( !Module.Module._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning', util.format( 'The extension handler for %s does not exist, defaulting to .js handler', this.filename ) );
+                        this.emit( 'warning',
+                            util.format( 'The extension handler for %s does not exist, defaulting to .js handler',
+                                this.filename ) );
                     }
 
                     this._script.load( this._script.filename );
@@ -891,7 +894,8 @@ module Scriptor {
                 src = this._source.value();
 
                 if( !Buffer.isBuffer( src ) ) {
-                    assert.strictEqual( typeof src, 'string', 'Reference source must return string or Buffer as value' );
+                    assert.strictEqual( typeof src, 'string',
+                        'Reference source must return string or Buffer as value' );
                 }
 
             } else {

@@ -14,7 +14,7 @@ declare module _ {
          * concat, join, pop, push, reverse, shift, slice, sort, splice, and unshift
          *
          * Chaining is supported in custom builds as long as the value method is implicitly or
-         * explicitly included in the build.
+         * explicitly included in the ts_build.
          *
          * The chainable wrapper functions are:
          * after, assign, bind, bindAll, bindKey, chain, chunk, compact, compose, concat, countBy,
@@ -5989,7 +5989,7 @@ declare module _ {
          * A micro-templating method that handles arbitrary delimiters, preserves whitespace, and
          * correctly escapes quotes within interpolated code.
          *
-         * Note: In the development build, _.template utilizes sourceURLs for easier debugging. See
+         * Note: In the development ts_build, _.template utilizes sourceURLs for easier debugging. See
          * http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/#toc-sourceurl
          *
          * For more information on precompiling templates see:
