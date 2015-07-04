@@ -2,9 +2,9 @@
  * Created by novacrazy on 7/8/14.
  */
 
-module.exports = function(grunt) {
+module.exports = function( grunt ) {
 
-    grunt.loadNpmTasks( 'grunt-ts' );
+    grunt.loadNpmTasks( 'grunt-babel' );
     grunt.loadNpmTasks( 'grunt-contrib-clean' );
     grunt.loadNpmTasks( 'grunt-banner' );
 
@@ -12,49 +12,99 @@ module.exports = function(grunt) {
                   + '\n ****/';
 
     grunt.initConfig( {
-        ts:        {
-            options: {
-                target:         'es5',
-                module:         'commonjs',
-                sourceMap:      false,
-                declaration:    false,
-                removeComments: false
+        babel:     {
+            options:      {
+                loose:        "all",
+                ast:          false,
+                sourceMaps:   true,
+                nonStandard:  false,
+                compact:      "false",
+                modules:      "common",
+                experimental: true
             },
-            'build': {
-                src:       ['./ts_src/**/*.ts'],
-                outDir:    './ts_build/',
-                reference: './ts_src/reference.ts'
+            build_modern: {
+                options: {
+                    blacklist: [
+                        'es3.memberExpressionLiterals',
+                        'es3.propertyLiterals',
+                        'regenerator', //es6.generators
+                        'es6.properties.shorthand'
+                    ],
+                    optional:  [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals',
+                        //'minification.deadCodeElimination',
+                        //'utility.inlineEnvironmentVariables',
+                        'bluebirdCoroutines',
+                        'es7.classProperties'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './src/',
+                    src:    './**/*.js',
+                    dest:   './build/modern/'
+                }]
+            },
+            build_compat: {
+                options: {
+                    optional: [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals',
+                        //'minification.deadCodeElimination',
+                        //'utility.inlineEnvironmentVariables',
+                        'bluebirdCoroutines',
+                        'es7.classProperties'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './src/',
+                    src:    './**/*.js',
+                    dest:   './build/compat/'
+                }]
+            },
+            build_binary: {
+                options: {
+                    optional: [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals'
+                        //'minification.deadCodeElimination',
+                        //'utility.inlineEnvironmentVariables',
+                        //'bluebirdCoroutines',
+                        //'es7.classProperties'
+                    ]
+                },
+                files:   {
+                    './bin/scriptor.js': './bin/scriptor.es6'
+                }
             }
         },
         usebanner: {
-            build_strict: {
-                options: {
-                    position:  'top',
-                    banner:    '"use strict";',
-                    linebreak: true
-                },
-                files:   {
-                    src: ['./ts_build/**/*.js']
-                }
-            },
-            license:      {
+            license: {
                 options: {
                     position:  'top',
                     banner:    LICENSE,
                     linebreak: true
                 },
                 files:   {
-                    src: ['./ts_build/**/*.js']
+                    src: ['./build/**/*.js']
                 }
             }
         },
         clean:     {
             build: {
-                src: ['./ts_build']
+                src: ['./build', './bin/**/*.js', './bin/**/*.map']
             }
         }
     } );
 
-    grunt.registerTask( 'ts-build', ['clean:build', 'ts:build', 'usebanner:build_strict', 'usebanner:license'] );
-    grunt.registerTask( 'default', ['ts-build'] );
+    grunt.registerTask( 'build', ['clean:build', 'babel', 'usebanner:license'] );
+    grunt.registerTask( 'default', ['build'] );
 };
