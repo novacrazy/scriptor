@@ -514,4 +514,3 @@ exports['default'] = function( argv ) {
 };
 
 module.exports = exports['default'];
-//# sourceMappingURL=scriptor.js.map
