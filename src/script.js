@@ -51,6 +51,8 @@ export default class Script extends EventPropagator {
     _factory = null;
     _watcher = null;
 
+    _maxListeners = 10; //Node default maxListeners
+
     _recursion = 0;
     _maxRecursion = default_max_recursion;
     _debounceMaxWait = default_max_debounceMaxWait;
@@ -160,6 +162,25 @@ export default class Script extends EventPropagator {
         this._init();
     }
 
+    setMaxListeners( num ) {
+        num = Math.floor( num );
+
+        assert( !isNaN( num ), 'maxListeners must be set to a number' );
+
+        this._maxListeners = num;
+
+        super.setMaxListeners( num );
+    }
+
+    getMaxListeners() {
+        if( typeof super.getMaxListeners === 'function' ) {
+            return super.getMaxListeners();
+
+        } else {
+            return this._maxListeners;
+        }
+    }
+
     config( config ) {
         if( config !== void 0 && config !== null ) {
             this._config = normalizeConfig( config );
@@ -226,9 +247,11 @@ export default class Script extends EventPropagator {
 
     set maxRecursion( value ) {
         //JSHint doesn't like bitwise operators
-        this._maxRecursion = Math.floor( value );
+        value = Math.floor( value );
 
-        assert( !isNaN( this._maxRecursion ), 'maxRecursion must be set to a number' );
+        assert( !isNaN( value ), 'maxRecursion must be set to a number' );
+
+        this._maxRecursion = value;
     }
 
     get maxRecursion() {
@@ -236,9 +259,11 @@ export default class Script extends EventPropagator {
     }
 
     set debounceMaxWait( time ) {
-        this._debounceMaxWait = Math.floor( time );
+        time = Math.floor( time );
 
-        assert( !isNaN( this._debounceMaxWait ), 'debounceMaxWait must be set to a number' );
+        assert( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+
+        this._debounceMaxWait = time;
     }
 
     get debounceMaxWait() {
