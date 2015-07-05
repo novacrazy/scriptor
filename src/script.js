@@ -19,6 +19,8 @@ import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js'
 
 import {tryPromise, isGeneratorFunction, makeCoroutine, isAbsoluteOrRelative, bind} from './utils.js';
 
+import defaultExtensions from './extensions.js';
+
 let scriptCache = new Map();
 
 export function load( filename, watch = true, parent = null ) {
@@ -71,6 +73,13 @@ export default class Script extends EventPropagator {
     define = null;
 
     imports = {};
+
+    static extensions_enabled = true;
+    static extensions = defaultExtensions;
+
+    static hasExtension( ext ) {
+        return Script.extensions.hasOwnProperty( ext );
+    }
 
     _init() {
         let require = this._require.bind( this );
@@ -574,13 +583,13 @@ export default class Script extends EventPropagator {
                 var ext = extname( this.filename ) || '.js';
 
                 //Use custom extension if available
-                if( extensions_enabled && extensions.hasOwnProperty( ext ) ) {
+                if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
 
                     this._script.paths = Module._nodeModulePaths( dirname( this.filename ) );
 
                     this._loading = true;
 
-                    return tryPromise( extensions[ext]( this._script, this.filename ) ).then( src => {
+                    return tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
                         if( this._loading ) {
                             this._source = src;
                             this._script.loaded = true;
@@ -674,7 +683,6 @@ export default class Script extends EventPropagator {
     exports() {
         if( this.loaded ) {
             if( this.pending ) {
-
                 //Add the event listeners first
                 let waiting = makeEventPromise( this, 'exports', 'exports_error' );
 
