@@ -36,6 +36,12 @@ var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-def
 
 exports.__esModule = true;
 
+var _bluebird = require( 'bluebird' );
+
+var _bluebird2 = _interopRequireDefault( _bluebird );
+
+exports.Promise = _bluebird2.default;
+
 var _script = require( './script' );
 
 var _script2 = _interopRequireDefault( _script );
