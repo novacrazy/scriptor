@@ -109,6 +109,15 @@ function tryPromise( value ) {
     }
 }
 
+function tryReject( func, context, ...args ) {
+    try {
+        return tryPromise( func.apply( context, args ) );
+
+    } catch( err ) {
+        return Promise.reject( err );
+    }
+}
+
 //Taken from tj/co
 export function isGenerator( obj ) {
     return 'function' === typeof obj.next && 'function' === typeof obj.throw;
