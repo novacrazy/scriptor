@@ -889,4 +889,3 @@ export default class Script extends EventPropagator {
         throw new Error( `Cannot include script "${filename}" from an unmanaged script` );
     }
 }
-
