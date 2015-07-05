@@ -75,12 +75,17 @@ module.exports = function( grunt ) {
                         'runtime',
                         'spec.undefinedToVoid',
                         'minification.constantFolding',
-                        'minification.propertyLiterals'
+                        'minification.propertyLiterals',
+                        'es7.classProperties'
                     ]
                 },
-                files:   {
-                    './bin/scriptor.js': './bin/scriptor.es6'
-                }
+                files:   [{
+                    expand: true,
+                    cwd:    './bin/',
+                    src:    './**/*.es6',
+                    dest:   './bin/',
+                    ext:    '.js'
+                }]
             }
         },
         usebanner: {
