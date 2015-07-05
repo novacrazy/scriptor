@@ -79,7 +79,7 @@ let EXIT_SUCCESS = 0,
     EXIT_FAILURE = 1;
 
 options
-    .version( package_json.version )
+    .version( package_json.version + '-compat' )
     .usage( '[options] files...' )
     .option( '-d, --dir <path>', 'Directory to run Scriptor in' )
     .option( '-c, --concurrency <n>', 'Limit asynchronous script concurrency to n (default: max_recursion + 1)' )
@@ -153,7 +153,7 @@ export default function( argv ) {
     if( !options.no_glob ) {
         scripts = [];
 
-        for( let arg of args ) {
+        for( let arg of options.args ) {
             if( glob.hasMagic( arg ) ) {
                 scripts = scripts.concat( glob.sync( arg ) );
 

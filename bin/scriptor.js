@@ -184,8 +184,9 @@ exports['default'] = function( argv ) {
     if( !_commander2['default'].no_glob ) {
         scripts = [];
 
-        for( var _iterator = args, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ? _iterator :
-                                                                                              _getIterator( _iterator ); ; ) {
+        for( var _iterator = _commander2['default'].args, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
+                                                                                                                     _iterator :
+                                                                                                                     _getIterator( _iterator ); ; ) {
             var _ref;
 
             if( _isArray ) {
