@@ -39,8 +39,11 @@ exports.injectAMD = injectAMD;
 exports.injectAMDAndStripBOM = injectAMDAndStripBOM;
 exports.parseDefine = parseDefine;
 exports.isThenable = isThenable;
+exports.tryPromise = tryPromise;
+exports.tryReject = tryReject;
 exports.isGenerator = isGenerator;
 exports.isGeneratorFunction = isGeneratorFunction;
+exports.parseDeps = parseDeps;
 exports.normalizeConfig = normalizeConfig;
 
 var _bluebird = require( 'bluebird' );

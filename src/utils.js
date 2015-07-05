@@ -100,7 +100,7 @@ export function isThenable( obj ) {
     return obj !== void 0 && obj !== null && (obj instanceof Promise || typeof obj.then === 'function');
 }
 
-function tryPromise( value ) {
+export function tryPromise( value ) {
     if( isThenable( value ) ) {
         return value;
 
@@ -109,7 +109,7 @@ function tryPromise( value ) {
     }
 }
 
-function tryReject( func, context, ...args ) {
+export function tryReject( func, context, ...args ) {
     try {
         return tryPromise( func.apply( context, args ) );
 
@@ -144,7 +144,7 @@ function toPosix( filepath ) {
     return filepath.replace( '\\', '/' );
 }
 
-function parseDeps( deps, paths ) {
+export function parseDeps( deps, paths ) {
     if( _.isObject( deps ) && !_.isArray( deps ) ) {
         return _.map( deps, function( v, k ) {
 
