@@ -86,6 +86,29 @@ module.exports = function( grunt ) {
                     dest:   './bin/',
                     ext:    '.js'
                 }]
+            },
+            build_tests:  {
+                options: {
+                    blacklist: [
+                        'es3.memberExpressionLiterals',
+                        'es3.propertyLiterals',
+                        'regenerator', //es6.generators
+                        'es6.properties.shorthand'
+                    ],
+                    optional:  [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'es7.functionBind',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './test/src/',
+                    src:    './**/*.js',
+                    dest:   './test/build/'
+                }]
             }
         },
         usebanner: {
@@ -103,10 +126,20 @@ module.exports = function( grunt ) {
         clean:     {
             build: {
                 src: ['./build', './bin/**/*.js', './bin/**/*.map']
+            },
+            tests: {
+                src: ['./test/build']
             }
         }
     } );
 
-    grunt.registerTask( 'build', ['clean:build', 'babel', 'usebanner:license'] );
-    grunt.registerTask( 'default', ['build'] );
+    grunt.registerTask( 'build', ['clean:build',
+                                  'babel:build_modern',
+                                  'babel:build_compat',
+                                  'babel:build_binary',
+                                  'usebanner:license'] );
+
+    grunt.registerTask( 'build-tests', ['clean:tests', 'babel:build_tests'] );
+
+    grunt.registerTask( 'default', ['build', 'build-tests'] );
 };
