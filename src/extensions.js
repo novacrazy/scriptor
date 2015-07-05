@@ -12,14 +12,14 @@ let readFileAsync = Promise.promisify( readFile );
 
 export default {
     '.js':   ( module, filename ) => {
-        return readFile( filename ).then( injectAMDAndStripBOM ).then( src => {
+        return readFileAsync( filename ).then( injectAMDAndStripBOM ).then( src => {
             module._compile( src.toString( 'utf-8' ), filename );
 
             return src;
         } )
     },
     '.json': ( module, filename ) => {
-        return readFile( filename ).then( stripBOM ).then( src => {
+        return readFileAsync( filename ).then( stripBOM ).then( src => {
             try {
                 module.exports = JSON.parse( src.toString( 'utf-8' ) );
 
