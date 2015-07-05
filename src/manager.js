@@ -5,7 +5,7 @@
 import Module from 'module';
 
 import {resolve} from 'path';
-import {normalizeConfig} from 'utils.js';
+import {normalizeConfig} from './utils.js';
 
 import Script from './script.js';
 

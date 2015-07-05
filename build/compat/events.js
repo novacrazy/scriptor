@@ -44,7 +44,7 @@ exports.makeMultiEventPromise = makeMultiEventPromise;
 
 var _events = require( 'events' );
 
-var _import = require( '_' );
+var _lodash = require( 'lodash' );
 
 var Promise = require( 'bluebird' );
 

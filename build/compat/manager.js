@@ -46,7 +46,7 @@ var _module3 = _interopRequireDefault( _module2 );
 
 var _path = require( 'path' );
 
-var _utilsJs = require( 'utils.js' );
+var _utilsJs = require( './utils.js' );
 
 var _scriptJs = require( './script.js' );
 

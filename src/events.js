@@ -7,7 +7,7 @@ import {EventEmitter} from 'events';
 
 export * from 'events';
 
-import {once} from '_';
+import {once} from 'lodash';
 
 export class EventPropagator extends EventEmitter {
     _propagateEvents = false;
