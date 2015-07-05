@@ -63,10 +63,6 @@ var _path = require( 'path' );
 
 var _errorJs = require( './error.js' );
 
-var _amdNormalizeConfigJs = require( './amd/normalize-config.js' );
-
-var _amdParseDefineJs = require( './amd/parse-define.js' );
-
 var _eventsJs = require( './events.js' );
 
 var _defaultsJs = require( './defaults.js' );
@@ -124,7 +120,7 @@ var Script = (function( _EventPropagator ) {
         this._loading = false;
         this._loadingText = false;
         this._runningFactory = false;
-        this._config = _amdNormalizeConfigJs.normalizeConfig( null );
+        this._config = _utilsJs.normalizeConfig( null );
         this._dependencies = [];
         this.require = null;
         this.define = null;
@@ -233,7 +229,7 @@ var Script = (function( _EventPropagator ) {
 
     Script.prototype.config = function config( _config2 ) {
         if( _config2 !== void 0 && _config2 !== null ) {
-            this._config = _amdNormalizeConfigJs.normalizeConfig( _config2 );
+            this._config = _utilsJs.normalizeConfig( _config2 );
         }
 
         return this._config;
@@ -493,7 +489,8 @@ var Script = (function( _EventPropagator ) {
                                                             reject( _errorJs.normalizeError( id, 'scripterror', err ) );
                                                         };
 
-                                                        //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                                                        //Since onload is a closure, it 'this' is implicitly bound with
+                                                        // TypeScript
                                                         plugin.load( id, _this6.require, onLoad, _this6._config );
                                                     })();
                                                 }
@@ -653,7 +650,7 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype._define = function _define() {
-        var define_args = _amdParseDefineJs.parseDefine.apply( undefined, arguments );
+        var define_args = _utilsJs.parseDefine.apply( undefined, arguments );
 
         var id = define_args[0];
 

@@ -11,13 +11,11 @@ import {resolve as resolveURL} from 'url';
 import {extname, dirname, basename, resolve as resolvePath, posix as path} from 'path';
 
 import {normalizeError} from './error.js';
-import {normalizeConfig} from './amd/normalize-config.js';
-import {parseDefine} from './amd/parse-define.js';
 
 import {EventPropagator} from './events.js';
 import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
 
-import {tryPromise, isGeneratorFunction, makeCoroutine, isAbsoluteOrRelative, bind} from './utils.js';
+import {tryPromise, isGeneratorFunction, makeCoroutine, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
 
 import defaultExtensions from './extensions.js';
 
