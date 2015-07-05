@@ -33,6 +33,7 @@ module.exports = function( grunt ) {
                     optional:  [
                         'runtime',
                         'spec.undefinedToVoid',
+                        'es7.functionBind',
                         'minification.constantFolding',
                         'minification.propertyLiterals',
                         //'minification.deadCodeElimination',
@@ -53,6 +54,7 @@ module.exports = function( grunt ) {
                     optional: [
                         'runtime',
                         'spec.undefinedToVoid',
+                        'es7.functionBind',
                         'minification.constantFolding',
                         'minification.propertyLiterals',
                         'es7.asyncFunctions',
