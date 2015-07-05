@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+
+require( './scriptor-compat.js' )( process.argv );

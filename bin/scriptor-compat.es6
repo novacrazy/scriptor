@@ -12,10 +12,10 @@ import _ from 'lodash';
 
 let constants = process.binding( 'constants' );
 
-import {default_debounceMaxWait, default_max_recursion} from './../build/modern/defaults.js';
+import {default_debounceMaxWait, default_max_recursion} from './../build/compat/defaults.js';
 import {Logger, LogLevel} from './tools/cli.js';
 
-import * as Scriptor from './../build/modern/index.js';
+import * as Scriptor from './../build/compat/index.js';
 
 function diff_ms( start ) {
     let [seconds, nanoseconds] = process.hrtime( start );
