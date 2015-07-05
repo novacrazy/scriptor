@@ -16,7 +16,7 @@ module.exports = function( grunt ) {
             options:      {
                 loose:        "all",
                 ast:          false,
-                sourceMaps:   true,
+                sourceMaps: false,
                 nonStandard:  false,
                 compact:      "false",
                 modules:      "common",
@@ -55,9 +55,8 @@ module.exports = function( grunt ) {
                         'spec.undefinedToVoid',
                         'minification.constantFolding',
                         'minification.propertyLiterals',
-                        //'minification.deadCodeElimination',
-                        //'utility.inlineEnvironmentVariables',
-                        'bluebirdCoroutines',
+                        'es7.asyncFunctions',
+                        'regenerator',
                         'es7.classProperties'
                     ]
                 },
@@ -75,10 +74,6 @@ module.exports = function( grunt ) {
                         'spec.undefinedToVoid',
                         'minification.constantFolding',
                         'minification.propertyLiterals'
-                        //'minification.deadCodeElimination',
-                        //'utility.inlineEnvironmentVariables',
-                        //'bluebirdCoroutines',
-                        //'es7.classProperties'
                     ]
                 },
                 files:   {
