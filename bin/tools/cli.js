@@ -24,6 +24,8 @@ var _events = require( 'events' );
 
 var _util = require( 'util' );
 
+var _util2 = _interopRequireDefault( _util );
+
 function Enum( values ) {
     _assert2['default']( typeof values === 'object' && !Array.isArray( values ), 'Enum values must be an object' );
 
@@ -112,7 +114,7 @@ var Logger = (function( _EventEmitter ) {
 
     Logger.prototype.do_log = function do_log( level, format, args ) {
         if( level <= this.level ) {
-            var message = format.apply( undefined, args );
+            var message = _util2['default'].format.apply( _util2['default'], args );
 
             print_message( level, message );
 

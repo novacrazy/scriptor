@@ -4,7 +4,7 @@
 
 import assert from 'assert';
 import {EventEmitter} from 'events';
-import {format} from 'util';
+import util from 'util';
 
 function Enum( values ) {
     assert( typeof values === 'object' && !Array.isArray( values ), 'Enum values must be an object' );
@@ -75,7 +75,7 @@ export class Logger extends EventEmitter {
 
     do_log( level, format, args ) {
         if( level <= this.level ) {
-            var message = format( ...args );
+            var message = util.format( ...args );
 
             print_message( level, message );
 
