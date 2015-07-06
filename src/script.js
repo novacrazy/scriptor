@@ -77,6 +77,8 @@ export default class Script extends EventPropagator {
 
     imports = {};
 
+    static Scriptor = null;
+
     static extensions_enabled = true;
     static extensions = defaultExtensions;
 
@@ -525,7 +527,7 @@ export default class Script extends EventPropagator {
                     return Promise;
 
                 } else if( id === 'Scriptor' ) {
-                    return null; //TODO: Figure out what to export
+                    return Script.Scriptor;
 
                 } else if( this._loadCache.has( id ) ) {
                     return this._loadCache.get( id );
