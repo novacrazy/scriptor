@@ -4,6 +4,10 @@
 
 import assert from 'assert';
 
+import Promise from 'bluebird';
+
+Promise.longStackTraces();
+
 export function runTests( build, tests ) {
     assert( build === 'compat' || build === 'modern', 'Only modern and compat builds are supported' );
 
