@@ -1,0 +1,36 @@
+/**
+ * Created by Aaron on 7/6/2015.
+ */
+
+import {runTests} from './runner.js';
+
+import assert from 'assert';
+
+import Promise from 'bluebird';
+
+var Module = require( 'module' );
+var path = require( 'path' );
+var fs = require( 'fs' );
+//Draws from the same node_modules folder, so they should be exact
+var touch = require( 'touch' );
+
+let tests = ( Scriptor, build ) => {
+    describe( `Script loading (${build} build)`, () => {
+        let Script = Scriptor.Script;
+
+        describe( 'empty file', function() {
+            let script = new Script( './test/build/fixtures/scripts/empty.js', module );
+
+            it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
+                script.exports().then( function( script_exports ) {
+                    assert.deepEqual( script_exports, {} );
+                    assert( script.loaded );
+
+                } ).then( done );
+            } );
+        } );
+    } );
+};
+
+runTests( 'compat', tests );
+runTests( 'modern', tests );
