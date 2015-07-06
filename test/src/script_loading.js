@@ -64,7 +64,10 @@ let tests = ( Scriptor, build ) => {
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
                     assert.deepEqual( script_exports, {
-                        test: 42
+                        'default':  {
+                            test: 42
+                        },
+                        __esModule: true
                     } );
                     assert( script.loaded );
 

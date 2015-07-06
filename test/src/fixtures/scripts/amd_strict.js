@@ -6,4 +6,6 @@ define( ['exports'], function( exports ) {
     exports['default'] = {
         test: 42
     };
+
+    exports.__esModule = true;
 } );
