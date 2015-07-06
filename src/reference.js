@@ -23,6 +23,7 @@ class ReferenceBase extends EventEmitter {
     _value = void 0;
     _ran = false;
     _running = false;
+    _closed = false;
 
     _left = void 0;
     _right = void 0;
@@ -39,16 +40,23 @@ class ReferenceBase extends EventEmitter {
         return this._running;
     }
 
+    get closed() {
+        return this._closed;
+    }
+
     value() {
         if( this._ran ) {
             return Promise.resolve( this._value );
 
-        } else {
+        } else if( !this._closed ) {
             let waiting = makeEventPromise( this, 'value', 'value_error' );
 
             this._run();
 
             return waiting;
+
+        } else {
+            return Promise.reject( 'Reference closed.' );
         }
     }
 
@@ -69,9 +77,18 @@ class ReferenceBase extends EventEmitter {
     }
 
     close() {
+        if( this._running ) {
+            this.emit( 'value_error', new Error( 'Reference closed' ) );
+        }
+
+        this._running = false;
+        this._ran = false;
+
         delete this['_left'];
         delete this['_right'];
         delete this['_value'];
+
+        this._closed = true;
     }
 }
 
@@ -96,29 +113,26 @@ export default class Reference extends ReferenceBase {
         script.on( 'change', this._onChange );
     }
 
-    get closed() {
-        return this._script === void 0 ||
-               this._script === null;
-    }
-
     _run() {
         if( !this._running ) {
             this._running = true;
 
             this._script.apply( this._args ).then( value => {
-                if( typeof value === 'object' ) {
-                    this._value = _.clone( value );
+                if( this._running ) {
+                    if( typeof value === 'object' ) {
+                        this._value = _.clone( value );
 
-                    Object.freeze( this._value );
+                        Object.freeze( this._value );
 
-                } else {
-                    this._value = value;
+                    } else {
+                        this._value = value;
+                    }
+
+                    this._ran = true;
+                    this._running = false;
+
+                    this.emit( 'value', this._value );
                 }
-
-                this._ran = true;
-                this._running = false;
-
-                this.emit( 'value', this._value );
 
             } ).catch( err => {
                 this._running = false;
@@ -129,7 +143,7 @@ export default class Reference extends ReferenceBase {
     }
 
     close() {
-        if( !this.closed ) {
+        if( !this._closed ) {
             this._script.removeListener( 'change', this._onChange );
 
             delete this['_args'];
@@ -208,28 +222,26 @@ class TransformReference extends ReferenceBase {
         ref.on( 'change', this._onChange );
     }
 
-    get closed() {
-        return this._ref === void 0;
-    }
-
     _run() {
         if( !this._running ) {
             this._running = true;
 
             tryReject( this._transform, null, this._ref, null ).then( value => {
-                if( typeof value === 'object' ) {
-                    this._value = _.clone( value );
+                if( this._running ) {
+                    if( typeof value === 'object' ) {
+                        this._value = _.clone( value );
 
-                    Object.freeze( this._value );
+                        Object.freeze( this._value );
 
-                } else {
-                    this._value = value;
+                    } else {
+                        this._value = value;
+                    }
+
+                    this._ran = true;
+                    this._running = false;
+
+                    this.emit( 'value', this._value );
                 }
-
-                this._ran = true;
-                this._running = false;
-
-                this.emit( 'value', this._value );
 
             } ).catch( err => {
                 this._running = false;
@@ -240,7 +252,7 @@ class TransformReference extends ReferenceBase {
     }
 
     close( recursive = false ) {
-        if( !this.closed ) {
+        if( !this._closed ) {
             this._ref.removeListener( 'change', this._onChange );
 
             if( recursive ) {
@@ -283,28 +295,26 @@ class JoinedTransformReference extends ReferenceBase {
         right.on( 'change', this._onChange );
     }
 
-    get closed() {
-        return this._left === void 0 || this._right === void 0;
-    }
-
     _run() {
         if( !this._running ) {
             this._running = true;
 
             tryReject( this._transform, null, this._left, this._right ).then( value => {
-                if( typeof value === 'object' ) {
-                    this._value = _.clone( value );
+                if( this._running ) {
+                    if( typeof value === 'object' ) {
+                        this._value = _.clone( value );
 
-                    Object.freeze( this._value );
+                        Object.freeze( this._value );
 
-                } else {
-                    this._value = value;
+                    } else {
+                        this._value = value;
+                    }
+
+                    this._ran = true;
+                    this._running = false;
+
+                    this.emit( 'value', this._value );
                 }
-
-                this._ran = true;
-                this._running = false;
-
-                this.emit( 'value', this._value );
 
             } ).catch( err => {
                 this._running = false;
@@ -315,7 +325,7 @@ class JoinedTransformReference extends ReferenceBase {
     }
 
     close( recursive = false ) {
-        if( !this.closed ) {
+        if( !this._closed ) {
             this._left.removeListener( 'change', this._onChange );
             this._right.removeListener( 'change', this._onChange );
 
@@ -338,40 +348,30 @@ class ResolvedReference extends ReferenceBase {
         this._run();
     }
 
-    get closed() {
-        return !this._running && !this._ran;
-    }
-
     _run() {
         if( !this._running ) {
             this._running = true;
 
             tryPromise( this._value ).then( result => {
-                if( typeof result === 'object' ) {
-                    this._value = Object.freeze( result );
+                if( this._running ) {
+                    if( typeof result === 'object' ) {
+                        this._value = Object.freeze( result );
 
-                } else {
-                    this._value = result;
+                    } else {
+                        this._value = result;
+                    }
+
+                    this._ran = true;
+                    this._running = false;
+
+                    this.emit( 'value', this._value );
                 }
-
-                this._ran = true;
-                this._running = false;
-
-                this.emit( 'value', this._value );
 
             } ).catch( err => {
                 this._running = false;
 
                 this.emit( 'value_error', err );
             } );
-        }
-    }
-
-    close() {
-        if( this._ran ) {
-            super.close();
-
-            this._ran = false;
         }
     }
 }
