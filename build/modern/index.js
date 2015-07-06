@@ -40,22 +40,23 @@ var _bluebird = require( 'bluebird' );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-exports.Promise = _bluebird2.default;
-
 var _script = require( './script' );
 
 var _script2 = _interopRequireDefault( _script );
-
-exports.Script = _script2.default;
 
 var _manager = require( './manager' );
 
 var _manager2 = _interopRequireDefault( _manager );
 
-exports.Manager = _manager2.default;
-
 var _reference = require( './reference' );
 
 var _reference2 = _interopRequireDefault( _reference );
 
-exports.Reference = _reference2.default;
+var Scriptor = {
+    Promise: _bluebird2.default, Script: _script2.default, Manager: _manager2.default, Reference: _reference2.default
+};
+
+_script2.default.Scriptor = Scriptor;
+
+exports.default = Scriptor;
+module.exports = exports.default;

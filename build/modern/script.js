@@ -76,6 +76,7 @@ var _extensionsJs = require( './extensions.js' );
 var _extensionsJs2 = _interopRequireDefault( _extensionsJs );
 
 var scriptCache = new _Map();
+var promisifyCache = new _Map();
 
 function load( filename ) {
     var watch = arguments[1] === undefined ? true : arguments[1];
@@ -281,7 +282,7 @@ var Script = (function( _EventPropagator ) {
              * If this is true, generators are obviously supported.
              * */
             if( _utilsJs.isGeneratorFunction( factory ) ) {
-                factory = makeCoroutine( factory );
+                factory = _bluebird2.default.coroutine( factory );
             }
 
             return this._require( deps ).then( function( resolvedDeps ) {
@@ -488,7 +489,7 @@ var Script = (function( _EventPropagator ) {
                 } else if( id === 'Promise' ) {
                     return _bluebird2.default;
                 } else if( id === 'Scriptor' ) {
-                    return null; //TODO: Figure out what to export
+                    return Script.Scriptor;
                 } else if( this._loadCache.has( id ) ) {
                     return this._loadCache.get( id );
                 } else if( this._defineCache.has( id ) ) {
@@ -977,6 +978,10 @@ var Script = (function( _EventPropagator ) {
             this._textMode = !!value;
         }
     }], [{
+        key:        'Scriptor',
+        value:      null,
+        enumerable: true
+    }, {
         key:        'extensions_enabled',
         value:      true,
         enumerable: true
