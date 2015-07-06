@@ -29,6 +29,34 @@ let tests = ( Scriptor, build ) => {
                 } ).then( done );
             } );
         } );
+
+        describe( 'simple script with CommonJS style exports', function() {
+            let script = new Script( './test/build/fixtures/scripts/commonjs_simple.js', module );
+
+            it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
+                script.exports().then( function( script_exports ) {
+                    assert.deepEqual( script_exports, {
+                        test: 42
+                    } );
+                    assert( script.loaded );
+
+                } ).then( done );
+            } );
+        } );
+
+        describe( 'simple script with simple AMD style factory exports', function() {
+            let script = new Script( './test/build/fixtures/scripts/amd_simple.js', module );
+
+            it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
+                script.exports().then( function( script_exports ) {
+                    assert.deepEqual( script_exports, {
+                        test: 42
+                    } );
+                    assert( script.loaded );
+
+                } ).then( done );
+            } );
+        } );
     } );
 };
 
