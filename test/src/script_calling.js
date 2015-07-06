@@ -55,6 +55,19 @@ let tests = ( Scriptor, build ) => {
                 } ).then( done );
             } );
         } );
+
+        describe( 'passing arguments to main function', function() {
+            let script = new Script( './test/build/fixtures/calling/arguments.js', module );
+
+            it( 'should call the exported function and return the result', function( done ) {
+                script.call( 'test' ).then( function( result ) {
+                    assert.deepEqual( result, 'Hello' );
+
+                    assert( script.loaded );
+
+                } ).then( done );
+            } );
+        } );
     } );
 };
 
