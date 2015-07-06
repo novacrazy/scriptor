@@ -69,6 +69,8 @@ class ReferenceBase extends EventEmitter {
     }
 
     close() {
+        delete this['_left'];
+        delete this['_right'];
         delete this['_value'];
     }
 }
@@ -188,7 +190,7 @@ class TransformReference extends ReferenceBase {
         assert( ref instanceof ReferenceBase, 'transform will only work on References' );
         assert.strictEqual( typeof transform, 'function', 'transform function must be a function' );
 
-        this._ref = ref;
+        this._left = this._ref = ref;
 
         if( isGeneratorFunction( transform ) ) {
             this._transform = makeCoroutine( transform );
@@ -235,10 +237,6 @@ class TransformReference extends ReferenceBase {
                 this.emit( 'value_error', err );
             } );
         }
-    }
-
-    left() {
-        return this._ref;
     }
 
     close( recursive = false ) {
@@ -325,9 +323,6 @@ class JoinedTransformReference extends ReferenceBase {
                 this._left.close( recursive );
                 this._right.close( recursive );
             }
-
-            delete this['_left'];
-            delete this['_right'];
 
             super.close();
         }
