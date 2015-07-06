@@ -57,6 +57,20 @@ let tests = ( Scriptor, build ) => {
                 } ).then( done );
             } );
         } );
+
+        describe( 'simple script with AMD strict style factory exports', function() {
+            let script = new Script( './test/build/fixtures/scripts/amd_strict.js', module );
+
+            it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
+                script.exports().then( function( script_exports ) {
+                    assert.deepEqual( script_exports, {
+                        test: 42
+                    } );
+                    assert( script.loaded );
+
+                } ).then( done );
+            } );
+        } );
     } );
 };
 

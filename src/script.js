@@ -339,16 +339,23 @@ export default class Script extends EventPropagator {
 
             return this._runFactory( null, this._dependencies, this._factory ).then( result => {
                 if( this._pending ) {
-                    //To match AMDefine, don't export the result unless there is one.
-                    //Null is allowed, since it would have to have been returned explicitly.
                     if( result !== void 0 ) {
+                        this._script.exports = result;
+
+                    } else {
+                        result = this._script.exports;
+                    }
+
+                    if( result['default'] !== void 0 ) {
+                        result = result['default'];
+
                         this._script.exports = result;
                     }
 
                     this._pending = false;
                     this._runningFactory = false;
 
-                    this.emit( 'exports', this._script.exports );
+                    this.emit( 'exports', result );
                 }
 
             }, err => {
@@ -736,13 +743,7 @@ export default class Script extends EventPropagator {
     apply( args ) {
         if( !this.textMode ) {
             return this.exports().then( main => {
-                if( typeof main === 'function' ||
-                    (main !== void 0 && main !== null && typeof main['default'] === 'function') ) {
-
-                    if( typeof main['default'] === 'function' ) {
-                        main = main['default'];
-                    }
-
+                if( typeof main === 'function' ) {
                     if( isGeneratorFunction( main ) ) {
                         main = makeCoroutine( main );
                     }
