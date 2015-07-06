@@ -55,6 +55,10 @@ var _bluebird = require( 'bluebird' );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
+var _lodash = require( 'lodash' );
+
+var _lodash2 = _interopRequireDefault( _lodash );
+
 var _fs = require( 'fs' );
 
 var _url = require( 'url' );
@@ -81,7 +85,7 @@ function load( filename ) {
 
     var script;
 
-    filename = _path.posix.resolve( filename );
+    filename = _path.resolve( filename );
 
     if( scriptCache.has( filename ) ) {
         script = scriptCache.get( filename );
@@ -134,12 +138,12 @@ var Script = (function( _EventPropagator ) {
             }
         }
 
+        this._script = new _module3['default']( null, parent );
+
         //Explicit comparisons to appease JSHint
         if( filename !== void 0 && filename !== null ) {
             this.load( filename );
         }
-
-        this._script = new _module3['default']( null, parent );
 
         this._init();
     }
@@ -162,7 +166,7 @@ var Script = (function( _EventPropagator ) {
             _assert2['default'].strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
 
             if( filepath.charAt( 0 ) === '.' ) {
-                //Use the url.resolve instead of path.resolve, even though they usually do the same thing
+                //Use the url.resolve instead of resolve, even though they usually do the same thing
                 return _url.resolve( _this.baseUrl, filepath );
             } else {
                 return filepath;
@@ -193,7 +197,7 @@ var Script = (function( _EventPropagator ) {
 
         //This is almost exactly like the normal require.resolve, but it's relative to this.baseUrl
         require.resolve = function( id ) {
-            var relative = resolve( _this.baseUrl, id );
+            var relative = _path.resolve( _this.baseUrl, id );
             return _module3['default']._resolveFilename( relative, _this._script );
         };
 
@@ -330,7 +334,7 @@ var Script = (function( _EventPropagator ) {
 
             while( 1 ) switch( context$2$0.prev = context$2$0.next ) {
                 case 0:
-                    normalize = resolve.bind( null, this.baseUrl );
+                    normalize = _path.resolve.bind( null, this.baseUrl );
 
                     if( !Array.isArray( id ) ) {
                         context$2$0.next = 5;
@@ -402,7 +406,7 @@ var Script = (function( _EventPropagator ) {
                                                         if( typeof obj === 'function' ) {
                                                             return _bluebird2['default'].promisify( obj );
                                                         } else if( typeof obj === 'object' ) {
-                                                            var newObj = _.clone( obj );
+                                                            var newObj = _lodash2['default'].clone( obj );
 
                                                             return _bluebird2['default'].promisifyAll( newObj );
                                                         } else {
@@ -627,7 +631,7 @@ var Script = (function( _EventPropagator ) {
                     filepath = this._config.paths[id];
 
                     if( filepath.charAt( 0 ) === '.' ) {
-                        filepath = resolve( this.baseUrl, filepath );
+                        filepath = _path.resolve( this.baseUrl, filepath );
                     }
 
                     return context$2$0.abrupt( 'return', this.require( filepath ) );
@@ -852,7 +856,7 @@ var Script = (function( _EventPropagator ) {
     Script.prototype.load = function load( filename ) {
         var watch = arguments[1] === undefined ? true : arguments[1];
 
-        filename = resolve( filename );
+        filename = _path.resolve( filename );
 
         this.close( false );
 
@@ -913,12 +917,12 @@ var Script = (function( _EventPropagator ) {
             }
 
             //These are separated out so rename and change events can be debounced separately.
-            var onChange = _.debounce( function( event, filename ) {
+            var onChange = _lodash2['default'].debounce( function( event, filename ) {
                 _this13.unload();
                 _this13.emit( 'change', event, filename );
             }, this.debounceMaxWait );
 
-            var onRename = _.debounce( function( event, filename ) {
+            var onRename = _lodash2['default'].debounce( function( event, filename ) {
                 var old_filename = _this13._script.filename;
 
                 //A simple rename doesn't change file content, so just change the filename
@@ -930,7 +934,7 @@ var Script = (function( _EventPropagator ) {
 
             watcher.on( 'change', function( event, filename ) {
 
-                //path.resolve doesn't like nulls, so this has to be done first
+                //resolve doesn't like nulls, so this has to be done first
                 if( filename === null || filename === void 0 ) {
                     //If filename is null, that is generally a bad sign, so just close the script (not permanently)
                     _this13.close( false );
@@ -939,7 +943,7 @@ var Script = (function( _EventPropagator ) {
                     //This is important because fs.watch 'change' event only returns things like 'script.js'
                     //as a filename, which when resolved normally is relative to process.cwd(), not where the script
                     //actually is. So we have to get the directory of the last filename and combine it with the new name
-                    filename = resolve( _this13.baseUrl, filename );
+                    filename = _path.resolve( _this13.baseUrl, filename );
 
                     if( event === 'change' && _this13.loaded ) {
                         onChange( event, filename );
