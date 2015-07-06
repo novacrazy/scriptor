@@ -22,6 +22,7 @@ import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeCo
 import defaultExtensions from './extensions.js';
 
 let scriptCache = new Map();
+let promisifyCache = new Map();
 
 export function load( filename, watch = true, parent = null ) {
     var script;
@@ -312,7 +313,7 @@ export default class Script extends EventPropagator {
              * If this is true, generators are obviously supported.
              * */
             if( isGeneratorFunction( factory ) ) {
-                factory = makeCoroutine( factory );
+                factory = Promise.coroutine( factory );
             }
 
             return this._require( deps ).then( resolvedDeps => {
