@@ -17,7 +17,7 @@ import {normalizeError} from './error.js';
 import {EventPropagator, makeEventPromise, makeMultiEventPromise} from './events.js';
 import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
 
-import {tryPromise, isGeneratorFunction, makeCoroutine, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
+import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
 
 import defaultExtensions from './extensions.js';
 
@@ -744,7 +744,7 @@ export default class Script extends EventPropagator {
                     }
 
                     if( isGeneratorFunction( main ) ) {
-                        main = makeCoroutine( main );
+                        main = Promise.coroutine( main );
                     }
 
                     return this._callWrapper( main, null, args );
