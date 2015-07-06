@@ -46,7 +46,7 @@ let tests = ( Scriptor, build ) => {
         } );
 
         describe( 'Creating a new Script with filename and module', function() {
-            var script, name = './test/build/fixtures/empty.js';
+            var script, name = './test/fixtures/empty.js';
 
             it( 'should create a new Script instance', function() {
                 script = new Script( name, module );

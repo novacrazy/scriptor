@@ -27,7 +27,7 @@ var tests = function tests( Scriptor, build ) {
         var Script = Scriptor.Script;
 
         describe( 'empty file', function() {
-            var script = new Script( './test/build/fixtures/empty.js', module );
+            var script = new Script( './test/fixtures/empty.js', module );
 
             it( 'should not execute anything but just return the empty exports', function( done ) {
                 script.call().then( function( result ) {
@@ -38,7 +38,7 @@ var tests = function tests( Scriptor, build ) {
         } );
 
         describe( 'simple module.exports = function(){...}', function() {
-            var script = new Script( './test/build/fixtures/calling/simple.js', module );
+            var script = new Script( './test/fixtures/calling/simple.js', module );
 
             it( 'should call the exported function and return the result', function( done ) {
                 script.call().then( function( result ) {
@@ -51,7 +51,7 @@ var tests = function tests( Scriptor, build ) {
         } );
 
         describe( 'coroutine as main function', function() {
-            var script = new Script( './test/build/fixtures/calling/coroutine.js', module );
+            var script = new Script( './test/fixtures/calling/coroutine.js', module );
 
             it( 'should call the exported function and return the result', function( done ) {
                 script.call().then( function( result ) {
@@ -62,7 +62,7 @@ var tests = function tests( Scriptor, build ) {
         } );
 
         describe( 'passing arguments to main function', function() {
-            var script = new Script( './test/build/fixtures/calling/arguments.js', module );
+            var script = new Script( './test/fixtures/calling/arguments.js', module );
 
             it( 'should call the exported function and return the result', function( done ) {
                 script.call( 'test' ).then( function( result ) {

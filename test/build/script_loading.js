@@ -27,7 +27,7 @@ var tests = function tests( Scriptor, build ) {
         var Script = Scriptor.Script;
 
         describe( 'empty file', function() {
-            var script = new Script( './test/build/fixtures/empty.js', module );
+            var script = new Script( './test/fixtures/empty.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
@@ -38,7 +38,7 @@ var tests = function tests( Scriptor, build ) {
         } );
 
         describe( 'simple script with CommonJS style exports', function() {
-            var script = new Script( './test/build/fixtures/loading/commonjs_simple.js', module );
+            var script = new Script( './test/fixtures/loading/commonjs_simple.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
@@ -51,7 +51,7 @@ var tests = function tests( Scriptor, build ) {
         } );
 
         describe( 'simple script with simple AMD style factory exports', function() {
-            var script = new Script( './test/build/fixtures/loading/amd_simple.js', module );
+            var script = new Script( './test/fixtures/loading/amd_simple.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
@@ -64,12 +64,12 @@ var tests = function tests( Scriptor, build ) {
         } );
 
         describe( 'simple script with AMD strict style factory exports', function() {
-            var script = new Script( './test/build/fixtures/loading/amd_strict.js', module );
+            var script = new Script( './test/fixtures/loading/amd_strict.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
                     _assert2.default.deepEqual( script_exports, {
-                        'default':  {
+                        'default': {
                             test: 42
                         },
                         __esModule: true

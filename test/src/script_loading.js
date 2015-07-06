@@ -19,7 +19,7 @@ let tests = ( Scriptor, build ) => {
         let Script = Scriptor.Script;
 
         describe( 'empty file', function() {
-            let script = new Script( './test/build/fixtures/empty.js', module );
+            let script = new Script( './test/fixtures/empty.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
@@ -31,7 +31,7 @@ let tests = ( Scriptor, build ) => {
         } );
 
         describe( 'simple script with CommonJS style exports', function() {
-            let script = new Script( './test/build/fixtures/loading/commonjs_simple.js', module );
+            let script = new Script( './test/fixtures/loading/commonjs_simple.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
@@ -45,7 +45,7 @@ let tests = ( Scriptor, build ) => {
         } );
 
         describe( 'simple script with simple AMD style factory exports', function() {
-            let script = new Script( './test/build/fixtures/loading/amd_simple.js', module );
+            let script = new Script( './test/fixtures/loading/amd_simple.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
@@ -59,7 +59,7 @@ let tests = ( Scriptor, build ) => {
         } );
 
         describe( 'simple script with AMD strict style factory exports', function() {
-            let script = new Script( './test/build/fixtures/loading/amd_strict.js', module );
+            let script = new Script( './test/fixtures/loading/amd_strict.js', module );
 
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
