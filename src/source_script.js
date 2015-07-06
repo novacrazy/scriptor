@@ -121,7 +121,7 @@ export default class SourceScript extends Script {
 
     source( encoding ) {
         if( this._source instanceof ReferenceBase ) {
-            return this._source.value().then( this::_normalizeSource ); //Note the function bind
+            return this._source.value().then( this._normalizeSource.bind( this ) );
 
         } else {
             try {
