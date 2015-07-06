@@ -14,7 +14,7 @@ export function normalizeError( id, type, err = {} ) {
 
     err.requireType = err.requireType || type;
 
-    err.message = (err.message || '') + ' - ' + id;
+    err.message = `${err.message || ''} - ${id}`;
 
     return err;
 }
