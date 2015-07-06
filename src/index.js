@@ -6,7 +6,15 @@
  * This file uses ES7 export extensions
  * */
 
-export Promise from 'bluebird';
-export Script from './script';
-export Manager from './manager';
-export Reference from './reference';
+import Promise from 'bluebird';
+import Script from './script';
+import Manager from './manager';
+import Reference from './reference';
+
+let Scriptor = {
+    Promise, Script, Manager, Reference
+};
+
+Script.Scriptor = Scriptor;
+
+export default Scriptor;
