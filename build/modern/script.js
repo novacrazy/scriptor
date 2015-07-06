@@ -281,7 +281,7 @@ var Script = (function( _EventPropagator ) {
              * If this is true, generators are obviously supported.
              * */
             if( _utilsJs.isGeneratorFunction( factory ) ) {
-                factory = _utilsJs.makeCoroutine( factory );
+                factory = makeCoroutine( factory );
             }
 
             return this._require( deps ).then( function( resolvedDeps ) {
@@ -708,7 +708,7 @@ var Script = (function( _EventPropagator ) {
                     }
 
                     if( _utilsJs.isGeneratorFunction( main ) ) {
-                        main = _utilsJs.makeCoroutine( main );
+                        main = _bluebird2.default.coroutine( main );
                     }
 
                     return _this10._callWrapper( main, null, args );

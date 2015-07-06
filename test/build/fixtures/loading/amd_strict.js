@@ -1,0 +1,13 @@
+/**
+ * Created by Aaron on 7/6/2015.
+ */
+
+'use strict';
+
+define( ['exports'], function( exports ) {
+    exports['default'] = {
+        test: 42
+    };
+
+    exports.__esModule = true;
+} );

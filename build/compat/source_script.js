@@ -150,7 +150,7 @@ var SourceScript = (function( _Script ) {
 
     SourceScript.prototype.source = function source( encoding ) {
         if( this._source instanceof _referenceJs.ReferenceBase ) {
-            return this._source.value().then( _normalizeSource.bind( this ) ); //Note the function bind
+            return this._source.value().then( this._normalizeSource.bind( this ) );
         } else {
             try {
                 var src = this._normalizeSource( this._source );
