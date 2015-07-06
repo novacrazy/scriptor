@@ -2,9 +2,9 @@
  * Created by novacrazy on 7/8/14.
  */
 
-module.exports = function(grunt) {
+module.exports = function( grunt ) {
 
-    grunt.loadNpmTasks( 'grunt-ts' );
+    grunt.loadNpmTasks( 'grunt-babel' );
     grunt.loadNpmTasks( 'grunt-contrib-clean' );
     grunt.loadNpmTasks( 'grunt-banner' );
 
@@ -12,32 +12,107 @@ module.exports = function(grunt) {
                   + '\n ****/';
 
     grunt.initConfig( {
-        ts:        {
-            options: {
-                target:         'es5',
-                module:         'commonjs',
-                sourceMap:      false,
-                declaration:    false,
-                removeComments: false
+        babel:     {
+            options:      {
+                loose:        "all",
+                ast:          false,
+                sourceMaps: false,
+                nonStandard:  false,
+                compact:      "false",
+                modules:      "common",
+                experimental: true
             },
-            'build': {
-                src:       ['./src/**/*.ts'],
-                outDir:    './build/',
-                reference: './src/reference.ts'
+            build_modern: {
+                options: {
+                    blacklist: [
+                        'es3.memberExpressionLiterals',
+                        'es3.propertyLiterals',
+                        'regenerator', //es6.generators
+                        'es6.properties.shorthand'
+                    ],
+                    optional:  [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'es7.functionBind',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals',
+                        'es7.exportExtensions',
+                        'bluebirdCoroutines',
+                        'es7.classProperties'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './src/',
+                    src:    './**/*.js',
+                    dest:   './build/modern/'
+                }]
+            },
+            build_compat: {
+                options: {
+                    optional: [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'es7.functionBind',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals',
+                        'es7.exportExtensions',
+                        'es7.asyncFunctions',
+                        'regenerator',
+                        'es7.classProperties'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './src/',
+                    src:    './**/*.js',
+                    dest:   './build/compat/'
+                }]
+            },
+            build_binary: {
+                options: {
+                    optional: [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals',
+                        'es7.classProperties'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './bin/',
+                    src:    './**/*.es6',
+                    dest:   './bin/',
+                    ext:    '.js'
+                }]
+            },
+            build_tests:  {
+                options: {
+                    blacklist: [
+                        'es3.memberExpressionLiterals',
+                        'es3.propertyLiterals',
+                        'regenerator', //es6.generators
+                        'es6.properties.shorthand'
+                    ],
+                    optional:  [
+                        'runtime',
+                        'spec.undefinedToVoid',
+                        'es7.functionBind',
+                        'minification.constantFolding',
+                        'minification.propertyLiterals'
+                    ]
+                },
+                files:   [{
+                    expand: true,
+                    cwd:    './test/src/',
+                    src:    './**/*.js',
+                    dest:   './test/build/'
+                }]
             }
         },
         usebanner: {
-            build_strict: {
-                options: {
-                    position:  'top',
-                    banner:    '"use strict";',
-                    linebreak: true
-                },
-                files:   {
-                    src: ['./build/**/*.js']
-                }
-            },
-            license:      {
+            license: {
                 options: {
                     position:  'top',
                     banner:    LICENSE,
@@ -50,11 +125,21 @@ module.exports = function(grunt) {
         },
         clean:     {
             build: {
-                src: ['./build']
+                src: ['./build', './bin/**/*.js', './bin/**/*.map']
+            },
+            tests: {
+                src: ['./test/build']
             }
         }
     } );
 
-    grunt.registerTask( 'ts-build', ['clean:build', 'ts:build', 'usebanner:build_strict', 'usebanner:license'] );
-    grunt.registerTask( 'default', ['ts-build'] );
+    grunt.registerTask( 'build', ['clean:build',
+                                  'babel:build_modern',
+                                  'babel:build_compat',
+                                  'babel:build_binary',
+                                  'usebanner:license'] );
+
+    grunt.registerTask( 'build-tests', ['clean:tests', 'babel:build_tests'] );
+
+    grunt.registerTask( 'default', ['build', 'build-tests'] );
 };
