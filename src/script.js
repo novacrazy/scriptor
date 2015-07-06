@@ -6,6 +6,8 @@ import Module from 'module';
 import assert from 'assert';
 import Promise from 'bluebird';
 
+import _ from 'lodash';
+
 import {readFile, watch as watchFile} from 'fs';
 import {resolve as resolveURL} from 'url';
 import {extname, dirname, basename, resolve, posix as path} from 'path';
