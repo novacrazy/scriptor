@@ -14,7 +14,7 @@ import {extname, dirname, basename, resolve, posix as path} from 'path';
 
 import {normalizeError} from './error.js';
 
-import {EventPropagator} from './events.js';
+import {EventPropagator, makeEventPromise, makeMultiEventPromise} from './events.js';
 import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
 
 import {tryPromise, isGeneratorFunction, makeCoroutine, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
@@ -278,7 +278,7 @@ export default class Script extends EventPropagator {
         this._textMode = !!value;
     }
 
-    _callWrapper( func, context, args ) {
+    _callWrapper( func, context = this, args = [] ) {
         //Just in case, always use recursion protection
         if( this._recursion > this._maxRecursion ) {
             return Promise.reject( new RangeError( `Script recursion limit reached at ${this._recursion} for script ${this.filename}` ) );
