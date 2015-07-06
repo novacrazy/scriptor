@@ -14,7 +14,6 @@ module.exports = function( grunt ) {
     grunt.initConfig( {
         babel:     {
             options:      {
-                loose:        "all",
                 ast:          false,
                 sourceMaps: false,
                 nonStandard:  false,
@@ -24,6 +23,7 @@ module.exports = function( grunt ) {
             },
             build_modern: {
                 options: {
+                    loose: "all",
                     blacklist: [
                         'es3.memberExpressionLiterals',
                         'es3.propertyLiterals',
@@ -47,12 +47,12 @@ module.exports = function( grunt ) {
                 }]
             },
             build_compat: {
+                loose: [],
                 options: {
                     optional: [
                         'runtime',
                         'spec.undefinedToVoid',
                         'minification.constantFolding',
-                        'minification.propertyLiterals',
                         'es7.asyncFunctions',
                         'regenerator',
                         'es7.classProperties'
@@ -66,6 +66,7 @@ module.exports = function( grunt ) {
                 }]
             },
             build_binary: {
+                loose: "all",
                 options: {
                     optional: [
                         'runtime',
@@ -84,6 +85,7 @@ module.exports = function( grunt ) {
                 }]
             },
             build_tests:  {
+                loose: "all",
                 options: {
                     blacklist: [
                         'es3.memberExpressionLiterals',
