@@ -8,7 +8,7 @@ import Promise from 'bluebird';
 
 import {readFile, watch as watchFile} from 'fs';
 import {resolve as resolveURL} from 'url';
-import {extname, dirname, basename, resolve as resolvePath, posix as path} from 'path';
+import {extname, dirname, basename, resolve, posix as path} from 'path';
 
 import {normalizeError} from './error.js';
 
@@ -24,7 +24,7 @@ let scriptCache = new Map();
 export function load( filename, watch = true, parent = null ) {
     var script;
 
-    filename = path.resolve( filename );
+    filename = resolve( filename );
 
     if( scriptCache.has( filename ) ) {
         script = scriptCache.get( filename );
@@ -89,7 +89,7 @@ export default class Script extends EventPropagator {
             assert.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
 
             if( filepath.charAt( 0 ) === '.' ) {
-                //Use the url.resolve instead of path.resolve, even though they usually do the same thing
+                //Use the url.resolve instead of resolve, even though they usually do the same thing
                 return resolveURL( this.baseUrl, filepath );
 
             } else {
@@ -150,12 +150,12 @@ export default class Script extends EventPropagator {
             }
         }
 
+        this._script = new Module( null, parent );
+
         //Explicit comparisons to appease JSHint
         if( filename !== void 0 && filename !== null ) {
             this.load( filename );
         }
-
-        this._script = new Module( null, parent );
 
         this._init();
     }
@@ -833,7 +833,7 @@ export default class Script extends EventPropagator {
 
             watcher.on( 'change', ( event, filename ) => {
 
-                //path.resolve doesn't like nulls, so this has to be done first
+                //resolve doesn't like nulls, so this has to be done first
                 if( filename === null || filename === void 0 ) {
                     //If filename is null, that is generally a bad sign, so just close the script (not permanently)
                     this.close( false );
