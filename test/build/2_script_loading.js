@@ -32,7 +32,7 @@ var tests = function tests( Scriptor, build ) {
             it( 'should load the file upon calling it (lazy evaluation)', function( done ) {
                 script.exports().then( function( script_exports ) {
                     _assert2.default.deepEqual( script_exports, {} );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -45,7 +45,7 @@ var tests = function tests( Scriptor, build ) {
                     _assert2.default.deepEqual( script_exports, {
                         test: 42
                     } );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -58,7 +58,7 @@ var tests = function tests( Scriptor, build ) {
                     _assert2.default.deepEqual( script_exports, {
                         test: 42
                     } );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -74,12 +74,12 @@ var tests = function tests( Scriptor, build ) {
                         },
                         __esModule: true
                     } );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
     } );
 };
 
-_runnerJs.runTests( 'compat', tests );
-_runnerJs.runTests( 'modern', tests );
+(0, _runnerJs.runTests)( 'compat', tests );
+(0, _runnerJs.runTests)( 'modern', tests );

@@ -4,6 +4,8 @@
 
 'use strict';
 
+var _slicedToArray = require( 'babel-runtime/helpers/sliced-to-array' )['default'];
+
 var _Object$freeze = require( 'babel-runtime/core-js/object/freeze' )['default'];
 
 var _getIterator = require( 'babel-runtime/core-js/get-iterator' )['default'];
@@ -12,7 +14,9 @@ var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-def
 
 var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 
 var _commander = require( 'commander' );
 
@@ -51,8 +55,10 @@ var constants = process.binding( 'constants' );
 function diff_ms( start ) {
     var _process$hrtime = process.hrtime( start );
 
-    var seconds = _process$hrtime[0];
-    var nanoseconds = _process$hrtime[1];
+    var _process$hrtime2 = _slicedToArray( _process$hrtime, 2 );
+
+    var seconds = _process$hrtime2[0];
+    var nanoseconds = _process$hrtime2[1];
 
     var milliseconds = seconds * 1000 + nanoseconds * 0.000001;
 
@@ -185,30 +191,34 @@ exports['default'] = function( argv ) {
     if( !_commander2['default'].no_glob ) {
         scripts = [];
 
-        for( var _iterator = _commander2['default'].args, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
-                                                                                                                     _iterator :
-                                                                                                                     _getIterator( _iterator ); ; ) {
-            var _ref;
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
 
-            if( _isArray ) {
-                if( _i >= _iterator.length ) {
-                    break;
+        var _iteratorError = void 0;
+
+        try {
+            for( var _iterator = _getIterator( _commander2['default'].args ), _step;
+                 !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true ) {
+                var arg = _step.value;
+
+                if( _glob2['default'].hasMagic( arg ) ) {
+                    scripts = scripts.concat( _glob2['default'].sync( arg ) );
+                } else {
+                    scripts.push( arg );
                 }
-                _ref = _iterator[_i++];
-            } else {
-                _i = _iterator.next();
-                if( _i.done ) {
-                    break;
-                }
-                _ref = _i.value;
             }
-
-            var arg = _ref;
-
-            if( _glob2['default'].hasMagic( arg ) ) {
-                scripts = scripts.concat( _glob2['default'].sync( arg ) );
-            } else {
-                scripts.push( arg );
+        } catch( err ) {
+            _didIteratorError = true;
+            _iteratorError = err;
+        } finally {
+            try {
+                if( !_iteratorNormalCompletion && _iterator['return'] ) {
+                    _iterator['return']();
+                }
+            } finally {
+                if( _didIteratorError ) {
+                    throw _iteratorError;
+                }
             }
         }
     } else {
@@ -360,28 +370,33 @@ exports['default'] = function( argv ) {
 
                     var onClose = function onClose( signal ) {
                         if( !closed ) {
+                            var _iteratorNormalCompletion2 = true;
+                            var _didIteratorError2 = false;
 
-                            for( var _iterator2 = instances, _isArray2 = Array.isArray( _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ?
-                                                                                                                            _iterator2 :
-                                                                                                                            _getIterator( _iterator2 ); ; ) {
-                                var _ref2;
+                            var _iteratorError2 = void 0;
 
-                                if( _isArray2 ) {
-                                    if( _i2 >= _iterator2.length ) {
-                                        break;
-                                    }
-                                    _ref2 = _iterator2[_i2++];
-                                } else {
-                                    _i2 = _iterator2.next();
-                                    if( _i2.done ) {
-                                        break;
-                                    }
-                                    _ref2 = _i2.value;
+                            try {
+
+                                for( var _iterator2 = _getIterator( instances ), _step2;
+                                     !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done);
+                                     _iteratorNormalCompletion2 = true ) {
+                                    var instance = _step2.value;
+
+                                    instance.unload();
                                 }
-
-                                var instance = _ref2;
-
-                                instance.unload();
+                            } catch( err ) {
+                                _didIteratorError2 = true;
+                                _iteratorError2 = err;
+                            } finally {
+                                try {
+                                    if( !_iteratorNormalCompletion2 && _iterator2['return'] ) {
+                                        _iterator2['return']();
+                                    }
+                                } finally {
+                                    if( _didIteratorError2 ) {
+                                        throw _iteratorError2;
+                                    }
+                                }
                             }
 
                             //Close on the next tick so close events can propagate.

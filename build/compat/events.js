@@ -30,6 +30,10 @@
 
 var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
 
+var _get = require( 'babel-runtime/helpers/get' )['default'];
+
+var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
+
 var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
 
 var _getIterator = require( 'babel-runtime/core-js/get-iterator' )['default'];
@@ -38,7 +42,9 @@ var _defaults = require( 'babel-runtime/helpers/defaults' )['default'];
 
 var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 exports.makeEventPromise = makeEventPromise;
 exports.makeMultiEventPromise = makeMultiEventPromise;
 
@@ -54,75 +60,86 @@ var EventPropagator = (function( _EventEmitter ) {
     function EventPropagator() {
         _classCallCheck( this, EventPropagator );
 
-        _EventEmitter.apply( this, arguments );
+        _get( Object.getPrototypeOf( EventPropagator.prototype ), 'constructor', this ).apply( this, arguments );
 
         this._propagateEvents = false;
     }
 
     _inherits( EventPropagator, _EventEmitter );
 
-    EventPropagator.prototype.propagateEvents = function propagateEvents() {
-        var enable = arguments[0] === undefined ? true : arguments[0];
+    _createClass( EventPropagator, [{
+        key:   'propagateEvents',
+        value: function propagateEvents() {
+            var enable = arguments[0] === undefined ? true : arguments[0];
 
-        this._propagateEvents = enable;
-    };
+            this._propagateEvents = enable;
+        }
+    }, {
+        key:   'isPropagatingFrom',
+        value: function isPropagatingFrom( emitter, event ) {
+            var listeners = emitter.listeners( events );
 
-    EventPropagator.prototype.isPropagatingFrom = function isPropagatingFrom( emitter, event ) {
-        var listeners = emitter.listeners( events );
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
 
-        for( var _iterator = listeners, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
-                                                                                                   _iterator :
-                                                                                                   _getIterator( _iterator ); ; ) {
-            var _ref;
+            var _iteratorError = void 0;
 
-            if( _isArray ) {
-                if( _i >= _iterator.length ) {
-                    break;
+            try {
+                for( var _iterator = _getIterator( listeners ), _step;
+                     !(_iteratorNormalCompletion = (_step = _iterator.next()).done);
+                     _iteratorNormalCompletion = true ) {
+                    var listener = _step.value;
+                    var __target__ = listener.__target__;
+
+                    if( __target__ !== void 0 && __target__ === this ) {
+                        return true;
+                    }
                 }
-                _ref = _iterator[_i++];
-            } else {
-                _i = _iterator.next();
-                if( _i.done ) {
-                    break;
+            } catch( err ) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if( !_iteratorNormalCompletion && _iterator['return'] ) {
+                        _iterator['return']();
+                    }
+                } finally {
+                    if( _didIteratorError ) {
+                        throw _iteratorError;
+                    }
                 }
-                _ref = _i.value;
             }
 
-            var listener = _ref;
-            var __target__ = listener.__target__;
+            return false;
+        }
+    }, {
+        key:   'propagateFrom',
+        value: function propagateFrom( emitter, event, handler ) {
+            var _this = this;
 
-            if( __target__ !== void 0 && __target__ === this ) {
-                return true;
+            if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
+                var propagate = _.once( function() {
+                    if( !propagate._hasPropagated && _this._propagateEvents ) {
+                        handler.call( _this );
+                        propagate._hasPropagated = true;
+                    }
+
+                    emitter.removeListener( event, propagate );
+                } );
+
+                propagate.__target__ = target;
+
+                emitter.on( event, propagate );
+
+                propagate._hasPropagated = false;
             }
         }
-
-        return false;
-    };
-
-    EventPropagator.prototype.propagateFrom = function propagateFrom( emitter, event, handler ) {
-        var _this = this;
-
-        if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
-            var propagate = _.once( function() {
-                if( !propagate._hasPropagated && _this._propagateEvents ) {
-                    handler.call( _this );
-                    propagate._hasPropagated = true;
-                }
-
-                emitter.removeListener( event, propagate );
-            } );
-
-            propagate.__target__ = target;
-
-            emitter.on( event, propagate );
-
-            propagate._hasPropagated = false;
+    }, {
+        key:   'isPropagatingEvents',
+        value: function isPropagatingEvents() {
+            return this._propagateEvents;
         }
-    };
-
-    EventPropagator.prototype.isPropagatingEvents = function isPropagatingEvents() {
-        return this._propagateEvents;
-    };
+    }] );
 
     return EventPropagator;
 })( _events.EventEmitter );
@@ -153,103 +170,123 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
 function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
     return new Promise( function( resolve, reject ) {
         function resolve_handler() {
-            for( var _iterator2 = reject_events, _isArray2 = Array.isArray( _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ?
-                                                                                                                _iterator2 :
-                                                                                                                _getIterator( _iterator2 ); ; ) {
-                var _ref2;
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
 
-                if( _isArray2 ) {
-                    if( _i2 >= _iterator2.length ) {
-                        break;
-                    }
-                    _ref2 = _iterator2[_i2++];
-                } else {
-                    _i2 = _iterator2.next();
-                    if( _i2.done ) {
-                        break;
-                    }
-                    _ref2 = _i2.value;
+            var _iteratorError2 = void 0;
+
+            try {
+                for( var _iterator2 = _getIterator( reject_events ), _step2;
+                     !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done);
+                     _iteratorNormalCompletion2 = true ) {
+                    var _event = _step2.value;
+
+                    emitter.removeListener( _event, reject_handler );
                 }
-
-                var _event = _ref2;
-
-                emitter.removeListener( _event, reject_handler );
+            } catch( err ) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if( !_iteratorNormalCompletion2 && _iterator2['return'] ) {
+                        _iterator2['return']();
+                    }
+                } finally {
+                    if( _didIteratorError2 ) {
+                        throw _iteratorError2;
+                    }
+                }
             }
 
             resolve.apply( undefined, arguments );
         }
 
         function reject_handler() {
-            for( var _iterator3 = resolve_events, _isArray3 = Array.isArray( _iterator3 ), _i3 = 0, _iterator3 = _isArray3 ?
-                                                                                                                 _iterator3 :
-                                                                                                                 _getIterator( _iterator3 ); ; ) {
-                var _ref3;
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
 
-                if( _isArray3 ) {
-                    if( _i3 >= _iterator3.length ) {
-                        break;
-                    }
-                    _ref3 = _iterator3[_i3++];
-                } else {
-                    _i3 = _iterator3.next();
-                    if( _i3.done ) {
-                        break;
-                    }
-                    _ref3 = _i3.value;
+            var _iteratorError3 = void 0;
+
+            try {
+                for( var _iterator3 = _getIterator( resolve_events ), _step3;
+                     !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done);
+                     _iteratorNormalCompletion3 = true ) {
+                    var _event2 = _step3.value;
+
+                    emitter.removeListener( _event2, resolve_handler );
                 }
-
-                var _event2 = _ref3;
-
-                emitter.removeListener( _event2, resolve_handler );
+            } catch( err ) {
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
+            } finally {
+                try {
+                    if( !_iteratorNormalCompletion3 && _iterator3['return'] ) {
+                        _iterator3['return']();
+                    }
+                } finally {
+                    if( _didIteratorError3 ) {
+                        throw _iteratorError3;
+                    }
+                }
             }
 
             reject.apply( undefined, arguments );
         }
 
-        for( var _iterator4 = resolve_events, _isArray4 = Array.isArray( _iterator4 ), _i4 = 0, _iterator4 = _isArray4 ?
-                                                                                                             _iterator4 :
-                                                                                                             _getIterator( _iterator4 ); ; ) {
-            var _ref4;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
 
-            if( _isArray4 ) {
-                if( _i4 >= _iterator4.length ) {
-                    break;
-                }
-                _ref4 = _iterator4[_i4++];
-            } else {
-                _i4 = _iterator4.next();
-                if( _i4.done ) {
-                    break;
-                }
-                _ref4 = _i4.value;
+        var _iteratorError4 = void 0;
+
+        try {
+            for( var _iterator4 = _getIterator( resolve_events ), _step4;
+                 !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done);
+                 _iteratorNormalCompletion4 = true ) {
+                var _event3 = _step4.value;
+
+                emitter.once( _event3, resolve_handler );
             }
-
-            var _event3 = _ref4;
-
-            emitter.once( _event3, resolve_handler );
+        } catch( err ) {
+            _didIteratorError4 = true;
+            _iteratorError4 = err;
+        } finally {
+            try {
+                if( !_iteratorNormalCompletion4 && _iterator4['return'] ) {
+                    _iterator4['return']();
+                }
+            } finally {
+                if( _didIteratorError4 ) {
+                    throw _iteratorError4;
+                }
+            }
         }
 
-        for( var _iterator5 = reject_events, _isArray5 = Array.isArray( _iterator5 ), _i5 = 0, _iterator5 = _isArray5 ?
-                                                                                                            _iterator5 :
-                                                                                                            _getIterator( _iterator5 ); ; ) {
-            var _ref5;
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
 
-            if( _isArray5 ) {
-                if( _i5 >= _iterator5.length ) {
-                    break;
-                }
-                _ref5 = _iterator5[_i5++];
-            } else {
-                _i5 = _iterator5.next();
-                if( _i5.done ) {
-                    break;
-                }
-                _ref5 = _i5.value;
+        var _iteratorError5 = void 0;
+
+        try {
+            for( var _iterator5 = _getIterator( reject_events ), _step5;
+                 !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done);
+                 _iteratorNormalCompletion5 = true ) {
+                var _event4 = _step5.value;
+
+                emitter.once( _event4, reject_handler );
             }
-
-            var _event4 = _ref5;
-
-            emitter.once( _event4, reject_handler );
+        } catch( err ) {
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
+        } finally {
+            try {
+                if( !_iteratorNormalCompletion5 && _iterator5['return'] ) {
+                    _iterator5['return']();
+                }
+            } finally {
+                if( _didIteratorError5 ) {
+                    throw _iteratorError5;
+                }
+            }
         }
     } );
 }

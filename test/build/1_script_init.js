@@ -32,11 +32,11 @@ var tests = function tests( Scriptor, build ) {
             it( 'should create a new Script instance', function() {
                 script = new Script( module );
 
-                _assert2.default( script instanceof Script );
+                (0, _assert2.default)( script instanceof Script );
             } );
 
             it( 'should have created a new Module instance internally', function() {
-                _assert2.default( script._script instanceof Module );
+                (0, _assert2.default)( script._script instanceof Module );
             } );
 
             it( 'should use provided module as parent', function() {
@@ -44,11 +44,11 @@ var tests = function tests( Scriptor, build ) {
             } );
 
             it( 'should not be loaded', function() {
-                _assert2.default( !script.loaded );
+                (0, _assert2.default)( !script.loaded );
             } );
 
             it( 'should NOT be watching a file', function() {
-                _assert2.default( !script.watched );
+                (0, _assert2.default)( !script.watched );
             } );
         } );
 
@@ -59,11 +59,11 @@ var tests = function tests( Scriptor, build ) {
             it( 'should create a new Script instance', function() {
                 script = new Script( './test/fixtures/empty.js', module );
 
-                _assert2.default( script instanceof Script );
+                (0, _assert2.default)( script instanceof Script );
             } );
 
             it( 'should have created a new Module instance internally', function() {
-                _assert2.default( script._script instanceof Module );
+                (0, _assert2.default)( script._script instanceof Module );
             } );
 
             it( 'should use provided module as parent', function() {
@@ -71,15 +71,15 @@ var tests = function tests( Scriptor, build ) {
             } );
 
             it( 'should not be loaded', function() {
-                _assert2.default( !script.loaded );
+                (0, _assert2.default)( !script.loaded );
             } );
 
             it( 'should be watching the file', function() {
-                _assert2.default( script.watched );
+                (0, _assert2.default)( script.watched );
             } );
         } );
     } );
 };
 
-_runnerJs.runTests( 'compat', tests );
-_runnerJs.runTests( 'modern', tests );
+(0, _runnerJs.runTests)( 'compat', tests );
+(0, _runnerJs.runTests)( 'modern', tests );

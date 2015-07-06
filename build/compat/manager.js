@@ -30,6 +30,8 @@
 
 var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
 
+var _get = require( 'babel-runtime/helpers/get' )['default'];
+
 var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
 
 var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
@@ -38,7 +40,9 @@ var _Map = require( 'babel-runtime/core-js/map' )['default'];
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 
 var _module2 = require( 'module' );
 
@@ -58,7 +62,7 @@ var ScriptAdapter = (function( _Script ) {
 
         _classCallCheck( this, ScriptAdapter );
 
-        _Script.call( this, filename, parent );
+        _get( Object.getPrototypeOf( ScriptAdapter.prototype ), 'constructor', this ).call( this, filename, parent );
 
         this._manager = null;
         this._manager = manager;
@@ -73,45 +77,47 @@ var ScriptAdapter = (function( _Script ) {
 
     _inherits( ScriptAdapter, _Script );
 
-    ScriptAdapter.prototype.include = function include( filename ) {
-        var _this2 = this;
-
-        var load = arguments[1] === undefined ? false : arguments[1];
-
-        //make sure filename can be relative to the current script
-        var real_filename = _path.resolve( this.baseUrl, filename );
-
-        //Since add doesn't do anything to already existing scripts, but does return a script,
-        //it can take care of the lookup or adding at the same time. Two birds with one lookup.
-        var script = this._manager.add( real_filename );
-
-        //Since include can be used independently of reference, make sure it's loaded before returning
-        //Otherwise, the returned script is in an incomplete state
-        if( load && !script.loaded ) {
-            script.reload();
-        }
-
-        this._addPropagationHandler( script, 'change', function() {
-            _this2.unload();
-            _this2.emit( 'change', _this2.filename );
-        } );
-
-        script.propagateEvents( this._propagateEvents );
-
-        script.maxRecursion = this.maxRecursion;
-
-        return script;
-    };
-
-    ScriptAdapter.prototype.close = function close( permanent ) {
-        if( permanent ) {
-            delete this['_manager'];
-        }
-
-        return _Script.prototype.close.call( this, permanent );
-    };
-
     _createClass( ScriptAdapter, [{
+        key:   'include',
+        value: function include( filename ) {
+            var _this2 = this;
+
+            var load = arguments[1] === undefined ? false : arguments[1];
+
+            //make sure filename can be relative to the current script
+            var real_filename = (0, _path.resolve)( this.baseUrl, filename );
+
+            //Since add doesn't do anything to already existing scripts, but does return a script,
+            //it can take care of the lookup or adding at the same time. Two birds with one lookup.
+            var script = this._manager.add( real_filename );
+
+            //Since include can be used independently of reference, make sure it's loaded before returning
+            //Otherwise, the returned script is in an incomplete state
+            if( load && !script.loaded ) {
+                script.reload();
+            }
+
+            this._addPropagationHandler( script, 'change', function() {
+                _this2.unload();
+                _this2.emit( 'change', _this2.filename );
+            } );
+
+            script.propagateEvents( this._propagateEvents );
+
+            script.maxRecursion = this.maxRecursion;
+
+            return script;
+        }
+    }, {
+        key:   'close',
+        value: function close( permanent ) {
+            if( permanent ) {
+                delete this['_manager'];
+            }
+
+            return _get( Object.getPrototypeOf( ScriptAdapter.prototype ), 'close', this ).call( this, permanent );
+        }
+    }, {
         key: 'manager',
         get: function get() {
             return this._manager;
@@ -136,187 +142,201 @@ var Manager = (function() {
         this._parent = new _module3['default']( 'ScriptManager', grandParent );
     }
 
-    Manager.prototype.cwd = function cwd() {
-        return this._cwd;
-    };
-
-    Manager.prototype.chdir = function chdir( value ) {
-        this._cwd = _path.resolve( this.cwd(), value );
-
-        return this._cwd;
-    };
-
-    Manager.prototype.setMaxListeners = function setMaxListeners( value ) {
-        if( value !== null && value !== void 0 ) {
-
-            value = Math.floor( value );
-
-            assert( !isNaN( value ), 'setMaxListeners must be passed a number' );
-
-            this._maxListeners = value;
-        } else {
-            this._maxListeners = null;
+    _createClass( Manager, [{
+        key:   'cwd',
+        value: function cwd() {
+            return this._cwd;
         }
-    };
+    }, {
+        key:   'chdir',
+        value: function chdir( value ) {
+            this._cwd = (0, _path.resolve)( this.cwd(), value );
 
-    Manager.prototype.getMaxListeners = function getMaxListeners() {
-        return this._maxListeners;
-    };
-
-    Manager.prototype.config = function config( _config2 ) {
-        if( _config2 !== void 0 && _config2 !== null ) {
-            this._config = _utilsJs.normalizeConfig( _config2 );
+            return this._cwd;
         }
+    }, {
+        key:   'setMaxListeners',
+        value: function setMaxListeners( value ) {
+            if( value !== null && value !== void 0 ) {
 
-        return this._config;
-    };
+                value = Math.floor( value );
 
-    Manager.prototype.propagateEvents = function propagateEvents() {
-        var enable = arguments[0] === undefined ? true : arguments[0];
+                assert( !isNaN( value ), 'setMaxListeners must be passed a number' );
 
-        var wasPropagating = this._propagateEvents;
-
-        this._propagateEvents = enable;
-
-        if( wasPropagating && !enable ) {
-            //immediately disable propagation by pretending it's already been propagated
-            this._scripts.forEach( function( script ) {
-                script.propagateEvents( false );
-            } );
-        } else if( !wasPropagating && enable ) {
-            this._scripts.forEach( function( script ) {
-                script.propagateEvents( true );
-            } );
+                this._maxListeners = value;
+            } else {
+                this._maxListeners = null;
+            }
         }
-    };
-
-    //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
-    //but this functions as a way to add and/or get a script in one fell swoop.
-    //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
-    //from watching a file.
-
-    Manager.prototype.add = function add( filename ) {
-        var watch = arguments[1] === undefined ? true : arguments[1];
-
-        filename = _path.resolve( this.cwd(), filename );
-
-        var script = this._scripts.get( filename );
-
-        if( script === void 0 ) {
-            script = new ScriptAdapter( this, null, this._parent );
-
-            if( this._propagateEvents ) {
-                script.propagateEvents();
+    }, {
+        key:   'getMaxListeners',
+        value: function getMaxListeners() {
+            return this._maxListeners;
+        }
+    }, {
+        key:   'config',
+        value: function config( _config2 ) {
+            if( _config2 !== void 0 && _config2 !== null ) {
+                this._config = (0, _utilsJs.normalizeConfig)( _config2 );
             }
 
-            if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
-                script.debounceMaxWait = this.debounceMaxWait;
+            return this._config;
+        }
+    }, {
+        key:   'propagateEvents',
+        value: function propagateEvents() {
+            var enable = arguments[0] === undefined ? true : arguments[0];
+
+            var wasPropagating = this._propagateEvents;
+
+            this._propagateEvents = enable;
+
+            if( wasPropagating && !enable ) {
+                //immediately disable propagation by pretending it's already been propagated
+                this._scripts.forEach( function( script ) {
+                    script.propagateEvents( false );
+                } );
+            } else if( !wasPropagating && enable ) {
+                this._scripts.forEach( function( script ) {
+                    script.propagateEvents( true );
+                } );
             }
+        }
+    }, {
+        key: 'add',
+
+        //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
+        //but this functions as a way to add and/or get a script in one fell swoop.
+        //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
+        //from watching a file.
+        value: function add( filename ) {
+            var watch = arguments[1] === undefined ? true : arguments[1];
+
+            filename = (0, _path.resolve)( this.cwd(), filename );
+
+            var script = this._scripts.get( filename );
+
+            if( script === void 0 ) {
+                script = new ScriptAdapter( this, null, this._parent );
+
+                if( this._propagateEvents ) {
+                    script.propagateEvents();
+                }
+
+                if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
+                    script.debounceMaxWait = this.debounceMaxWait;
+                }
+
+                if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
+                    script.setMaxListeners( this._maxListeners );
+                }
+
+                if( this._config !== void 0 && this._config !== null ) {
+                    script.config( this._config );
+                }
+
+                script.load( filename, watch );
+
+                this._scripts.set( filename, script );
+            }
+
+            //Even if the script is added, this allows it to be watched, though not unwatched.
+            //Unwatching still has to be done manually
+            if( watch ) {
+                script.watch();
+            }
+
+            return script;
+        }
+    }, {
+        key: 'remove',
+
+        //Removes a script from the manager. But closing it permenantly is optional,
+        //as it may sometimes make sense to move it out of a manager and use it independently.
+        //However, that is quite rare so close defaults to true
+        value: function remove( filename ) {
+            var close = arguments[1] === undefined ? true : arguments[1];
+
+            filename = (0, _path.resolve)( this.cwd(), filename );
+
+            var script = this._scripts.get( filename );
+
+            if( script !== void 0 ) {
+                if( close ) {
+                    script.close();
+                }
+
+                return this._scripts['delete']( filename );
+            }
+
+            return false;
+        }
+    }, {
+        key:   'call',
+        value: function call( filename ) {
+            for( var _len = arguments.length, args = Array( _len > 1 ? _len - 1 : 0 ), _key = 1; _key < _len; _key++ ) {
+                args[_key - 1] = arguments[_key];
+            }
+
+            return this.apply( filename, args );
+        }
+    }, {
+        key:   'apply',
+        value: function apply( filename, args ) {
+            var script = this.add( filename, false );
+
+            try {
+                return script.apply( args );
+            } catch( err ) {
+                this.remove( filename, true );
+
+                throw err;
+            }
+        }
+    }, {
+        key:   'reference',
+        value: function reference( filename ) {
+            for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2;
+                 _key2++ ) {
+                args[_key2 - 1] = arguments[_key2];
+            }
+
+            return this.reference_apply( filename, args );
+        }
+    }, {
+        key:   'reference_apply',
+        value: function reference_apply( filename, args ) {
+            var ref = this.add( filename, false ).reference( args );
 
             if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
-                script.setMaxListeners( this._maxListeners );
+                ref.setMaxListeners( this._maxListeners );
             }
 
-            if( this._config !== void 0 && this._config !== null ) {
-                script.config( this._config );
-            }
-
-            script.load( filename, watch );
-
-            this._scripts.set( filename, script );
+            return ref;
         }
+    }, {
+        key:   'get',
+        value: function get( filename ) {
+            filename = (0, _path.resolve)( this.cwd(), filename );
 
-        //Even if the script is added, this allows it to be watched, though not unwatched.
-        //Unwatching still has to be done manually
-        if( watch ) {
-            script.watch();
+            return this._scripts.get( filename );
         }
+    }, {
+        key: 'clear',
 
-        return script;
-    };
+        //Make closing optional for the same reason as .remove
+        value: function clear() {
+            var close = arguments[0] === undefined ? true : arguments[0];
 
-    //Removes a script from the manager. But closing it permenantly is optional,
-    //as it may sometimes make sense to move it out of a manager and use it independently.
-    //However, that is quite rare so close defaults to true
-
-    Manager.prototype.remove = function remove( filename ) {
-        var close = arguments[1] === undefined ? true : arguments[1];
-
-        filename = _path.resolve( this.cwd(), filename );
-
-        var script = this._scripts.get( filename );
-
-        if( script !== void 0 ) {
             if( close ) {
-                script.close();
+                this._scripts.forEach( function( script ) {
+                    script.close();
+                } );
             }
 
-            return this._scripts['delete']( filename );
+            this._scripts.clear();
         }
-
-        return false;
-    };
-
-    Manager.prototype.call = function call( filename ) {
-        for( var _len = arguments.length, args = Array( _len > 1 ? _len - 1 : 0 ), _key = 1; _key < _len; _key++ ) {
-            args[_key - 1] = arguments[_key];
-        }
-
-        return this.apply( filename, args );
-    };
-
-    Manager.prototype.apply = function apply( filename, args ) {
-        var script = this.add( filename, false );
-
-        try {
-            return script.apply( args );
-        } catch( err ) {
-            this.remove( filename, true );
-
-            throw err;
-        }
-    };
-
-    Manager.prototype.reference = function reference( filename ) {
-        for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2;
-             _key2++ ) {
-            args[_key2 - 1] = arguments[_key2];
-        }
-
-        return this.reference_apply( filename, args );
-    };
-
-    Manager.prototype.reference_apply = function reference_apply( filename, args ) {
-        var ref = this.add( filename, false ).reference( args );
-
-        if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
-            ref.setMaxListeners( this._maxListeners );
-        }
-
-        return ref;
-    };
-
-    Manager.prototype.get = function get( filename ) {
-        filename = _path.resolve( this.cwd(), filename );
-
-        return this._scripts.get( filename );
-    };
-
-    //Make closing optional for the same reason as .remove
-
-    Manager.prototype.clear = function clear() {
-        var close = arguments[0] === undefined ? true : arguments[0];
-
-        if( close ) {
-            this._scripts.forEach( function( script ) {
-                script.close();
-            } );
-        }
-
-        this._scripts.clear();
-    };
-
-    _createClass( Manager, [{
+    }, {
         key: 'parent',
         get: function get() {
             return this._parent;

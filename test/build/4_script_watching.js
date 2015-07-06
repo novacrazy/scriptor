@@ -34,7 +34,7 @@ var tests = function tests( Scriptor, build ) {
                     _assert2.default.deepEqual( script_exports, {
                         test: 42
                     } );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
 
@@ -47,7 +47,7 @@ var tests = function tests( Scriptor, build ) {
             } );
 
             it( 'should be unloaded after the change', function() {
-                _assert2.default( !script.loaded );
+                (0, _assert2.default)( !script.loaded );
             } );
 
             it( 'should be able to reload the script with the changes implicitly', function( done ) {
@@ -55,19 +55,19 @@ var tests = function tests( Scriptor, build ) {
                     _assert2.default.deepEqual( script_exports, {
                         test: 42
                     } );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
 
             it( 'should be able to unwatch a file', function() {
                 script.unwatch();
 
-                _assert2.default( !script.watched );
+                (0, _assert2.default)( !script.watched );
             } );
 
             it( 'should not unload if the file is changed when the script is not watched', function( done ) {
                 var watcher = fs.watch( script.filename, function() {
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                     watcher.close();
                     done();
                 } );
@@ -78,5 +78,5 @@ var tests = function tests( Scriptor, build ) {
     } );
 };
 
-_runnerJs.runTests( 'compat', tests );
-_runnerJs.runTests( 'modern', tests );
+(0, _runnerJs.runTests)( 'compat', tests );
+(0, _runnerJs.runTests)( 'modern', tests );

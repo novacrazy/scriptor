@@ -37,5 +37,5 @@ var tests = function tests( Scriptor, build ) {
     } );
 };
 
-_runnerJs.runTests( 'compat', tests );
-_runnerJs.runTests( 'modern', tests );
+(0, _runnerJs.runTests)( 'compat', tests );
+(0, _runnerJs.runTests)( 'modern', tests );

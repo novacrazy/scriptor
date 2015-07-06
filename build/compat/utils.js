@@ -30,7 +30,9 @@
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 exports.isAbsolutePath = isAbsolutePath;
 exports.isAbsoluteOrRelative = isAbsoluteOrRelative;
 exports.bind = bind;
@@ -62,9 +64,9 @@ var AMD_Header_Buffer = new Buffer( _defaultsJs.AMD_Header );
 
 function isAbsolutePath( filepath ) {
     if( typeof _path.isAbsolute === 'function' ) {
-        return _path.isAbsolute( filepath );
+        return (0, _path.isAbsolute)( filepath );
     } else {
-        return normalize( filepath ) === _path.resolve( filepath );
+        return normalize( filepath ) === (0, _path.resolve)( filepath );
     }
 }
 
@@ -248,7 +250,7 @@ function normalizeConfig( config ) {
     config.deps = parseDeps( config.deps, config.paths );
 
     //Normalize shims
-    config.shim = _lodash2['default']( config.shim ).mapValues( function( shim ) {
+    config.shim = (0, _lodash2['default'])( config.shim ).mapValues( function( shim ) {
         if( Array.isArray( shim ) ) {
             return {
                 deps: parseDeps( shim, config.paths )
@@ -262,7 +264,7 @@ function normalizeConfig( config ) {
     } ).omit( isNull ).value();
 
     //Normalize paths
-    config.paths = _lodash2['default']( config.paths ).mapValues( function( p ) {
+    config.paths = (0, _lodash2['default'])( config.paths ).mapValues( function( p ) {
         if( _lodash2['default'].isString( p ) ) {
             return toPosix( p );
         }

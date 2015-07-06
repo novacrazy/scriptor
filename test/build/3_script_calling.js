@@ -32,7 +32,7 @@ var tests = function tests( Scriptor, build ) {
             it( 'should not execute anything but just return the empty exports', function( done ) {
                 script.call().then( function( result ) {
                     _assert2.default.deepEqual( result, {} );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -45,7 +45,7 @@ var tests = function tests( Scriptor, build ) {
                     _assert2.default.deepEqual( result, {
                         towel: 'Don\'t Forget Yours'
                     } );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -56,7 +56,7 @@ var tests = function tests( Scriptor, build ) {
             it( 'should call the exported function and return the result', function( done ) {
                 script.call().then( function( result ) {
                     _assert2.default.deepEqual( result, 42 );
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -68,12 +68,12 @@ var tests = function tests( Scriptor, build ) {
                 script.call( 'test' ).then( function( result ) {
                     _assert2.default.deepEqual( result, 'Hello' );
 
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
     } );
 };
 
-_runnerJs.runTests( 'compat', tests );
-_runnerJs.runTests( 'modern', tests );
+(0, _runnerJs.runTests)( 'compat', tests );
+(0, _runnerJs.runTests)( 'modern', tests );

@@ -28,7 +28,9 @@
 
 'use strict';
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 var default_max_recursion = 9;
 
 exports.default_max_recursion = default_max_recursion;

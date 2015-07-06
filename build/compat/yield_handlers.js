@@ -28,13 +28,15 @@
 
 'use strict';
 
-var _Object$keys = require( 'babel-runtime/core-js/object/keys' )['default'];
-
 var _getIterator = require( 'babel-runtime/core-js/get-iterator' )['default'];
+
+var _Object$keys = require( 'babel-runtime/core-js/object/keys' )['default'];
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 exports['default'] = addYieldHandler;
 
 var _bluebird = require( 'bluebird' );
@@ -48,32 +50,36 @@ function objectToPromise( obj ) {
     var results = new obj.constructor();
     var promises = [];
 
-    for( var _iterator = _Object$keys( obj ), _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
-                                                                                                         _iterator :
-                                                                                                         _getIterator( _iterator ); ; ) {
-        var _ref;
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
 
-        if( _isArray ) {
-            if( _i >= _iterator.length ) {
-                break;
+    var _iteratorError = void 0;
+
+    try {
+        for( var _iterator = _getIterator( _Object$keys( obj ) ), _step;
+             !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true ) {
+            var key = _step.value;
+
+            var promise = toPromise.call( this, obj[key] );
+
+            if( promise && (0, _utilsJs.isThenable)( promise ) ) {
+                defer( promise, key );
+            } else {
+                results[key] = obj[key];
             }
-            _ref = _iterator[_i++];
-        } else {
-            _i = _iterator.next();
-            if( _i.done ) {
-                break;
-            }
-            _ref = _i.value;
         }
-
-        var key = _ref;
-
-        var promise = toPromise.call( this, obj[key] );
-
-        if( promise && _utilsJs.isThenable( promise ) ) {
-            defer( promise, key );
-        } else {
-            results[key] = obj[key];
+    } catch( err ) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if( !_iteratorNormalCompletion && _iterator['return'] ) {
+                _iterator['return']();
+            }
+        } finally {
+            if( _didIteratorError ) {
+                throw _iteratorError;
+            }
         }
     }
 
@@ -102,7 +108,7 @@ function resolveGenerator( gen ) {
             gen = gen();
         }
 
-        if( !gen || !_utilsJs.isGenerator( gen ) ) {
+        if( !gen || !(0, _utilsJs.isGenerator)( gen ) ) {
             return _bluebird2['default'].resolve( gen );
         } else {
             (function() {
@@ -128,7 +134,7 @@ function resolveGenerator( gen ) {
                     } else {
                         var value = toPromise.call( _this, ret.value );
 
-                        if( _utilsJs.isThenable( value ) ) {
+                        if( (0, _utilsJs.isThenable)( value ) ) {
                             return value.then( onFulfilled )['catch']( onRejected );
                         } else {
                             return onRejected( new TypeError( 'You may only yield a function, promise, generator, array, or object, '
@@ -147,18 +153,18 @@ function resolveGenerator( gen ) {
 function toPromise( value ) {
     var _this2 = this;
 
-    if( _utilsJs.isThenable( value ) ) {
+    if( (0, _utilsJs.isThenable)( value ) ) {
         return value;
     } else if( Array.isArray( value ) ) {
         return _bluebird2['default'].all( value.map( toPromise, this ) );
     } else if( typeof value === 'object' ) {
-        if( _utilsJs.isGenerator( value ) ) {
+        if( (0, _utilsJs.isGenerator)( value ) ) {
             return resolveGenerator.call( this, value );
         } else {
             return objectToPromise.call( this, value );
         }
     } else if( typeof value === 'function' ) {
-        if( _utilsJs.isGeneratorFunction( value ) ) {
+        if( (0, _utilsJs.isGeneratorFunction)( value ) ) {
             return _bluebird2['default'].coroutine( value )();
         } else {
             //Thunks

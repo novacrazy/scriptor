@@ -28,7 +28,9 @@
 
 'use strict';
 
-exports.__esModule = true;
+Object.defineProperty( exports, '__esModule', {
+    value: true
+} );
 exports.normalizeError = normalizeError;
 
 function normalizeError( id, type ) {

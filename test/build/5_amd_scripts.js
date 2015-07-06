@@ -31,7 +31,7 @@ var tests = function tests( Scriptor, build ) {
 
             it( 'should load without any issues', function( done ) {
                 script.exports().then( function() {
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
@@ -41,12 +41,12 @@ var tests = function tests( Scriptor, build ) {
 
             it( 'should load without any issues', function( done ) {
                 script.exports().then( function() {
-                    _assert2.default( script.loaded );
+                    (0, _assert2.default)( script.loaded );
                 } ).then( done );
             } );
         } );
     } );
 };
 
-_runnerJs.runTests( 'compat', tests );
-_runnerJs.runTests( 'modern', tests );
+(0, _runnerJs.runTests)( 'compat', tests );
+(0, _runnerJs.runTests)( 'modern', tests );
