@@ -43,6 +43,18 @@ let tests = ( Scriptor, build ) => {
                 } ).then( done );
             } );
         } );
+
+        describe( 'coroutine as main function', function() {
+            let script = new Script( './test/build/fixtures/calling/coroutine.js', module );
+
+            it( 'should call the exported function and return the result', function( done ) {
+                script.call().then( function( result ) {
+                    assert.deepEqual( result, 42 );
+                    assert( script.loaded );
+
+                } ).then( done );
+            } );
+        } );
     } );
 };
 
