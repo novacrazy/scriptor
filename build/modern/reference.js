@@ -73,6 +73,7 @@ var ReferenceBase = (function( _EventEmitter ) {
         this._value = void 0;
         this._ran = false;
         this._running = false;
+        this._closed = false;
         this._left = void 0;
         this._right = void 0;
     }
@@ -86,12 +87,14 @@ var ReferenceBase = (function( _EventEmitter ) {
     ReferenceBase.prototype.value = function value() {
         if( this._ran ) {
             return _bluebird2.default.resolve( this._value );
-        } else {
+        } else if( !this._closed ) {
             var waiting = _events.makeEventPromise( this, 'value', 'value_error' );
 
             this._run();
 
             return waiting;
+        } else {
+            return _bluebird2.default.reject( 'Reference closed.' );
         }
     };
 
@@ -112,7 +115,18 @@ var ReferenceBase = (function( _EventEmitter ) {
     };
 
     ReferenceBase.prototype.close = function close() {
+        if( this._running ) {
+            this.emit( 'value_error', new Error( 'Reference closed' ) );
+        }
+
+        this._running = false;
+        this._ran = false;
+
+        delete this['_left'];
+        delete this['_right'];
         delete this['_value'];
+
+        this._closed = true;
     };
 
     _createClass( ReferenceBase, [{
@@ -124,6 +138,11 @@ var ReferenceBase = (function( _EventEmitter ) {
         key: 'running',
         get: function get() {
             return this._running;
+        }
+    }, {
+        key: 'closed',
+        get: function get() {
+            return this._closed;
         }
     }] );
 
@@ -163,18 +182,20 @@ var Reference = (function( _ReferenceBase ) {
             this._running = true;
 
             this._script.apply( this._args ).then( function( value ) {
-                if( typeof value === 'object' ) {
-                    _this2._value = _lodash2.default.clone( value );
+                if( _this2._running ) {
+                    if( typeof value === 'object' ) {
+                        _this2._value = _lodash2.default.clone( value );
 
-                    _Object$freeze( _this2._value );
-                } else {
-                    _this2._value = value;
+                        _Object$freeze( _this2._value );
+                    } else {
+                        _this2._value = value;
+                    }
+
+                    _this2._ran = true;
+                    _this2._running = false;
+
+                    _this2.emit( 'value', _this2._value );
                 }
-
-                _this2._ran = true;
-                _this2._running = false;
-
-                _this2.emit( 'value', _this2._value );
             } ).catch( function( err ) {
                 _this2._running = false;
 
@@ -184,7 +205,7 @@ var Reference = (function( _ReferenceBase ) {
     };
 
     Reference.prototype.close = function close() {
-        if( !this.closed ) {
+        if( !this._closed ) {
             this._script.removeListener( 'change', this._onChange );
 
             delete this['_args'];
@@ -231,13 +252,6 @@ var Reference = (function( _ReferenceBase ) {
         return new TransformReference( ref, _transform3 );
     };
 
-    _createClass( Reference, [{
-        key: 'closed',
-        get: function get() {
-            return this._script === void 0 || this._script === null;
-        }
-    }] );
-
     return Reference;
 })( ReferenceBase );
 
@@ -258,7 +272,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
         _assert2.default( ref instanceof ReferenceBase, 'transform will only work on References' );
         _assert2.default.strictEqual( typeof transform, 'function', 'transform function must be a function' );
 
-        this._ref = ref;
+        this._left = this._ref = ref;
 
         if( _utilsJs.isGeneratorFunction( transform ) ) {
             this._transform = _utilsJs.makeCoroutine( transform );
@@ -284,18 +298,20 @@ var TransformReference = (function( _ReferenceBase2 ) {
             this._running = true;
 
             _utilsJs.tryReject( this._transform, null, this._ref, null ).then( function( value ) {
-                if( typeof value === 'object' ) {
-                    _this4._value = _lodash2.default.clone( value );
+                if( _this4._running ) {
+                    if( typeof value === 'object' ) {
+                        _this4._value = _lodash2.default.clone( value );
 
-                    _Object$freeze( _this4._value );
-                } else {
-                    _this4._value = value;
+                        _Object$freeze( _this4._value );
+                    } else {
+                        _this4._value = value;
+                    }
+
+                    _this4._ran = true;
+                    _this4._running = false;
+
+                    _this4.emit( 'value', _this4._value );
                 }
-
-                _this4._ran = true;
-                _this4._running = false;
-
-                _this4.emit( 'value', _this4._value );
             } ).catch( function( err ) {
                 _this4._running = false;
 
@@ -304,14 +320,10 @@ var TransformReference = (function( _ReferenceBase2 ) {
         }
     };
 
-    TransformReference.prototype.left = function left() {
-        return this._ref;
-    };
-
     TransformReference.prototype.close = function close() {
         var recursive = arguments[0] === undefined ? false : arguments[0];
 
-        if( !this.closed ) {
+        if( !this._closed ) {
             this._ref.removeListener( 'change', this._onChange );
 
             if( recursive ) {
@@ -323,13 +335,6 @@ var TransformReference = (function( _ReferenceBase2 ) {
             _ReferenceBase2.prototype.close.call( this );
         }
     };
-
-    _createClass( TransformReference, [{
-        key: 'closed',
-        get: function get() {
-            return this._ref === void 0;
-        }
-    }] );
 
     return TransformReference;
 })( ReferenceBase );
@@ -377,18 +382,20 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
             this._running = true;
 
             _utilsJs.tryReject( this._transform, null, this._left, this._right ).then( function( value ) {
-                if( typeof value === 'object' ) {
-                    _this6._value = _lodash2.default.clone( value );
+                if( _this6._running ) {
+                    if( typeof value === 'object' ) {
+                        _this6._value = _lodash2.default.clone( value );
 
-                    _Object$freeze( _this6._value );
-                } else {
-                    _this6._value = value;
+                        _Object$freeze( _this6._value );
+                    } else {
+                        _this6._value = value;
+                    }
+
+                    _this6._ran = true;
+                    _this6._running = false;
+
+                    _this6.emit( 'value', _this6._value );
                 }
-
-                _this6._ran = true;
-                _this6._running = false;
-
-                _this6.emit( 'value', _this6._value );
             } ).catch( function( err ) {
                 _this6._running = false;
 
@@ -400,7 +407,7 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
     JoinedTransformReference.prototype.close = function close() {
         var recursive = arguments[0] === undefined ? false : arguments[0];
 
-        if( !this.closed ) {
+        if( !this._closed ) {
             this._left.removeListener( 'change', this._onChange );
             this._right.removeListener( 'change', this._onChange );
 
@@ -409,19 +416,9 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
                 this._right.close( recursive );
             }
 
-            delete this['_left'];
-            delete this['_right'];
-
             _ReferenceBase3.prototype.close.call( this );
         }
     };
-
-    _createClass( JoinedTransformReference, [{
-        key: 'closed',
-        get: function get() {
-            return this._left === void 0 || this._right === void 0;
-        }
-    }] );
 
     return JoinedTransformReference;
 })( ReferenceBase );
@@ -446,16 +443,18 @@ var ResolvedReference = (function( _ReferenceBase4 ) {
             this._running = true;
 
             _utilsJs.tryPromise( this._value ).then( function( result ) {
-                if( typeof result === 'object' ) {
-                    _this7._value = _Object$freeze( result );
-                } else {
-                    _this7._value = result;
+                if( _this7._running ) {
+                    if( typeof result === 'object' ) {
+                        _this7._value = _Object$freeze( result );
+                    } else {
+                        _this7._value = result;
+                    }
+
+                    _this7._ran = true;
+                    _this7._running = false;
+
+                    _this7.emit( 'value', _this7._value );
                 }
-
-                _this7._ran = true;
-                _this7._running = false;
-
-                _this7.emit( 'value', _this7._value );
             } ).catch( function( err ) {
                 _this7._running = false;
 
@@ -463,21 +462,6 @@ var ResolvedReference = (function( _ReferenceBase4 ) {
             } );
         }
     };
-
-    ResolvedReference.prototype.close = function close() {
-        if( this._ran ) {
-            _ReferenceBase4.prototype.close.call( this );
-
-            this._ran = false;
-        }
-    };
-
-    _createClass( ResolvedReference, [{
-        key: 'closed',
-        get: function get() {
-            return !this._running && !this._ran;
-        }
-    }] );
 
     return ResolvedReference;
 })( ReferenceBase );

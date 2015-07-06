@@ -241,8 +241,11 @@ var Script = (function( _EventPropagator ) {
         return this.manager !== null && this.manager !== void 0;
     };
 
-    Script.prototype._callWrapper = function _callWrapper( func, context, args ) {
+    Script.prototype._callWrapper = function _callWrapper( func ) {
         var _this2 = this;
+
+        var context = arguments[1] === undefined ? this : arguments[1];
+        var args = arguments[2] === undefined ? [] : arguments[2];
 
         //Just in case, always use recursion protection
         if( this._recursion > this._maxRecursion ) {
@@ -651,8 +654,8 @@ var Script = (function( _EventPropagator ) {
             /*
              * This is a special one were it doesn't matter which event triggers first.
              * */
-            var waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'],
-                                                 ['loading_error', 'loading_src_error'] );
+            var waiting = _eventsJs.makeMultiEventPromise( this, ['loaded', 'loaded_src'],
+                                                           ['loading_error', 'loading_src_error'] );
 
             return _bluebird2.default.all( [this._callWrapper( this.do_load ), waiting] ).then( function() {
                 return _this8.source( encoding );
@@ -666,7 +669,7 @@ var Script = (function( _EventPropagator ) {
         if( this.loaded ) {
             if( this.pending ) {
                 //Add the event listeners first
-                var waiting = makeEventPromise( this, 'exports', 'exports_error' );
+                var waiting = _eventsJs.makeEventPromise( this, 'exports', 'exports_error' );
 
                 this._runMainFactory();
 
@@ -676,7 +679,7 @@ var Script = (function( _EventPropagator ) {
             }
         } else {
             //Add the event listeners first
-            var waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+            var waiting = _eventsJs.makeEventPromise( this, 'loaded', 'loading_error' );
 
             return _bluebird2.default.all( [this._callWrapper( this.do_load ), waiting] ).then( function() {
                 return _this9.exports();

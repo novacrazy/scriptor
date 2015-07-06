@@ -15,6 +15,12 @@ var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
 
+var _bluebird = require( 'bluebird' );
+
+var _bluebird2 = _interopRequireDefault( _bluebird );
+
+_bluebird2.default.longStackTraces();
+
 function runTests( build, tests ) {
     _assert2.default( build === 'compat' || build === 'modern', 'Only modern and compat builds are supported' );
 
