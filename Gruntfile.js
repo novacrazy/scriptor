@@ -35,7 +35,6 @@ module.exports = function( grunt ) {
                         'spec.undefinedToVoid',
                         'minification.constantFolding',
                         'minification.propertyLiterals',
-                        'es7.exportExtensions',
                         'bluebirdCoroutines',
                         'es7.classProperties'
                     ]
@@ -54,7 +53,6 @@ module.exports = function( grunt ) {
                         'spec.undefinedToVoid',
                         'minification.constantFolding',
                         'minification.propertyLiterals',
-                        'es7.exportExtensions',
                         'es7.asyncFunctions',
                         'regenerator',
                         'es7.classProperties'
