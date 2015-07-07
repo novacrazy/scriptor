@@ -2,7 +2,8 @@
  * Created by Aaron on 7/4/2015.
  */
 
-let Promise = require( 'bluebird' );
+import Promise from 'bluebird';
+
 import {EventEmitter} from 'events';
 
 export * from 'events';

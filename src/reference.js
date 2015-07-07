@@ -8,7 +8,7 @@ import Promise from 'bluebird';
 
 import _ from 'lodash';
 
-import {EventEmitter, makeEventPromise} from './events';
+import {EventEmitter, makeEventPromise} from './events.js';
 
 import {isGeneratorFunction, makeCoroutine, tryPromise, tryReject} from './utils.js';
 

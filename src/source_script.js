@@ -2,14 +2,14 @@
  * Created by Aaron on 7/5/2015.
  */
 
-import Script from './script.js';
-
 import Promise from 'bluebird';
 
 import _ from 'lodash';
 
 import {basename, dirname} from 'path';
 import {stripBOM, injectAMD} from './utils.js';
+
+import Script from './script.js';
 
 import {ReferenceBase} from './reference.js';
 
