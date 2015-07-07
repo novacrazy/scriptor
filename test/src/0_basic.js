@@ -46,6 +46,12 @@ let tests = ( Scriptor, build ) => {
         it( 'should have exported a addYieldHandler function', () => {
             assert.strictEqual( typeof Scriptor.addYieldHandler, 'function', 'No addYieldHandler function exported' );
         } );
+
+        it( 'should have exported a few utility functions', () => {
+            assert.strictEqual( typeof Scriptor.utils, 'object', 'No utilities exported' );
+            assert.strictEqual( typeof Scriptor.utils.stripBOM, 'function', 'Missing utility "stripBOM"' );
+            assert.strictEqual( typeof Scriptor.utils.injectAMD, 'function', 'Missing utility "stripBOM"' );
+        } );
     } );
 };
 
