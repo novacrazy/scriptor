@@ -7,7 +7,7 @@ import {runTests} from './runner.js';
 import assert from 'assert';
 
 let tests = ( Scriptor, build ) => {
-    describe( `AMD Scripts (${build} build)`, () => {
+    describe( `AMD Scripts (${build} build)`, function() {
         let Script = Scriptor.Script;
 
         describe( 'simple script that requires a build-in module', function() {

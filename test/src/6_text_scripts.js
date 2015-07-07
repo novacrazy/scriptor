@@ -7,7 +7,7 @@ import {runTests} from './runner.js';
 import assert from 'assert';
 
 let tests = ( Scriptor, build ) => {
-    describe( `TextScripts (${build} build)`, () => {
+    describe( `TextScripts (${build} build)`, function() {
         let TextScript = Scriptor.TextScript;
 
         describe( 'simple file with hello world', function() {

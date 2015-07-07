@@ -7,7 +7,7 @@ import {runTests} from './runner.js';
 import assert from 'assert';
 
 let tests = ( Scriptor, build ) => {
-    describe( `Script errors (${build} build)`, () => {
+    describe( `Script errors (${build} build)`, function() {
         let Script = Scriptor.Script;
 
         describe( 'simple script that throws an error the first time define is invoked', function() {
@@ -24,7 +24,7 @@ let tests = ( Scriptor, build ) => {
 
                     hadError = true;
 
-                } ).then( () => {
+                } ).then( function() {
                     assert( hadError, 'No error was thrown' );
 
                 } ).then( done, done );

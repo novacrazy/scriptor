@@ -9,7 +9,7 @@ import assert from 'assert';
 var Module = require( 'module' );
 
 let tests = ( Scriptor, build ) => {
-    describe( `Script calling (${build} build)`, () => {
+    describe( `Script calling (${build} build)`, function() {
         let Script = Scriptor.Script;
 
         describe( 'empty file', function() {

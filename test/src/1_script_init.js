@@ -11,7 +11,7 @@ var Module = require( 'module' );
 
 
 let tests = ( Scriptor, build ) => {
-    describe( `Script initialization (${build} build)`, () => {
+    describe( `Script initialization (${build} build)`, function() {
         let Script = Scriptor.Script;
 
         describe( 'Creating a new Script without default filename', function() {

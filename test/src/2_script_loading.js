@@ -7,7 +7,7 @@ import {runTests} from './runner.js';
 import assert from 'assert';
 
 let tests = ( Scriptor, build ) => {
-    describe( `Script loading (${build} build)`, () => {
+    describe( `Script loading (${build} build)`, function() {
         let Script = Scriptor.Script;
 
         describe( 'empty file', function() {

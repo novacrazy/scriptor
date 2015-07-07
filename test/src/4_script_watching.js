@@ -10,7 +10,7 @@ var fs = require( 'fs' );
 var touch = require( 'touch' );
 
 let tests = ( Scriptor, build ) => {
-    describe( `Script watching (${build} build)`, () => {
+    describe( `Script watching (${build} build)`, function() {
         let Script = Scriptor.Script;
 
         describe( 'simple script', function() {

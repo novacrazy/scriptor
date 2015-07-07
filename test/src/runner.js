@@ -13,7 +13,7 @@ export function runTests( build, tests ) {
 
     let Scriptor;
 
-    describe( `requiring ${build} build`, () => {
+    describe( `requiring ${build} build`, function() {
         Scriptor = require( `../../build/${build}/index.js` );
     } );
 
