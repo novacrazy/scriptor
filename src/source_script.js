@@ -66,6 +66,17 @@ export default class SourceScript extends Script {
                 this._loading = true;
                 this._loadingText = false;
 
+                if( this._willWatch ) {
+                    try {
+                        this._do_watch( this._watchPersistent );
+
+                    } catch( err ) {
+                        this._loading = false;
+
+                        this.emit( 'loading_error', err );
+                    }
+                }
+
                 this.source( 'utf-8' ).then( src => {
                     this._script._compile( src, this.filename );
 
@@ -75,7 +86,7 @@ export default class SourceScript extends Script {
 
                     this.emit( 'loaded', this._script.exports );
 
-                } ).catch( err => {
+                }, err => {
                     this._loading = false;
 
                     this.emit( 'loading_error', err );
@@ -85,6 +96,18 @@ export default class SourceScript extends Script {
                 this._loading = true;
                 this._loadingText = true;
 
+                if( this._willWatch ) {
+                    try {
+                        this._do_watch( this._watchPersistent );
+
+                    } catch( err ) {
+                        this._loading = false;
+                        this._loadingText = false;
+
+                        this.emit( 'loading_src_error', err );
+                    }
+                }
+
                 this.source( 'utf-8' ).then( src => {
                     this._script.loaded = true;
 
@@ -93,12 +116,26 @@ export default class SourceScript extends Script {
 
                     this.emit( 'loaded', this.loaded );
 
-                } ).catch( err => {
+                }, err => {
                     this._loading = false;
+                    this._loadingText = false;
 
                     this.emit( 'loading_error', err );
                 } );
             }
+        }
+    }
+
+    _do_watch() {
+        if( !this.watched && this._source instanceof ReferenceBase ) {
+
+            this._onChange = _.debounce( ( event, filename ) => {
+                this.unload();
+                this.emit( 'change', event, filename );
+
+            }, this.debounceMaxWait );
+
+            this._source.on( 'change', this._onChange );
         }
     }
 
@@ -153,29 +190,12 @@ export default class SourceScript extends Script {
         return this;
     }
 
-    watch() {
-        if( !this.watched && this._source instanceof ReferenceBase ) {
-
-            this._onChange = _.debounce( ( event, filename ) => {
-                this.unload();
-                this.emit( 'change', event, filename );
-
-            }, this.debounceMaxWait );
-
-            this._source.on( 'change', this._onChange );
-
-            return true;
-        }
-
-        return false;
-    }
-
     unwatch() {
         if( this.watched && this._source instanceof ReferenceBase ) {
             this._source.removeListener( 'change', this._onChange );
-            return delete this['_onChange'];
+            delete this['_onChange'];
         }
 
-        return false;
+        super.unwatch();
     }
 }
