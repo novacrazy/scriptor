@@ -908,7 +908,7 @@ export default class Script extends EventPropagator {
             this._watchPersistent = persistent;
 
         } else if( this._willWatch ) {
-            this._watchPersistent = this._watchPersistent || persistent;
+            this._watchPersistent = persistent;
         }
     }
 
@@ -920,11 +920,9 @@ export default class Script extends EventPropagator {
             delete this['_watcher'];
 
             this._willWatch = false;
-            this._watchPersistent = false;
 
         } else if( this._willWatch ) {
             this._willWatch = false;
-            this._watchPersistent = false;
         }
     }
 
