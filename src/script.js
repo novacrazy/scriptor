@@ -52,6 +52,9 @@ export default class Script extends EventPropagator {
     _factory = null;
     _watcher = null;
 
+    _willWatch = false;
+    _watchPersistent = false;
+
     _maxListeners = 10; //Node default maxListeners
 
     _recursion = 0;
@@ -195,6 +198,10 @@ export default class Script extends EventPropagator {
     get watched() {
         return this._watcher !== void 0 &&
                this._watcher !== null;
+    }
+
+    get willWatch() {
+        return !this.watched && this._willWatch;
     }
 
     get id() {
@@ -612,10 +619,20 @@ export default class Script extends EventPropagator {
 
                 //Use custom extension if available
                 if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
-
                     this._script.paths = Module._nodeModulePaths( dirname( this.filename ) );
 
                     this._loading = true;
+
+                    if( this._willWatch && !this.watched ) {
+                        try {
+                            this.do_watch( this._watchPersistent );
+
+                        } catch( err ) {
+                            this._loading = false;
+
+                            this.emit( 'loading_error', err );
+                        }
+                    }
 
                     return tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
                         if( this._loading ) {
@@ -646,6 +663,10 @@ export default class Script extends EventPropagator {
                     this._loading = true;
 
                     try {
+                        if( this._willWatch && !this.watched ) {
+                            this.do_watch( this._watchPersistent );
+                        }
+
                         this._script.load( this._script.filename );
 
                         if( this._loading ) {
@@ -663,6 +684,18 @@ export default class Script extends EventPropagator {
             } else {
                 this._loading = true;
                 this._loadingText = true;
+
+                if( this._willWatch && !this.watched ) {
+                    try {
+                        this.do_watch( this._watchPersistent );
+
+                    } catch( err ) {
+                        this._loading = false;
+                        this._loadingText = false;
+
+                        this.emit( 'loading_src_error', err );
+                    }
+                }
 
                 return readFile( this.filename ).then( src => {
                     if( this._loading && this._loadingText ) {
@@ -682,6 +715,70 @@ export default class Script extends EventPropagator {
                     this.emit( 'loading_src_error', err );
                 } );
             }
+        }
+    }
+
+    do_watch( persistent ) {
+        if( !this.watched ) {
+            let watcher;
+
+            try {
+                watcher = this._watcher = watchFile( this.filename, {
+                    persistent: persistent
+                } );
+
+            } catch( err ) {
+                throw normalizeError( this.filename, 'nodefine', err );
+            }
+
+            //These are separated out so rename and change events can be debounced separately.
+            var onChange = _.debounce( ( event, filename ) => {
+                this.unload();
+                this.emit( 'change', event, filename );
+
+            }, this.debounceMaxWait );
+
+            var onRename = _.debounce( ( event, filename ) => {
+                var old_filename = this._script.filename;
+
+                //A simple rename doesn't change file content, so just change the filename
+                //and leave the script loaded
+                this._script.filename = filename;
+
+                this.emit( 'rename', old_filename, filename );
+
+            }, this.debounceMaxWait );
+
+            watcher.on( 'change', ( event, filename ) => {
+
+                //resolve doesn't like nulls, so this has to be done first
+                if( filename === null || filename === void 0 ) {
+                    //If filename is null, that is generally a bad sign, so just close the script (not permanently)
+                    this.close( false );
+
+                } else {
+
+                    //This is important because fs.watch 'change' event only returns things like 'script.js'
+                    //as a filename, which when resolved normally is relative to process.cwd(), not where the script
+                    //actually is. So we have to get the directory of the last filename and combine it with the new name
+                    filename = resolve( this.baseUrl, filename );
+
+                    if( event === 'change' && this.loaded ) {
+                        onChange( event, filename )
+
+                    } else if( event === 'rename' && filename !== this.filename ) {
+                        onRename( event, filename );
+                    }
+                }
+            } );
+
+            watcher.on( 'error', error => {
+                //In the event of an error, unload and unwatch
+                this.close( false );
+
+                //Would it be better to throw?
+                this.emit( 'error', error );
+            } );
         }
     }
 
@@ -807,70 +904,12 @@ export default class Script extends EventPropagator {
 
     watch( persistent = false ) {
         if( !this.watched ) {
-            let watcher;
+            this._willWatch = true;
+            this._watchPersistent = persistent;
 
-            try {
-                watcher = this._watcher = watchFile( this.filename, {
-                    persistent: persistent
-                } );
-
-            } catch( err ) {
-                throw normalizeError( this.filename, 'nodefine', err );
-            }
-
-            //These are separated out so rename and change events can be debounced separately.
-            var onChange = _.debounce( ( event, filename ) => {
-                this.unload();
-                this.emit( 'change', event, filename );
-
-            }, this.debounceMaxWait );
-
-            var onRename = _.debounce( ( event, filename ) => {
-                var old_filename = this._script.filename;
-
-                //A simple rename doesn't change file content, so just change the filename
-                //and leave the script loaded
-                this._script.filename = filename;
-
-                this.emit( 'rename', old_filename, filename );
-
-            }, this.debounceMaxWait );
-
-            watcher.on( 'change', ( event, filename ) => {
-
-                //resolve doesn't like nulls, so this has to be done first
-                if( filename === null || filename === void 0 ) {
-                    //If filename is null, that is generally a bad sign, so just close the script (not permanently)
-                    this.close( false );
-
-                } else {
-
-                    //This is important because fs.watch 'change' event only returns things like 'script.js'
-                    //as a filename, which when resolved normally is relative to process.cwd(), not where the script
-                    //actually is. So we have to get the directory of the last filename and combine it with the new name
-                    filename = resolve( this.baseUrl, filename );
-
-                    if( event === 'change' && this.loaded ) {
-                        onChange( event, filename )
-
-                    } else if( event === 'rename' && filename !== this.filename ) {
-                        onRename( event, filename );
-                    }
-                }
-            } );
-
-            watcher.on( 'error', error => {
-                //In the event of an error, unload and unwatch
-                this.close( false );
-
-                //Would it be better to throw?
-                this.emit( 'error', error );
-            } );
-
-            return true;
+        } else if( this._willWatch ) {
+            this._watchPersistent = persistent;
         }
-
-        return false;
     }
 
     unwatch() {
@@ -878,10 +917,14 @@ export default class Script extends EventPropagator {
             //close the watched and null it to allow the GC to collect it
             this._watcher.close();
 
-            return delete this['_watcher'];
-        }
+            delete this['_watcher'];
 
-        return false;
+            this._willWatch = false;
+            this._watchPersistent = false;
+
+        } else if( this._willWatch ) {
+            this._willWatch = false;
+        }
     }
 
     close( permanent = true ) {
