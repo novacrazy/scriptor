@@ -22,8 +22,8 @@ class ScriptAdapter extends Script {
         //When a script is renamed, it should be reassigned in the manager
         //Otherwise, when it's accessed at the new location, the manager just creates a new script
         this.on( 'rename', ( event, oldname, newname ) => {
-            this._manager.scripts.set( newname, this._manager.scripts.get( oldname ) );
-            this._manager.scripts.delete( oldname );
+            this._manager._scripts.set( newname, this._manager._scripts.get( oldname ) );
+            this._manager._scripts.delete( oldname );
         } );
     }
 
