@@ -18,7 +18,8 @@
     "coroutine"
   ],
   "bin":             {
-    "scriptor": "bin/scriptor"
+    "scriptor":        "bin/scriptor",
+    "scriptor-compat": "bin/scriptor-compat"
   },
   "author":          "Aaron Trent <novacrazy@gmail.com>",
   "license":         "MIT",
