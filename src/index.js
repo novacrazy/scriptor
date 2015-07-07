@@ -7,14 +7,20 @@
  * */
 
 import Promise from 'bluebird';
+
 import Script from './script';
+import {load} from './script';
+
+import SourceScript from './source_script';
+import {compile} from './source_script';
+
 import Manager from './manager';
 import Reference from './reference';
 
-import addYieldHandler from './yield_handlers.js';
+import addYieldHandler from './yield_handler';
 
 let Scriptor = {
-    Promise, Script, Manager, Reference, addYieldHandler
+    Promise, Script, SourceScript, Manager, Reference, addYieldHandler, load, compile
 };
 
 Script.Scriptor = Scriptor;
