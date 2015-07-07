@@ -21,6 +21,8 @@ import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeCo
 
 import defaultExtensions from './extensions.js';
 
+let readFileAsync = Promise.promisify( readFile );
+
 let promisifyCache = new Map();
 
 export function load( filename, watch = true, parent = null ) {
@@ -685,7 +687,7 @@ export default class Script extends EventPropagator {
                     }
                 }
 
-                return readFile( this.filename ).then( src => {
+                return readFileAsync( this.filename ).then( src => {
                     if( this._loading && this._loadingText ) {
                         this._source = src;
                         this._script.loaded = true;
@@ -808,7 +810,7 @@ export default class Script extends EventPropagator {
             }
 
         } else if( this.textMode ) {
-            return Promise.resolve( this._script.exports );
+            return this.source().then( () => this.exports() );
 
         } else {
             //Add the event listeners first
