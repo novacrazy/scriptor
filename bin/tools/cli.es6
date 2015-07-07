@@ -32,6 +32,11 @@ export var LogLevel = Enum( {
     LOG_VERBOSE: 2
 } );
 
+function print_message( level, message ) {
+
+}
+
+
 export class Logger extends EventEmitter {
     _level = null;
 
@@ -75,23 +80,19 @@ export class Logger extends EventEmitter {
 
     do_log( level, format, args ) {
         if( level <= this.level ) {
-            var message = util.format( ...args );
+            var message = util.format( format, ...args );
 
-            print_message( level, message );
+            if( level === LogLevel.LOG_ERROR ) {
+                console.error( message );
+
+            } else if( level === LogLevel.LOG_WARN ) {
+                console.warn( message );
+
+            } else {
+                console.log( message );
+            }
 
             this.emit( LogLevel[level], message );
         }
-    }
-}
-
-function print_message( level, message ) {
-    if( level === LogLevel.LOG_ERROR ) {
-        return console.error( message );
-
-    } else if( level === LogLevel.LOG_WARN ) {
-        return console.warn( message );
-
-    } else {
-        return console.log( message );
     }
 }

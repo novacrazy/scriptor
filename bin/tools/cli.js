@@ -59,6 +59,8 @@ var LogLevel = Enum( {
 } );
 
 exports.LogLevel = LogLevel;
+function print_message( level, message ) {
+}
 
 var Logger = (function( _EventEmitter ) {
     function Logger() {
@@ -127,9 +129,16 @@ var Logger = (function( _EventEmitter ) {
         key:   'do_log',
         value: function do_log( level, format, args ) {
             if( level <= this.level ) {
-                var message = _util2['default'].format.apply( _util2['default'], _toConsumableArray( args ) );
+                var message = _util2['default'].format.apply( _util2['default'],
+                                                              [format].concat( _toConsumableArray( args ) ) );
 
-                print_message( level, message );
+                if( level === LogLevel.LOG_ERROR ) {
+                    console.error( message );
+                } else if( level === LogLevel.LOG_WARN ) {
+                    console.warn( message );
+                } else {
+                    console.log( message );
+                }
 
                 this.emit( LogLevel[level], message );
             }
@@ -152,13 +161,3 @@ var Logger = (function( _EventEmitter ) {
 })( _events.EventEmitter );
 
 exports.Logger = Logger;
-
-function print_message( level, message ) {
-    if( level === LogLevel.LOG_ERROR ) {
-        return console.error( message );
-    } else if( level === LogLevel.LOG_WARN ) {
-        return console.warn( message );
-    } else {
-        return console.log( message );
-    }
-}
