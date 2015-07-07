@@ -21,9 +21,7 @@ export class EventPropagator extends EventEmitter {
         let listeners = emitter.listeners( events );
 
         for( let listener of listeners ) {
-            let {__target__} = listener;
-
-            if( __target__ !== void 0 && __target__ === this ) {
+            if( listener.__target__ === this ) {
                 return true;
             }
         }
