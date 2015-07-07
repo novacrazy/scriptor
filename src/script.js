@@ -623,7 +623,7 @@ export default class Script extends EventPropagator {
 
                     this._loading = true;
 
-                    if( this._willWatch && !this.watched ) {
+                    if( this._willWatch ) {
                         try {
                             this._do_watch( this._watchPersistent );
 
@@ -663,7 +663,7 @@ export default class Script extends EventPropagator {
                     this._loading = true;
 
                     try {
-                        if( this._willWatch && !this.watched ) {
+                        if( this._willWatch ) {
                             this._do_watch( this._watchPersistent );
                         }
 
@@ -685,7 +685,7 @@ export default class Script extends EventPropagator {
                 this._loading = true;
                 this._loadingText = true;
 
-                if( this._willWatch && !this.watched ) {
+                if( this._willWatch ) {
                     try {
                         this._do_watch( this._watchPersistent );
 
