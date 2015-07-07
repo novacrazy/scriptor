@@ -186,8 +186,7 @@ export default class Script extends EventPropagator {
     }
 
     get watched() {
-        return this._watcher !== void 0 &&
-               this._watcher !== null;
+        return this._watcher instanceof EventEmitter;
     }
 
     get willWatch() {
@@ -246,7 +245,6 @@ export default class Script extends EventPropagator {
     }
 
     set maxRecursion( value ) {
-        //JSHint doesn't like bitwise operators
         value = Math.floor( value );
 
         assert( !isNaN( value ), 'maxRecursion must be set to a number' );
