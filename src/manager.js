@@ -45,12 +45,12 @@ class ScriptAdapter extends Script {
             script.reload();
         }
 
-        this._addPropagationHandler( script, 'change', () => {
+        this.propagateFrom( script, 'change', () => {
             this.unload();
             this.emit( 'change', this.filename );
         } );
 
-        script.propagateEvents( this._propagateEvents );
+        script.propagateEvents( this.isPropagatingEvents() );
 
         script.maxRecursion = this.maxRecursion;
 
