@@ -4,6 +4,8 @@
 
 import Module from 'module';
 
+import assert from 'assert';
+
 import {resolve} from 'path';
 import {normalizeConfig} from './utils.js';
 
