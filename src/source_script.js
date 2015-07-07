@@ -53,7 +53,7 @@ export default class SourceScript extends Script {
     }
 
     get watched() {
-        return this._onChange !== void 0 && this._onChange !== null;
+        return typeof this._onChange === 'function';
     }
 
     _do_load() {
