@@ -731,28 +731,28 @@ var Script = (function( _EventPropagator ) {
                         if( this._willWatch ) {
                             try {
                                 this._do_watch( this._watchPersistent );
+
+                                (0, _utilsJs.tryPromise)( Script.extensions[ext]( this._script,
+                                                                                  this.filename ) ).then( function( src ) {
+                                    if( _this8._loading ) {
+                                        _this8._source = src;
+                                        _this8._script.loaded = true;
+
+                                        _this8._loading = false;
+
+                                        _this8.emit( 'loaded', _this8._script.exports );
+                                    }
+                                }, function( err ) {
+                                    _this8._loading = false;
+
+                                    _this8.emit( 'loading_error', err );
+                                } );
                             } catch( err ) {
                                 this._loading = false;
 
                                 this.emit( 'loading_error', err );
                             }
                         }
-
-                        return (0, _utilsJs.tryPromise)( Script.extensions[ext]( this._script,
-                                                                                 this.filename ) ).then( function( src ) {
-                            if( _this8._loading ) {
-                                _this8._source = src;
-                                _this8._script.loaded = true;
-
-                                _this8._loading = false;
-
-                                _this8.emit( 'loaded', _this8._script.exports );
-                            }
-                        }, function( err ) {
-                            _this8._loading = false;
-
-                            _this8.emit( 'loading_error', err );
-                        } );
                     } else {
                         /*
                          * This is the synchronous path. If custom extension handlers are used, this should never run
@@ -928,7 +928,9 @@ var Script = (function( _EventPropagator ) {
                 //Add the event listeners first
                 var waiting = (0, _eventsJs.makeEventPromise)( this, 'loaded', 'loading_error' );
 
-                return _bluebird2['default'].all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
+                this._callWrapper( this._do_load );
+
+                return waiting.then( function() {
                     return _this11.exports();
                 } );
             }
