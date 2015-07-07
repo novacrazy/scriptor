@@ -13,8 +13,6 @@ var _assert = require( 'assert' );
 var _assert2 = _interopRequireDefault( _assert );
 
 var tests = function tests( Scriptor, build ) {
-    Scriptor.addYieldHandler();
-
     describe( 'Script errors (' + build + ' build)', function() {
         var Script = Scriptor.Script;
 

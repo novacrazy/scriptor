@@ -7,8 +7,6 @@ import {runTests} from './runner.js';
 import assert from 'assert';
 
 let tests = ( Scriptor, build ) => {
-    Scriptor.addYieldHandler();
-
     describe( `Script errors (${build} build)`, () => {
         let Script = Scriptor.Script;
 
