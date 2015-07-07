@@ -21,27 +21,15 @@ import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeCo
 
 import defaultExtensions from './extensions.js';
 
-let scriptCache = new Map();
 let promisifyCache = new Map();
 
 export function load( filename, watch = true, parent = null ) {
-    var script;
 
     filename = resolve( filename );
 
-    if( scriptCache.has( filename ) ) {
-        script = scriptCache.get( filename );
+    let script = new Script( null, parent );
 
-    } else {
-        script = new Script( null, parent );
-
-        script.load( filename, watch );
-
-        //Remove the reference to the script upon close, even if it isn't permenant
-        script.once( 'close', () => {
-            scriptCache.delete( filename );
-        } );
-    }
+    script.load( filename, watch );
 
     return script;
 }
