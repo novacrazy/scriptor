@@ -12,16 +12,6 @@ var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _bluebird = require( 'bluebird' );
-
-var _bluebird2 = _interopRequireDefault( _bluebird );
-
-var Module = require( 'module' );
-var path = require( 'path' );
-var fs = require( 'fs' );
-//Draws from the same node_modules folder, so they should be exact
-var touch = require( 'touch' );
-
 var tests = function tests( Scriptor, build ) {
     describe( 'AMD Scripts (' + build + ' build)', function() {
         var Script = Scriptor.Script;

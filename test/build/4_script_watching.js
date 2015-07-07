@@ -12,14 +12,7 @@ var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _bluebird = require( 'bluebird' );
-
-var _bluebird2 = _interopRequireDefault( _bluebird );
-
-var Module = require( 'module' );
-var path = require( 'path' );
 var fs = require( 'fs' );
-//Draws from the same node_modules folder, so they should be exact
 var touch = require( 'touch' );
 
 var tests = function tests( Scriptor, build ) {
@@ -29,6 +22,14 @@ var tests = function tests( Scriptor, build ) {
         describe( 'simple script', function() {
             var script = new Script( './test/fixtures/watching/simple.js', module );
 
+            it( 'should NOT be watching the file before load', function() {
+                (0, _assert2.default)( !script.watched );
+            } );
+
+            it( 'should watch the file upon load', function() {
+                (0, _assert2.default)( script.willWatch );
+            } );
+
             it( 'should call the exported function and return the result', function( done ) {
                 script.exports().then( function( script_exports ) {
                     _assert2.default.deepEqual( script_exports, {
@@ -36,6 +37,10 @@ var tests = function tests( Scriptor, build ) {
                     } );
                     (0, _assert2.default)( script.loaded );
                 } ).then( done );
+            } );
+
+            it( 'should be watching the file after load', function() {
+                (0, _assert2.default)( script.watched );
             } );
 
             it( 'should trigger the change event when the file is modified', function( done ) {

@@ -12,15 +12,7 @@ var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _bluebird = require( 'bluebird' );
-
-var _bluebird2 = _interopRequireDefault( _bluebird );
-
 var Module = require( 'module' );
-var path = require( 'path' );
-var fs = require( 'fs' );
-//Draws from the same node_modules folder, so they should be exact
-var touch = require( 'touch' );
 
 var tests = function tests( Scriptor, build ) {
     describe( 'Script initialization (' + build + ' build)', function() {
@@ -50,6 +42,10 @@ var tests = function tests( Scriptor, build ) {
             it( 'should NOT be watching a file', function() {
                 (0, _assert2.default)( !script.watched );
             } );
+
+            it( 'should NOT be ready to watch the file upon load', function() {
+                (0, _assert2.default)( !script.willWatch );
+            } );
         } );
 
         describe( 'Creating a new Script with filename and module', function() {
@@ -74,8 +70,12 @@ var tests = function tests( Scriptor, build ) {
                 (0, _assert2.default)( !script.loaded );
             } );
 
-            it( 'should be watching the file', function() {
-                (0, _assert2.default)( script.watched );
+            it( 'should NOT be watching the file', function() {
+                (0, _assert2.default)( !script.watched );
+            } );
+
+            it( 'should be ready to watch the file upon load', function() {
+                (0, _assert2.default)( script.willWatch );
             } );
         } );
     } );

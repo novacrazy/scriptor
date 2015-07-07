@@ -43,10 +43,6 @@ Object.defineProperty( exports, '__esModule', {
 } );
 exports.compile = compile;
 
-var _scriptJs = require( './script.js' );
-
-var _scriptJs2 = _interopRequireDefault( _scriptJs );
-
 var _bluebird = require( 'bluebird' );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
@@ -58,6 +54,10 @@ var _lodash2 = _interopRequireDefault( _lodash );
 var _path = require( 'path' );
 
 var _utilsJs = require( './utils.js' );
+
+var _scriptJs = require( './script.js' );
+
+var _scriptJs2 = _interopRequireDefault( _scriptJs );
 
 var _referenceJs = require( './reference.js' );
 
@@ -91,18 +91,28 @@ var SourceScript = (function( _Script ) {
     _inherits( SourceScript, _Script );
 
     _createClass( SourceScript, [{
-        key:   'do_load',
-        value: function do_load() {
+        key:   '_do_load',
+        value: function _do_load() {
             var _this = this;
 
             if( !this.loading || this._loadingText && !this.textMode ) {
                 this.unload();
 
                 if( !this.textMode ) {
-                    this.do_setup();
+                    this._do_setup();
 
                     this._loading = true;
                     this._loadingText = false;
+
+                    if( this._willWatch ) {
+                        try {
+                            this._do_watch( this._watchPersistent );
+                        } catch( err ) {
+                            this._loading = false;
+
+                            this.emit( 'loading_error', err );
+                        }
+                    }
 
                     this.source( 'utf-8' ).then( function( src ) {
                         _this._script._compile( src, _this.filename );
@@ -112,7 +122,7 @@ var SourceScript = (function( _Script ) {
                         _this._loading = false;
 
                         _this.emit( 'loaded', _this._script.exports );
-                    } )['catch']( function( err ) {
+                    }, function( err ) {
                         _this._loading = false;
 
                         _this.emit( 'loading_error', err );
@@ -121,6 +131,17 @@ var SourceScript = (function( _Script ) {
                     this._loading = true;
                     this._loadingText = true;
 
+                    if( this._willWatch ) {
+                        try {
+                            this._do_watch( this._watchPersistent );
+                        } catch( err ) {
+                            this._loading = false;
+                            this._loadingText = false;
+
+                            this.emit( 'loading_src_error', err );
+                        }
+                    }
+
                     this.source( 'utf-8' ).then( function( src ) {
                         _this._script.loaded = true;
 
@@ -128,12 +149,28 @@ var SourceScript = (function( _Script ) {
                         _this._loadingText = false;
 
                         _this.emit( 'loaded', _this.loaded );
-                    } )['catch']( function( err ) {
+                    }, function( err ) {
                         _this._loading = false;
+                        _this._loadingText = false;
 
                         _this.emit( 'loading_error', err );
                     } );
                 }
+            }
+        }
+    }, {
+        key:   '_do_watch',
+        value: function _do_watch() {
+            var _this2 = this;
+
+            if( !this.watched && this._source instanceof _referenceJs.ReferenceBase ) {
+
+                this._onChange = _lodash2['default'].debounce( function( event, filename ) {
+                    _this2.unload();
+                    _this2.emit( 'change', event, filename );
+                }, this.debounceMaxWait );
+
+                this._source.on( 'change', this._onChange );
             }
         }
     }, {
@@ -190,33 +227,14 @@ var SourceScript = (function( _Script ) {
             return this;
         }
     }, {
-        key:   'watch',
-        value: function watch() {
-            var _this2 = this;
-
-            if( !this.watched && this._source instanceof _referenceJs.ReferenceBase ) {
-
-                this._onChange = _lodash2['default'].debounce( function( event, filename ) {
-                    _this2.unload();
-                    _this2.emit( 'change', event, filename );
-                }, this.debounceMaxWait );
-
-                this._source.on( 'change', this._onChange );
-
-                return true;
-            }
-
-            return false;
-        }
-    }, {
         key:   'unwatch',
         value: function unwatch() {
             if( this.watched && this._source instanceof _referenceJs.ReferenceBase ) {
                 this._source.removeListener( 'change', this._onChange );
-                return delete this['_onChange'];
+                delete this['_onChange'];
             }
 
-            return false;
+            _get( Object.getPrototypeOf( SourceScript.prototype ), 'unwatch', this ).call( this );
         }
     }, {
         key: 'filename',

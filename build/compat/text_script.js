@@ -23,62 +23,47 @@
  *
  ****/
 /**
- * Created by Aaron on 7/5/2015.
+ * Created by Aaron on 7/7/2015.
  */
 
-/*
- * This file uses ES7 export extensions
- * */
-
 'use strict';
+
+var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
+
+var _get = require( 'babel-runtime/helpers/get' )['default'];
+
+var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
+
+var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
 Object.defineProperty( exports, '__esModule', {
-  value: true
+    value: true
 } );
-
-var _bluebird = require( 'bluebird' );
-
-var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _scriptJs = require( './script.js' );
 
 var _scriptJs2 = _interopRequireDefault( _scriptJs );
 
-var _source_scriptJs = require( './source_script.js' );
+var TextScript = (function( _Script ) {
+    function TextScript() {
+        _classCallCheck( this, TextScript );
 
-var _source_scriptJs2 = _interopRequireDefault( _source_scriptJs );
+        _get( Object.getPrototypeOf( TextScript.prototype ), 'constructor', this ).apply( this, arguments );
+    }
 
-var _text_scriptJs = require( './text_script.js' );
+    _inherits( TextScript, _Script );
 
-var _text_scriptJs2 = _interopRequireDefault( _text_scriptJs );
+    _createClass( TextScript, [{
+        key: 'textMode',
+        get: function get() {
+            return true;
+        }
+    }] );
 
-var _managerJs = require( './manager.js' );
+    return TextScript;
+})( _scriptJs2['default'] );
 
-var _managerJs2 = _interopRequireDefault( _managerJs );
-
-var _referenceJs = require( './reference.js' );
-
-var _referenceJs2 = _interopRequireDefault( _referenceJs );
-
-var _yield_handlerJs = require( './yield_handler.js' );
-
-var _yield_handlerJs2 = _interopRequireDefault( _yield_handlerJs );
-
-var Scriptor = {
-  Promise:         _bluebird2['default'],
-  Script:          _scriptJs2['default'],
-  SourceScript:    _source_scriptJs2['default'],
-  TextScript:      _text_scriptJs2['default'],
-  Manager:         _managerJs2['default'],
-  Reference:       _referenceJs2['default'],
-  addYieldHandler: _yield_handlerJs2['default'],
-  load:            _scriptJs.load,
-  compile:         _source_scriptJs.compile
-};
-
-_scriptJs2['default'].Scriptor = Scriptor;
-
-exports['default'] = Scriptor;
+exports['default'] = TextScript;
 module.exports = exports['default'];

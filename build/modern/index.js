@@ -40,23 +40,43 @@ var _bluebird = require( 'bluebird' );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _script = require( './script' );
+var _scriptJs = require( './script.js' );
 
-var _script2 = _interopRequireDefault( _script );
+var _scriptJs2 = _interopRequireDefault( _scriptJs );
 
-var _manager = require( './manager' );
+var _source_scriptJs = require( './source_script.js' );
 
-var _manager2 = _interopRequireDefault( _manager );
+var _source_scriptJs2 = _interopRequireDefault( _source_scriptJs );
 
-var _reference = require( './reference' );
+var _text_scriptJs = require( './text_script.js' );
 
-var _reference2 = _interopRequireDefault( _reference );
+var _text_scriptJs2 = _interopRequireDefault( _text_scriptJs );
+
+var _managerJs = require( './manager.js' );
+
+var _managerJs2 = _interopRequireDefault( _managerJs );
+
+var _referenceJs = require( './reference.js' );
+
+var _referenceJs2 = _interopRequireDefault( _referenceJs );
+
+var _yield_handlerJs = require( './yield_handler.js' );
+
+var _yield_handlerJs2 = _interopRequireDefault( _yield_handlerJs );
 
 var Scriptor = {
-    Promise: _bluebird2.default, Script: _script2.default, Manager: _manager2.default, Reference: _reference2.default
+  Promise:         _bluebird2.default,
+  Script:          _scriptJs2.default,
+  SourceScript:    _source_scriptJs2.default,
+  TextScript:      _text_scriptJs2.default,
+  Manager:         _managerJs2.default,
+  Reference:       _referenceJs2.default,
+  addYieldHandler: _yield_handlerJs2.default,
+  load:            _scriptJs.load,
+  compile:         _source_scriptJs.compile
 };
 
-_script2.default.Scriptor = Scriptor;
+_scriptJs2.default.Scriptor = Scriptor;
 
 exports.default = Scriptor;
 module.exports = exports.default;

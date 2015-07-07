@@ -34,6 +34,8 @@ var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' ).defaul
 
 var _getIterator = require( 'babel-runtime/core-js/get-iterator' ).default;
 
+var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
+
 var _defaults = require( 'babel-runtime/helpers/defaults' ).default;
 
 var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
@@ -42,11 +44,13 @@ exports.__esModule = true;
 exports.makeEventPromise = makeEventPromise;
 exports.makeMultiEventPromise = makeMultiEventPromise;
 
+var _bluebird = require( 'bluebird' );
+
+var _bluebird2 = _interopRequireDefault( _bluebird );
+
 var _events = require( 'events' );
 
 var _lodash = require( 'lodash' );
-
-var Promise = require( 'bluebird' );
 
 _defaults( exports, _interopRequireWildcard( _events ) );
 
@@ -130,7 +134,7 @@ var EventPropagator = (function( _EventEmitter ) {
 exports.EventPropagator = EventPropagator;
 
 function makeEventPromise( emitter, resolve_event, reject_event ) {
-    return new Promise( function( resolve, reject ) {
+    return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
             emitter.removeListener( reject_event, reject_handler );
             resolve.apply( undefined, arguments );
@@ -151,7 +155,7 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
  * */
 
 function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
-    return new Promise( function( resolve, reject ) {
+    return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
             for( var _iterator2 = reject_events, _isArray2 = Array.isArray( _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ?
                                                                                                                 _iterator2 :

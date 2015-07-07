@@ -53,7 +53,7 @@ var _lodash = require( 'lodash' );
 
 var _lodash2 = _interopRequireDefault( _lodash );
 
-var _events = require( './events' );
+var _eventsJs = require( './events.js' );
 
 var _utilsJs = require( './utils.js' );
 
@@ -88,7 +88,7 @@ var ReferenceBase = (function( _EventEmitter ) {
         if( this._ran ) {
             return _bluebird2.default.resolve( this._value );
         } else if( !this._closed ) {
-            var waiting = _events.makeEventPromise( this, 'value', 'value_error' );
+            var waiting = _eventsJs.makeEventPromise( this, 'value', 'value_error' );
 
             this._run();
 
@@ -147,7 +147,7 @@ var ReferenceBase = (function( _EventEmitter ) {
     }] );
 
     return ReferenceBase;
-})( _events.EventEmitter );
+})( _eventsJs.EventEmitter );
 
 var Reference = (function( _ReferenceBase ) {
     function Reference( script, args ) {

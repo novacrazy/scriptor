@@ -75,29 +75,19 @@ var _extensionsJs = require( './extensions.js' );
 
 var _extensionsJs2 = _interopRequireDefault( _extensionsJs );
 
-var scriptCache = new _Map();
+var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
+
 var promisifyCache = new _Map();
 
 function load( filename ) {
     var watch = arguments[1] === undefined ? true : arguments[1];
     var parent = arguments[2] === undefined ? null : arguments[2];
 
-    var script;
-
     filename = _path.resolve( filename );
 
-    if( scriptCache.has( filename ) ) {
-        script = scriptCache.get( filename );
-    } else {
-        script = new Script( null, parent );
+    var script = new Script( null, parent );
 
-        script.load( filename, watch );
-
-        //Remove the reference to the script upon close, even if it isn't permenant
-        script.once( 'close', function() {
-            scriptCache.delete( filename );
-        } );
-    }
+    script.load( filename, watch );
 
     return script;
 }
@@ -112,6 +102,8 @@ var Script = (function( _EventPropagator ) {
         this._source = null;
         this._factory = null;
         this._watcher = null;
+        this._willWatch = false;
+        this._watchPersistent = false;
         this._maxListeners = 10;
         this._recursion = 0;
         this._maxRecursion = _defaultsJs.default_max_recursion;
@@ -385,7 +377,7 @@ var Script = (function( _EventPropagator ) {
                                         promisifyCache.set( id, obj );
 
                                         return obj;
-                                    } ).then( _onLoad );
+                                    } ).then( _onLoad, _onLoad.error );
                                 }
                             }
                         };
@@ -539,7 +531,7 @@ var Script = (function( _EventPropagator ) {
         }
     };
 
-    Script.prototype.do_setup = function do_setup() {
+    Script.prototype._do_setup = function _do_setup() {
         var _this6 = this;
 
         this._script.imports = this.imports;
@@ -555,7 +547,7 @@ var Script = (function( _EventPropagator ) {
         };
     };
 
-    Script.prototype.do_load = function do_load() {
+    Script.prototype._do_load = function _do_load() {
         var _this7 = this;
 
         _assert2.default.notEqual( this.filename, null, 'Cannot load a script without a filename' );
@@ -564,7 +556,7 @@ var Script = (function( _EventPropagator ) {
             this.unload();
 
             if( !this.textMode ) {
-                this.do_setup();
+                this._do_setup();
 
                 this._loadingText = false;
 
@@ -572,10 +564,19 @@ var Script = (function( _EventPropagator ) {
 
                 //Use custom extension if available
                 if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
-
                     this._script.paths = _module3.default._nodeModulePaths( _path.dirname( this.filename ) );
 
                     this._loading = true;
+
+                    if( this._willWatch ) {
+                        try {
+                            this._do_watch( this._watchPersistent );
+                        } catch( err ) {
+                            this._loading = false;
+
+                            this.emit( 'loading_error', err );
+                        }
+                    }
 
                     return _utilsJs.tryPromise( Script.extensions[ext]( this._script,
                                                                         this.filename ) ).then( function( src ) {
@@ -605,6 +606,10 @@ var Script = (function( _EventPropagator ) {
                     this._loading = true;
 
                     try {
+                        if( this._willWatch ) {
+                            this._do_watch( this._watchPersistent );
+                        }
+
                         this._script.load( this._script.filename );
 
                         if( this._loading ) {
@@ -620,7 +625,18 @@ var Script = (function( _EventPropagator ) {
                 this._loading = true;
                 this._loadingText = true;
 
-                return _fs.readFile( this.filename ).then( function( src ) {
+                if( this._willWatch ) {
+                    try {
+                        this._do_watch( this._watchPersistent );
+                    } catch( err ) {
+                        this._loading = false;
+                        this._loadingText = false;
+
+                        this.emit( 'loading_src_error', err );
+                    }
+                }
+
+                return readFileAsync( this.filename ).then( function( src ) {
                     if( _this7._loading && _this7._loadingText ) {
                         _this7._source = src;
                         _this7._script.loaded = true;
@@ -640,8 +656,69 @@ var Script = (function( _EventPropagator ) {
         }
     };
 
-    Script.prototype.source = function source() {
+    Script.prototype._do_watch = function _do_watch( persistent ) {
         var _this8 = this;
+
+        if( !this.watched ) {
+            var watcher = undefined;
+
+            try {
+                watcher = this._watcher = _fs.watch( this.filename, {
+                    persistent: persistent
+                } );
+            } catch( err ) {
+                throw _errorJs.normalizeError( this.filename, 'nodefine', err );
+            }
+
+            //These are separated out so rename and change events can be debounced separately.
+            var onChange = _lodash2.default.debounce( function( event, filename ) {
+                _this8.unload();
+                _this8.emit( 'change', event, filename );
+            }, this.debounceMaxWait );
+
+            var onRename = _lodash2.default.debounce( function( event, filename ) {
+                var old_filename = _this8._script.filename;
+
+                //A simple rename doesn't change file content, so just change the filename
+                //and leave the script loaded
+                _this8._script.filename = filename;
+
+                _this8.emit( 'rename', old_filename, filename );
+            }, this.debounceMaxWait );
+
+            watcher.on( 'change', function( event, filename ) {
+
+                //resolve doesn't like nulls, so this has to be done first
+                if( filename === null || filename === void 0 ) {
+                    //If filename is null, that is generally a bad sign, so just close the script (not permanently)
+                    _this8.close( false );
+                } else {
+
+                    //This is important because fs.watch 'change' event only returns things like 'script.js'
+                    //as a filename, which when resolved normally is relative to process.cwd(), not where the script
+                    //actually is. So we have to get the directory of the last filename and combine it with the new name
+                    filename = _path.resolve( _this8.baseUrl, filename );
+
+                    if( event === 'change' && _this8.loaded ) {
+                        onChange( event, filename );
+                    } else if( event === 'rename' && filename !== _this8.filename ) {
+                        onRename( event, filename );
+                    }
+                }
+            } );
+
+            watcher.on( 'error', function( error ) {
+                //In the event of an error, unload and unwatch
+                _this8.close( false );
+
+                //Would it be better to throw?
+                _this8.emit( 'error', error );
+            } );
+        }
+    };
+
+    Script.prototype.source = function source() {
+        var _this9 = this;
 
         var encoding = arguments[0] === undefined ? null : arguments[0];
 
@@ -658,14 +735,14 @@ var Script = (function( _EventPropagator ) {
             var waiting = _eventsJs.makeMultiEventPromise( this, ['loaded', 'loaded_src'],
                                                            ['loading_error', 'loading_src_error'] );
 
-            return _bluebird2.default.all( [this._callWrapper( this.do_load ), waiting] ).then( function() {
-                return _this8.source( encoding );
+            return _bluebird2.default.all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
+                return _this9.source( encoding );
             } );
         }
     };
 
     Script.prototype.exports = function exports() {
-        var _this9 = this;
+        var _this10 = this;
 
         if( this.loaded ) {
             if( this.pending ) {
@@ -678,12 +755,16 @@ var Script = (function( _EventPropagator ) {
             } else {
                 return _bluebird2.default.resolve( this._script.exports );
             }
+        } else if( this.textMode ) {
+            return this.source().then( function() {
+                return _this10.exports();
+            } );
         } else {
             //Add the event listeners first
             var waiting = _eventsJs.makeEventPromise( this, 'loaded', 'loading_error' );
 
-            return _bluebird2.default.all( [this._callWrapper( this.do_load ), waiting] ).then( function() {
-                return _this9.exports();
+            return _bluebird2.default.all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
+                return _this10.exports();
             } );
         }
     };
@@ -697,7 +778,7 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype.apply = function apply( args ) {
-        var _this10 = this;
+        var _this11 = this;
 
         if( !this.textMode ) {
             return this.exports().then( function( main ) {
@@ -712,7 +793,7 @@ var Script = (function( _EventPropagator ) {
                         main = _bluebird2.default.coroutine( main );
                     }
 
-                    return _this10._callWrapper( main, null, args );
+                    return _this11._callWrapper( main, null, args );
                 } else {
                     return main;
                 }
@@ -759,81 +840,25 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype.reload = function reload() {
-        var _this11 = this;
+        var _this12 = this;
 
         //Force it to reload and recompile the script.
-        this._callWrapper( this.do_load ).then( function() {
+        this._callWrapper( this._do_load ).then( function() {
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
-            _this11.emit( 'change', 'change', _this11.filename );
+            _this12.emit( 'change', 'change', _this12.filename );
         } );
     };
 
     Script.prototype.watch = function watch() {
-        var _this12 = this;
-
         var persistent = arguments[0] === undefined ? false : arguments[0];
 
         if( !this.watched ) {
-            var watcher = undefined;
-
-            try {
-                watcher = this._watcher = _fs.watch( this.filename, {
-                    persistent: persistent
-                } );
-            } catch( err ) {
-                throw _errorJs.normalizeError( this.filename, 'nodefine', err );
-            }
-
-            //These are separated out so rename and change events can be debounced separately.
-            var onChange = _lodash2.default.debounce( function( event, filename ) {
-                _this12.unload();
-                _this12.emit( 'change', event, filename );
-            }, this.debounceMaxWait );
-
-            var onRename = _lodash2.default.debounce( function( event, filename ) {
-                var old_filename = _this12._script.filename;
-
-                //A simple rename doesn't change file content, so just change the filename
-                //and leave the script loaded
-                _this12._script.filename = filename;
-
-                _this12.emit( 'rename', old_filename, filename );
-            }, this.debounceMaxWait );
-
-            watcher.on( 'change', function( event, filename ) {
-
-                //resolve doesn't like nulls, so this has to be done first
-                if( filename === null || filename === void 0 ) {
-                    //If filename is null, that is generally a bad sign, so just close the script (not permanently)
-                    _this12.close( false );
-                } else {
-
-                    //This is important because fs.watch 'change' event only returns things like 'script.js'
-                    //as a filename, which when resolved normally is relative to process.cwd(), not where the script
-                    //actually is. So we have to get the directory of the last filename and combine it with the new name
-                    filename = _path.resolve( _this12.baseUrl, filename );
-
-                    if( event === 'change' && _this12.loaded ) {
-                        onChange( event, filename );
-                    } else if( event === 'rename' && filename !== _this12.filename ) {
-                        onRename( event, filename );
-                    }
-                }
-            } );
-
-            watcher.on( 'error', function( error ) {
-                //In the event of an error, unload and unwatch
-                _this12.close( false );
-
-                //Would it be better to throw?
-                _this12.emit( 'error', error );
-            } );
-
-            return true;
+            this._willWatch = true;
+            this._watchPersistent = persistent;
+        } else if( this._willWatch ) {
+            this._watchPersistent = persistent;
         }
-
-        return false;
     };
 
     Script.prototype.unwatch = function unwatch() {
@@ -841,10 +866,12 @@ var Script = (function( _EventPropagator ) {
             //close the watched and null it to allow the GC to collect it
             this._watcher.close();
 
-            return delete this['_watcher'];
-        }
+            delete this['_watcher'];
 
-        return false;
+            this._willWatch = false;
+        } else if( this._willWatch ) {
+            this._willWatch = false;
+        }
     };
 
     Script.prototype.close = function close() {
@@ -885,6 +912,11 @@ var Script = (function( _EventPropagator ) {
         key: 'watched',
         get: function get() {
             return this._watcher !== void 0 && this._watcher !== null;
+        }
+    }, {
+        key: 'willWatch',
+        get: function get() {
+            return !this.watched && this._willWatch;
         }
     }, {
         key: 'id',
