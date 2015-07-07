@@ -21,6 +21,14 @@ let tests = ( Scriptor, build ) => {
         describe( 'simple script', function() {
             let script = new Script( './test/fixtures/watching/simple.js', module );
 
+            it( 'should NOT be watching the file before load', function() {
+                assert( !script.watched );
+            } );
+
+            it( 'should watch the file upon load', function() {
+                assert( script.willWatch );
+            } );
+
             it( 'should call the exported function and return the result', function( done ) {
                 script.exports().then( function( script_exports ) {
                     assert.deepEqual( script_exports, {
@@ -29,6 +37,10 @@ let tests = ( Scriptor, build ) => {
                     assert( script.loaded );
 
                 } ).then( done );
+            } );
+
+            it( 'should be watching the file after load', function() {
+                assert( script.watched );
             } );
 
             it( 'should trigger the change event when the file is modified', function( done ) {

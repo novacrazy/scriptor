@@ -43,6 +43,10 @@ let tests = ( Scriptor, build ) => {
             it( 'should NOT be watching a file', function() {
                 assert( !script.watched );
             } );
+
+            it( 'should NOT be ready to watch the file upon load', function() {
+                assert( !script.willWatch );
+            } );
         } );
 
         describe( 'Creating a new Script with filename and module', function() {
@@ -66,8 +70,12 @@ let tests = ( Scriptor, build ) => {
                 assert( !script.loaded );
             } );
 
-            it( 'should be watching the file', function() {
-                assert( script.watched );
+            it( 'should NOT be watching the file', function() {
+                assert( !script.watched );
+            } );
+
+            it( 'should be ready to watch the file upon load', function() {
+                assert( script.willWatch );
             } );
         } );
     } );

@@ -56,6 +56,10 @@ let tests = ( Scriptor, build ) => {
 
                 } ).then( done );
             } );
+
+            it( 'should be watching the file after load', function() {
+                assert( script.watched );
+            } );
         } );
 
         describe( 'simple script with AMD strict style factory exports', function() {
@@ -72,6 +76,10 @@ let tests = ( Scriptor, build ) => {
                     assert( script.loaded );
 
                 } ).then( done );
+            } );
+
+            it( 'should be watching the file after load', function() {
+                assert( script.watched );
             } );
         } );
     } );
