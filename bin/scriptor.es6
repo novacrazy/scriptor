@@ -97,7 +97,6 @@ options
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-s, --silent', 'Do not echo anything' )
-    .option( '--no_ext', 'Disable use of custom extensions with AMD injection' )
     .option( '--no_signal', 'Do not intercept process signals' )
     .option( '--no_glob', 'Do not match glob patterns' )
     .option( '--no_title', 'Do not set process title' );
@@ -212,11 +211,6 @@ export default function( argv ) {
 
     //Only run anything if there are any scripts to run, otherwise show the help
     if( scripts.length > 0 ) {
-        if( !options.no_ext ) {
-            logger.info( 'Custom extensions installed.' );
-            Scriptor.installCustomExtensions();
-        }
-
         if( options.long_stack_traces ) {
             Scriptor.Promise.longStackTraces();
             logger.info( 'Long Stack Traces enabled' );
