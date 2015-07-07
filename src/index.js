@@ -11,8 +11,10 @@ import Script from './script';
 import Manager from './manager';
 import Reference from './reference';
 
+import addYieldHandler from './yield_handlers.js';
+
 let Scriptor = {
-    Promise, Script, Manager, Reference
+    Promise, Script, Manager, Reference, addYieldHandler
 };
 
 Script.Scriptor = Scriptor;
