@@ -415,7 +415,7 @@ export default class Script extends EventPropagator {
                                     promisifyCache.set( id, obj );
 
                                     return obj;
-                                } ).then( _onLoad );
+                                } ).then( _onLoad, _onLoad.error );
                             }
                         }
                     };
@@ -806,6 +806,9 @@ export default class Script extends EventPropagator {
             } else {
                 return Promise.resolve( this._script.exports );
             }
+
+        } else if( this.textMode ) {
+            return Promise.resolve( this._script.exports );
 
         } else {
             //Add the event listeners first
