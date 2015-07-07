@@ -321,7 +321,7 @@ export default class Script extends EventPropagator {
 
         } else {
             //On the off chance the function factory is a promise, run it through again if need be
-            return tryPromise( factory ).then( ( resolvedFactory ) => {
+            return tryPromise( factory ).then( resolvedFactory => {
                 if( typeof factory === 'function' ) {
                     return this._runFactory( id, deps, resolvedFactory );
 
@@ -617,28 +617,28 @@ export default class Script extends EventPropagator {
                         try {
                             this._do_watch( this._watchPersistent );
 
+                            tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
+                                if( this._loading ) {
+                                    this._source = src;
+                                    this._script.loaded = true;
+
+                                    this._loading = false;
+
+                                    this.emit( 'loaded', this._script.exports );
+                                }
+
+                            }, err => {
+                                this._loading = false;
+
+                                this.emit( 'loading_error', err );
+                            } );
+
                         } catch( err ) {
                             this._loading = false;
 
                             this.emit( 'loading_error', err );
                         }
                     }
-
-                    return tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
-                        if( this._loading ) {
-                            this._source = src;
-                            this._script.loaded = true;
-
-                            this._loading = false;
-
-                            this.emit( 'loaded', this._script.exports );
-                        }
-
-                    }, err => {
-                        this._loading = false;
-
-                        this.emit( 'loading_error', err );
-                    } );
 
                 } else {
                     /*
@@ -816,7 +816,9 @@ export default class Script extends EventPropagator {
             //Add the event listeners first
             let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
 
-            return Promise.all( [this._callWrapper( this._do_load ), waiting] ).then( () => {
+            this._callWrapper( this._do_load );
+
+            return waiting.then( () => {
                 return this.exports();
             } );
         }
