@@ -590,7 +590,7 @@ export default class Script extends EventPropagator {
         }
     }
 
-    do_setup() {
+    _do_setup() {
         this._script.imports = this.imports;
 
         this._script.define = bind( this.define, this );
@@ -604,14 +604,14 @@ export default class Script extends EventPropagator {
         };
     }
 
-    do_load() {
+    _do_load() {
         assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
         if( !this.loading || (this._loadingText && !this.textMode) ) {
             this.unload();
 
             if( !this.textMode ) {
-                this.do_setup();
+                this._do_setup();
 
                 this._loadingText = false;
 
@@ -625,7 +625,7 @@ export default class Script extends EventPropagator {
 
                     if( this._willWatch && !this.watched ) {
                         try {
-                            this.do_watch( this._watchPersistent );
+                            this._do_watch( this._watchPersistent );
 
                         } catch( err ) {
                             this._loading = false;
@@ -664,7 +664,7 @@ export default class Script extends EventPropagator {
 
                     try {
                         if( this._willWatch && !this.watched ) {
-                            this.do_watch( this._watchPersistent );
+                            this._do_watch( this._watchPersistent );
                         }
 
                         this._script.load( this._script.filename );
@@ -687,7 +687,7 @@ export default class Script extends EventPropagator {
 
                 if( this._willWatch && !this.watched ) {
                     try {
-                        this.do_watch( this._watchPersistent );
+                        this._do_watch( this._watchPersistent );
 
                     } catch( err ) {
                         this._loading = false;
@@ -718,7 +718,7 @@ export default class Script extends EventPropagator {
         }
     }
 
-    do_watch( persistent ) {
+    _do_watch( persistent ) {
         if( !this.watched ) {
             let watcher;
 
@@ -799,7 +799,7 @@ export default class Script extends EventPropagator {
                                                  ['loaded', 'loaded_src'],
                                                  ['loading_error', 'loading_src_error'] );
 
-            return Promise.all( [this._callWrapper( this.do_load ), waiting] ).then( () => {
+            return Promise.all( [this._callWrapper( this._do_load ), waiting] ).then( () => {
                 return this.source( encoding );
             } );
         }
@@ -823,7 +823,7 @@ export default class Script extends EventPropagator {
             //Add the event listeners first
             let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
 
-            return Promise.all( [this._callWrapper( this.do_load ), waiting] ).then( () => {
+            return Promise.all( [this._callWrapper( this._do_load ), waiting] ).then( () => {
                 return this.exports();
             } );
         }
@@ -895,7 +895,7 @@ export default class Script extends EventPropagator {
 
     reload() {
         //Force it to reload and recompile the script.
-        this._callWrapper( this.do_load ).then( () => {
+        this._callWrapper( this._do_load ).then( () => {
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
