@@ -93,9 +93,8 @@ var EventPropagator = (function( _EventEmitter ) {
             }
 
             var listener = _ref;
-            var __target__ = listener.__target__;
 
-            if( __target__ !== void 0 && __target__ === this ) {
+            if( listener.__target__ === this ) {
                 return true;
             }
         }

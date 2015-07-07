@@ -70,8 +70,8 @@ var ScriptAdapter = (function( _Script ) {
         //When a script is renamed, it should be reassigned in the manager
         //Otherwise, when it's accessed at the new location, the manager just creates a new script
         this.on( 'rename', function( event, oldname, newname ) {
-            _this._manager.scripts.set( newname, _this._manager.scripts.get( oldname ) );
-            _this._manager.scripts.delete( oldname );
+            _this._manager._scripts.set( newname, _this._manager._scripts.get( oldname ) );
+            _this._manager._scripts.delete( oldname );
         } );
     }
 
@@ -131,6 +131,7 @@ var Manager = (function() {
 
         this._debounceMaxWait = null;
         this._maxListeners = null;
+        this._maxRecursion = null;
         this._config = null;
         this._cwd = process.cwd();
         this._scripts = new _Map();
@@ -215,6 +216,10 @@ var Manager = (function() {
 
             if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
                 script.debounceMaxWait = this.debounceMaxWait;
+            }
+
+            if( this.maxRecursion !== null && this.maxRecursion !== void 0 ) {
+                script.maxRecursion = this.maxRecursion;
             }
 
             if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
@@ -345,6 +350,23 @@ var Manager = (function() {
             } else {
                 this._debounceMaxWait = null;
             }
+        }
+    }, {
+        key: 'maxRecursion',
+        set: function set( value ) {
+            if( value !== null && value !== void 0 ) {
+
+                value = Math.floor( value );
+
+                _assert2.default( !isNaN( value ), 'maxRecursion must be set to a number' );
+
+                this._maxRecursion = value;
+            } else {
+                this._maxRecursion = null;
+            }
+        },
+        get: function get() {
+            return this._maxRecursion;
         }
     }] );
 

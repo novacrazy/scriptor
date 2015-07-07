@@ -1086,7 +1086,7 @@ var Script = (function( _EventPropagator ) {
     }, {
         key: 'watched',
         get: function get() {
-            return this._watcher !== void 0 && this._watcher !== null;
+            return this._watcher instanceof _eventsJs.EventEmitter;
         }
     }, {
         key: 'willWatch',
@@ -1154,7 +1154,6 @@ var Script = (function( _EventPropagator ) {
     }, {
         key: 'maxRecursion',
         set: function set( value ) {
-            //JSHint doesn't like bitwise operators
             value = Math.floor( value );
 
             (0, _assert2['default'])( !isNaN( value ), 'maxRecursion must be set to a number' );

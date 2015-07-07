@@ -247,7 +247,7 @@ var SourceScript = (function( _Script ) {
     }, {
         key: 'watched',
         get: function get() {
-            return this._onChange !== void 0 && this._onChange !== null;
+            return typeof this._onChange === 'function';
         }
     }] );
 
