@@ -56,12 +56,12 @@ export default class SourceScript extends Script {
         return this._onChange !== void 0 && this._onChange !== null;
     }
 
-    do_load() {
+    _do_load() {
         if( !this.loading || (this._loadingText && !this.textMode) ) {
             this.unload();
 
             if( !this.textMode ) {
-                this.do_setup();
+                this._do_setup();
 
                 this._loading = true;
                 this._loadingText = false;
