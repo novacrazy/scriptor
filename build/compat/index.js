@@ -35,7 +35,7 @@
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
 Object.defineProperty( exports, '__esModule', {
-  value: true
+    value: true
 } );
 
 var _bluebird = require( 'bluebird' );
@@ -67,15 +67,15 @@ var _yield_handlerJs = require( './yield_handler.js' );
 var _yield_handlerJs2 = _interopRequireDefault( _yield_handlerJs );
 
 var Scriptor = {
-  Promise:         _bluebird2['default'],
-  Script:          _scriptJs2['default'],
-  SourceScript:    _source_scriptJs2['default'],
-  TextScript:      _text_scriptJs2['default'],
-  Manager:         _managerJs2['default'],
-  Reference:       _referenceJs2['default'],
-  addYieldHandler: _yield_handlerJs2['default'],
-  load:            _scriptJs.load,
-  compile:         _source_scriptJs.compile
+    Promise:         _bluebird2['default'],
+    Script:          _scriptJs2['default'],
+    SourceScript:    _source_scriptJs2['default'],
+    TextScript:      _text_scriptJs2['default'],
+    Manager:         _managerJs2['default'],
+    Reference:       _referenceJs2['default'],
+    addYieldHandler: _yield_handlerJs2['default'],
+    load:            _scriptJs.load,
+    compile:         _source_scriptJs.compile
 };
 
 _scriptJs2['default'].Scriptor = Scriptor;

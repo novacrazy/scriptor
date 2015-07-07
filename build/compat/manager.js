@@ -48,6 +48,10 @@ var _module2 = require( 'module' );
 
 var _module3 = _interopRequireDefault( _module2 );
 
+var _assert = require( 'assert' );
+
+var _assert2 = _interopRequireDefault( _assert );
+
 var _path = require( 'path' );
 
 var _utilsJs = require( './utils.js' );
@@ -97,12 +101,12 @@ var ScriptAdapter = (function( _Script ) {
                 script.reload();
             }
 
-            this._addPropagationHandler( script, 'change', function() {
+            this.propagateFrom( script, 'change', function() {
                 _this2.unload();
                 _this2.emit( 'change', _this2.filename );
             } );
 
-            script.propagateEvents( this._propagateEvents );
+            script.propagateEvents( this.isPropagatingEvents() );
 
             script.maxRecursion = this.maxRecursion;
 
@@ -161,7 +165,7 @@ var Manager = (function() {
 
                 value = Math.floor( value );
 
-                assert( !isNaN( value ), 'setMaxListeners must be passed a number' );
+                (0, _assert2['default'])( !isNaN( value ), 'setMaxListeners must be passed a number' );
 
                 this._maxListeners = value;
             } else {
@@ -355,7 +359,7 @@ var Manager = (function() {
             if( time !== null && time !== void 0 ) {
                 time = Math.floor( time );
 
-                assert( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+                (0, _assert2['default'])( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
                 this._debounceMaxWait = time;
             } else {
