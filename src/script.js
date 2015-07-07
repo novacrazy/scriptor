@@ -14,7 +14,7 @@ import {extname, dirname, basename, resolve, posix as path} from 'path';
 
 import {normalizeError} from './error.js';
 
-import {EventPropagator, makeEventPromise, makeMultiEventPromise} from './events.js';
+import {EventPropagator, EventEmitter, makeEventPromise, makeMultiEventPromise} from './events.js';
 import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
 
 import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
