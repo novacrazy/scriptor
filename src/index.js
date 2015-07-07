@@ -21,8 +21,10 @@ import Reference from './reference.js';
 
 import addYieldHandler from './yield_handler.js';
 
+import * as utils from './utils.js';
+
 let Scriptor = {
-    Promise, Script, SourceScript, TextScript, Manager, Reference, addYieldHandler, load, compile
+    Promise, Script, SourceScript, TextScript, Manager, Reference, addYieldHandler, load, compile, utils
 };
 
 Script.Scriptor = Scriptor;
