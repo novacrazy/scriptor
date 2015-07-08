@@ -72,7 +72,7 @@ var EventPropagator = (function( _EventEmitter ) {
     };
 
     EventPropagator.prototype.isPropagatingFrom = function isPropagatingFrom( emitter, event ) {
-        var listeners = emitter.listeners( events );
+        var listeners = emitter.listeners( event );
 
         for( var _iterator = listeners, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
                                                                                                    _iterator :

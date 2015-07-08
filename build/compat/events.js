@@ -81,7 +81,7 @@ var EventPropagator = (function( _EventEmitter ) {
     }, {
         key:   'isPropagatingFrom',
         value: function isPropagatingFrom( emitter, event ) {
-            var listeners = emitter.listeners( events );
+            var listeners = emitter.listeners( event );
 
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
