@@ -115,7 +115,7 @@ var EventPropagator = (function( _EventEmitter ) {
                 emitter.removeListener( event, propagate );
             } );
 
-            propagate.__target__ = target;
+            propagate.__target__ = this;
 
             emitter.on( event, propagate );
 
