@@ -21,6 +21,8 @@ import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeCo
 
 import defaultExtensions from './extensions.js';
 
+import Reference from './reference.js';
+
 let readFileAsync = Promise.promisify( readFile );
 
 let promisifyCache = new Map();
@@ -917,6 +919,16 @@ export default class Script extends EventPropagator {
         } else if( this._willWatch ) {
             this._willWatch = false;
         }
+    }
+
+    reference( ...args ) {
+        return this.reference_apply( args );
+    }
+
+    reference_apply( args ) {
+        assert( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
+
+        return new Reference( this, args );
     }
 
     close( permanent = true ) {

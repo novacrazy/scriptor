@@ -75,6 +75,10 @@ var _extensionsJs = require( './extensions.js' );
 
 var _extensionsJs2 = _interopRequireDefault( _extensionsJs );
 
+var _referenceJs = require( './reference.js' );
+
+var _referenceJs2 = _interopRequireDefault( _referenceJs );
+
 var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
 
 var promisifyCache = new _Map();
@@ -874,6 +878,20 @@ var Script = (function( _EventPropagator ) {
         } else if( this._willWatch ) {
             this._willWatch = false;
         }
+    };
+
+    Script.prototype.reference = function reference() {
+        for( var _len2 = arguments.length, args = Array( _len2 ), _key2 = 0; _key2 < _len2; _key2++ ) {
+            args[_key2] = arguments[_key2];
+        }
+
+        return this.reference_apply( args );
+    };
+
+    Script.prototype.reference_apply = function reference_apply( args ) {
+        _assert2.default( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
+
+        return new _referenceJs2.default( this, args );
     };
 
     Script.prototype.close = function close() {
