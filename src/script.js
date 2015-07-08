@@ -498,7 +498,7 @@ export default class Script extends EventPropagator {
                 } else {
                     script = load( id, this.watched, this._script );
 
-                    this.propagateFrom( script, 'change', () => {
+                    script.propagateTo( this, 'change', () => {
                         this.unload();
                         this.emit( 'change', this.filename );
                     } );

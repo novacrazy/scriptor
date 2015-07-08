@@ -29,8 +29,13 @@ export class EventPropagator extends EventEmitter {
         return false;
     }
 
+    isPropagatingTo( emitter, event ) {
+        return emitter.isPropagatingFrom( this, event );
+    }
+
     propagateFrom( emitter, event, handler ) {
         if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
+
             var propagate = once( () => {
                 if( !propagate._hasPropagated && this._propagateEvents ) {
                     handler.call( this );
@@ -46,6 +51,10 @@ export class EventPropagator extends EventEmitter {
 
             propagate._hasPropagated = false;
         }
+    }
+
+    propagateTo( emitter, event, handler ) {
+        emitter.propagateFrom( this, event, handler );
     }
 
     isPropagatingEvents() {
