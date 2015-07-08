@@ -333,13 +333,13 @@ exports['default'] = function( argv ) {
                     } else {
                         maxRecursion = concurrency - 1;
 
-                        if( maxRecursion > ScriptorCommon.default_max_recursion ) {
+                        if( maxRecursion > _buildModernDefaultsJs.default_max_recursion ) {
                             logger.warn( 'Increasing max_recursion to %d to handle increased concurrency',
                                          maxRecursion );
                         }
                     }
                 } else {
-                    maxRecursion = _buildModernIndexJs2['default'].default_max_recursion;
+                    maxRecursion = _buildModernDefaultsJs.default_max_recursion;
 
                     concurrency = maxRecursion + 1;
                 }
@@ -409,7 +409,7 @@ exports['default'] = function( argv ) {
 
                 instance.maxRecursion = maxRecursion;
 
-                if( log_level === ScriptorCLI.LogLevel.LOG_SILENT || _commander2['default'].cork ) {
+                if( log_level === _toolsCliJs.LogLevel.LOG_SILENT || _commander2['default'].cork ) {
                     process.stdout.cork();
                 }
 

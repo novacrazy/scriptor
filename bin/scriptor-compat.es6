@@ -277,13 +277,13 @@ export default function( argv ) {
                 } else {
                     maxRecursion = concurrency - 1;
 
-                    if( maxRecursion > ScriptorCommon.default_max_recursion ) {
+                    if( maxRecursion > default_max_recursion ) {
                         logger.warn( 'Increasing max_recursion to %d to handle increased concurrency', maxRecursion );
                     }
                 }
 
             } else {
-                maxRecursion = Scriptor.default_max_recursion;
+                maxRecursion = default_max_recursion;
 
                 concurrency = maxRecursion + 1;
             }
@@ -327,7 +327,7 @@ export default function( argv ) {
 
             instance.maxRecursion = maxRecursion;
 
-            if( log_level === ScriptorCLI.LogLevel.LOG_SILENT || options.cork ) {
+            if( log_level === LogLevel.LOG_SILENT || options.cork ) {
                 process.stdout.cork();
             }
 
