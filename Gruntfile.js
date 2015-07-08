@@ -23,12 +23,11 @@ module.exports = function( grunt ) {
             },
             build_modern: {
                 options: {
-                    loose: "all",
+                    loose:     "all",
                     blacklist: [
                         'es3.memberExpressionLiterals',
                         'es3.propertyLiterals',
-                        'regenerator', //es6.generators
-                        'es6.properties.shorthand'
+                        'regenerator' //es6.generators
                     ],
                     optional:  [
                         'runtime',
