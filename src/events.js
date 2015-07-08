@@ -31,7 +31,7 @@ export class EventPropagator extends EventEmitter {
 
     propagateFrom( emitter, event, handler ) {
         if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
-            var propagate = _.once( () => {
+            var propagate = once( () => {
                 if( !propagate._hasPropagated && this._propagateEvents ) {
                     handler.call( this );
                     propagate._hasPropagated = true;

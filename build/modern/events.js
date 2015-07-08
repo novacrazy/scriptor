@@ -106,7 +106,7 @@ var EventPropagator = (function( _EventEmitter ) {
         var _this = this;
 
         if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
-            var propagate = _.once( function() {
+            var propagate = _lodash.once( function() {
                 if( !propagate._hasPropagated && _this._propagateEvents ) {
                     handler.call( _this );
                     propagate._hasPropagated = true;
