@@ -59,6 +59,8 @@ class ScriptAdapter extends Script {
 
     close( permanent ) {
         if( permanent ) {
+            this._manager.scripts.delete( this.filename );
+
             delete this['_manager'];
         }
 
