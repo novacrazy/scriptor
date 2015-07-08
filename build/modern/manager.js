@@ -169,11 +169,7 @@ var Manager = (function() {
     };
 
     Manager.prototype.config = function config( _config2 ) {
-        if( _config2 !== void 0 && _config2 !== null ) {
-            this._config = _utilsJs.normalizeConfig( _config2 );
-        }
-
-        return this._config;
+        this._config = _utilsJs.normalizeConfig( _config2 );
     };
 
     Manager.prototype.propagateEvents = function propagateEvents() {
@@ -195,21 +191,8 @@ var Manager = (function() {
         }
     };
 
-    //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
-    //but this functions as a way to add and/or get a script in one fell swoop.
-    //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
-    //from watching a file.
-
-    Manager.prototype.add = function add( filename ) {
-        var watch = arguments[1] === undefined ? true : arguments[1];
-
-        filename = _path.resolve( this.cwd(), filename );
-
-        var script = this._scripts.get( filename );
-
-        if( script === void 0 ) {
-            script = new ScriptAdapter( this, null, this._parent );
-
+    Manager.prototype._modifyScript = function _modifyScript( script ) {
+        if( script !== void 0 ) {
             if( this._propagateEvents ) {
                 script.propagateEvents();
             }
@@ -226,14 +209,35 @@ var Manager = (function() {
                 script.setMaxListeners( this._maxListeners );
             }
 
-            if( this._config !== void 0 && this._config !== null ) {
-                script.config( this._config );
+            if( this._config !== null && this._config !== void 0 ) {
+                script.config( this._config, true );
             }
+        }
+
+        return script;
+    };
+
+    //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
+    //but this functions as a way to add and/or get a script in one fell swoop.
+    //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
+    //from watching a file.
+
+    Manager.prototype.add = function add( filename ) {
+        var watch = arguments[1] === undefined ? true : arguments[1];
+
+        filename = _path.resolve( this.cwd(), filename );
+
+        var script = this._scripts.get( filename );
+
+        if( script === void 0 ) {
+            script = new ScriptAdapter( this, null, this._parent );
 
             script.load( filename, watch );
 
             this._scripts.set( filename, script );
         }
+
+        this._modifyScript( script );
 
         //Even if the script is added, this allows it to be watched, though not unwatched.
         //Unwatching still has to be done manually
@@ -308,7 +312,7 @@ var Manager = (function() {
     Manager.prototype.get = function get( filename ) {
         filename = _path.resolve( this.cwd(), filename );
 
-        return this._scripts.get( filename );
+        return this._modifyScript( this._scripts.get( filename ) );
     };
 
     //Make closing optional for the same reason as .remove

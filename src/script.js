@@ -179,12 +179,15 @@ export default class Script extends EventPropagator {
         }
     }
 
-    config( config ) {
+    config( config, alreadyNormalized = false ) {
         if( config !== void 0 && config !== null ) {
-            this._config = normalizeConfig( config );
-        }
+            if( alreadyNormalized ) {
+                this._config = config;
 
-        return this._config;
+            } else {
+                this._config = normalizeConfig( config );
+            }
+        }
     }
 
     get watched() {

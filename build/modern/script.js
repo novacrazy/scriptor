@@ -227,11 +227,15 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype.config = function config( _config2 ) {
-        if( _config2 !== void 0 && _config2 !== null ) {
-            this._config = _utilsJs.normalizeConfig( _config2 );
-        }
+        var alreadyNormalized = arguments[1] === undefined ? false : arguments[1];
 
-        return this._config;
+        if( _config2 !== void 0 && _config2 !== null ) {
+            if( alreadyNormalized ) {
+                this._config = _config2;
+            } else {
+                this._config = _utilsJs.normalizeConfig( _config2 );
+            }
+        }
     };
 
     Script.prototype.isManaged = function isManaged() {
