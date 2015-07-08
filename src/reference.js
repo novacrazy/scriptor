@@ -10,7 +10,7 @@ import _ from 'lodash';
 
 import {EventEmitter, makeEventPromise} from './events.js';
 
-import {isGeneratorFunction, makeCoroutine, tryPromise, tryReject} from './utils.js';
+import {isGeneratorFunction, tryPromise, tryReject} from './utils.js';
 
 export function identity( left, right ) {
     assert( left instanceof ReferenceBase, 'Cannot pass non-Reference to reference identity function.' );
@@ -207,7 +207,7 @@ class TransformReference extends ReferenceBase {
         this._left = this._ref = ref;
 
         if( isGeneratorFunction( transform ) ) {
-            this._transform = makeCoroutine( transform );
+            this._transform = Promise.coroutine( transform );
 
         } else {
             this._transform = transform;
@@ -279,7 +279,7 @@ class JoinedTransformReference extends ReferenceBase {
         this._right = right;
 
         if( isGeneratorFunction( transform ) ) {
-            this._transform = makeCoroutine( transform );
+            this._transform = Promise.coroutine( transform );
 
         } else {
             this._transform = transform;
