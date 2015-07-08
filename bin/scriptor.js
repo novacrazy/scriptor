@@ -12,8 +12,6 @@ var _getIterator = require( 'babel-runtime/core-js/get-iterator' )['default'];
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
-
 Object.defineProperty( exports, '__esModule', {
     value: true
 } );
@@ -48,7 +46,7 @@ var _toolsCliJs = require( './tools/cli.js' );
 
 var _buildModernIndexJs = require( './../build/modern/index.js' );
 
-var Scriptor = _interopRequireWildcard( _buildModernIndexJs );
+var _buildModernIndexJs2 = _interopRequireDefault( _buildModernIndexJs );
 
 var constants = process.binding( 'constants' );
 
@@ -273,12 +271,12 @@ exports['default'] = function( argv ) {
     if( scripts.length > 0 ) {
         (function() {
             if( _commander2['default'].long_stack_traces ) {
-                Scriptor.Promise.longStackTraces();
+                _buildModernIndexJs2['default'].Promise.longStackTraces();
                 logger.info( 'Long Stack Traces enabled' );
             }
 
             //New manager created, using process.cwd as the cwd
-            var manager = new Scriptor.Manager();
+            var manager = new _buildModernIndexJs2['default'].Manager();
 
             if( _commander2['default'].propagate ) {
                 manager.propagateEvents();
@@ -341,7 +339,7 @@ exports['default'] = function( argv ) {
                         }
                     }
                 } else {
-                    maxRecursion = Scriptor.default_max_recursion;
+                    maxRecursion = _buildModernIndexJs2['default'].default_max_recursion;
 
                     concurrency = maxRecursion + 1;
                 }
@@ -420,7 +418,9 @@ exports['default'] = function( argv ) {
                 } );
             };
 
-            var mapper = function mapper( script ) {
+            logger.info( 'Concurrency set at %s', concurrency );
+
+            _buildModernIndexJs2['default'].Promise.map( scripts, function( script ) {
                 var num = place++;
 
                 logger.verbose( 'Running script #%d, %s.', num, script );
@@ -445,11 +445,10 @@ exports['default'] = function( argv ) {
                 }
 
                 return run_script( instance, script, num );
-            };
+            }, {
+                concurrency: concurrency
 
-            logger.info( 'Concurrency set at %s', concurrency );
-
-            Scriptor.Promise.map( scripts, mapper, {concurrency: concurrency} )['catch']( onError ).then( function() {
+            } )['catch']( onError ).then( function() {
                 logger.log( 'All scripts successfully executed in %s', diff_ms( script_start ) );
 
                 if( _commander2['default'].close ) {

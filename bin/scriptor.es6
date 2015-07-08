@@ -15,7 +15,7 @@ let constants = process.binding( 'constants' );
 import {default_debounceMaxWait, default_max_recursion} from './../build/modern/defaults.js';
 import {Logger, LogLevel} from './tools/cli.js';
 
-import * as Scriptor from './../build/modern/index.js';
+import Scriptor from './../build/modern/index.js';
 
 function diff_ms( start ) {
     let [seconds, nanoseconds] = process.hrtime( start );
@@ -336,7 +336,9 @@ export default function( argv ) {
             } );
         };
 
-        let mapper = script => {
+        logger.info( 'Concurrency set at %s', concurrency );
+
+        Scriptor.Promise.map( scripts, script => {
             let num = place++;
 
             logger.verbose( 'Running script #%d, %s.', num, script );
@@ -361,11 +363,10 @@ export default function( argv ) {
             }
 
             return run_script( instance, script, num );
-        };
+        }, {
+            concurrency: concurrency
 
-        logger.info( 'Concurrency set at %s', concurrency );
-
-        Scriptor.Promise.map( scripts, mapper, {concurrency: concurrency} ).catch( onError ).then( () => {
+        } ).catch( onError ).then( () => {
             logger.log( 'All scripts successfully executed in %s', diff_ms( script_start ) );
 
             if( options.close ) {
