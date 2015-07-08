@@ -116,11 +116,17 @@ var EventPropagator = (function( _EventEmitter ) {
             return false;
         }
     }, {
+        key:   'isPropagatingTo',
+        value: function isPropagatingTo( emitter, event ) {
+            return emitter.isPropagatingFrom( this, event );
+        }
+    }, {
         key:   'propagateFrom',
         value: function propagateFrom( emitter, event, handler ) {
             var _this = this;
 
             if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
+
                 var propagate = (0, _lodash.once)( function() {
                     if( !propagate._hasPropagated && _this._propagateEvents ) {
                         handler.call( _this );
@@ -136,6 +142,11 @@ var EventPropagator = (function( _EventEmitter ) {
 
                 propagate._hasPropagated = false;
             }
+        }
+    }, {
+        key:   'propagateTo',
+        value: function propagateTo( emitter, event, handler ) {
+            emitter.propagateFrom( this, event, handler );
         }
     }, {
         key:   'isPropagatingEvents',

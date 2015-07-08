@@ -561,7 +561,7 @@ var Script = (function( _EventPropagator ) {
                         } else {
                             script = load( id, this.watched, this._script );
 
-                            this.propagateFrom( script, 'change', function() {
+                            script.propagateTo( this, 'change', function() {
                                 _this5.unload();
                                 _this5.emit( 'change', _this5.filename );
                             } );
