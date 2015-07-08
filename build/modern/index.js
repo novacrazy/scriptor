@@ -80,7 +80,7 @@ var Scriptor = {
     addYieldHandler: _yield_handlerJs2.default,
     load:            _scriptJs.load,
     compile: _source_scriptJs.compile,
-             utils
+    utils:   utils
 };
 
 _scriptJs2.default.Scriptor = Scriptor;

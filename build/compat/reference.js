@@ -295,7 +295,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
         this._left = this._ref = ref;
 
         if( (0, _utilsJs.isGeneratorFunction)( transform ) ) {
-            this._transform = (0, _utilsJs.makeCoroutine)( transform );
+            this._transform = _bluebird2['default'].coroutine( transform );
         } else {
             this._transform = transform;
         }
@@ -382,7 +382,7 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
         this._right = right;
 
         if( (0, _utilsJs.isGeneratorFunction)( transform ) ) {
-            this._transform = (0, _utilsJs.makeCoroutine)( transform );
+            this._transform = _bluebird2['default'].coroutine( transform );
         } else {
             this._transform = transform;
         }
