@@ -109,6 +109,8 @@ var ScriptAdapter = (function( _Script ) {
 
     ScriptAdapter.prototype.close = function close( permanent ) {
         if( permanent ) {
+            this._manager.scripts.delete( this.filename );
+
             delete this['_manager'];
         }
 

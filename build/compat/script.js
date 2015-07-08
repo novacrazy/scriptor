@@ -859,8 +859,9 @@ var Script = (function( _EventPropagator ) {
 
                     //resolve doesn't like nulls, so this has to be done first
                     if( filename === null || filename === void 0 ) {
-                        //If filename is null, that is generally a bad sign, so just close the script (not permanently)
-                        _this9.close( false );
+                        //Generally, if the filename was null, either the platform is unsupported
+                        // or the file has been deleted. So just reopen it with a fresh watcher and stuff.
+                        _this9.reopen();
                     } else {
 
                         //This is important because fs.watch 'change' event only returns things like 'script.js'
@@ -1070,6 +1071,18 @@ var Script = (function( _EventPropagator ) {
             (0, _assert2['default'])( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
 
             return new _referenceJs2['default']( this, args );
+        }
+    }, {
+        key:   'reopen',
+        value: function reopen() {
+            this.unload();
+
+            if( this.watched ) {
+                this.unwatch();
+                this.watch( this._watchPersistent );
+            }
+
+            this.emit( 'change', this.filename );
         }
     }, {
         key:   'close',
