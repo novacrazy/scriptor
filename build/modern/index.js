@@ -62,25 +62,20 @@ var _referenceJs = require( './reference.js' );
 
 var _referenceJs2 = _interopRequireDefault( _referenceJs );
 
-var _yield_handlerJs = require( './yield_handler.js' );
-
-var _yield_handlerJs2 = _interopRequireDefault( _yield_handlerJs );
-
 var _utilsJs = require( './utils.js' );
 
 var utils = _interopRequireWildcard( _utilsJs );
 
 var Scriptor = {
-    Promise:         _bluebird2.default,
-    Script:          _scriptJs2.default,
-    SourceScript:    _source_scriptJs2.default,
-    TextScript:      _text_scriptJs2.default,
-    Manager:         _managerJs2.default,
-    Reference:       _referenceJs2.default,
-    addYieldHandler: _yield_handlerJs2.default,
-    load:            _scriptJs.load,
-    compile: _source_scriptJs.compile,
-    utils:   utils
+    Promise:      _bluebird2.default,
+    Script:       _scriptJs2.default,
+    SourceScript: _source_scriptJs2.default,
+    TextScript:   _text_scriptJs2.default,
+    Manager:      _managerJs2.default,
+    Reference:    _referenceJs2.default,
+    load:         _scriptJs.load,
+    compile:      _source_scriptJs.compile,
+    utils:        utils
 };
 
 _scriptJs2.default.Scriptor = Scriptor;

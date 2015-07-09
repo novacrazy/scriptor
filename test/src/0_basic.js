@@ -43,10 +43,6 @@ let tests = ( Scriptor, build ) => {
             assert.strictEqual( Scriptor.Promise, Promise, 'Exported Promise is not bluebird' );
         } );
 
-        it( 'should have exported a addYieldHandler function', function() {
-            assert.strictEqual( typeof Scriptor.addYieldHandler, 'function', 'No addYieldHandler function exported' );
-        } );
-
         it( 'should have exported a few utility functions', function() {
             assert.strictEqual( typeof Scriptor.utils, 'object', 'No utilities exported' );
             assert.strictEqual( typeof Scriptor.utils.stripBOM, 'function', 'Missing utility "stripBOM"' );

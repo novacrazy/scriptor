@@ -51,11 +51,6 @@ var tests = function tests( Scriptor, build ) {
             _assert2.default.strictEqual( Scriptor.Promise, _bluebird2.default, 'Exported Promise is not bluebird' );
         } );
 
-        it( 'should have exported a addYieldHandler function', function() {
-            _assert2.default.strictEqual( typeof Scriptor.addYieldHandler, 'function',
-                                          'No addYieldHandler function exported' );
-        } );
-
         it( 'should have exported a few utility functions', function() {
             _assert2.default.strictEqual( typeof Scriptor.utils, 'object', 'No utilities exported' );
             _assert2.default.strictEqual( typeof Scriptor.utils.stripBOM, 'function', 'Missing utility "stripBOM"' );
