@@ -4,7 +4,7 @@
 
 //Define our module
 define( ['koa', 'koa-router', './lib/react-factory', './lib/react-render'],
-    function*(koa, router, factory, render, require) {
+    function*( koa, router, factory, render, require ) {
 
         //Add custom extension handlers for .jsx and .dot files
         yield require( ['./lib/jsx-require-async.js', './lib/dot-require-async.js'] );

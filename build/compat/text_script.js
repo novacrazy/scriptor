@@ -28,9 +28,9 @@
 
 'use strict';
 
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
 var _get = require( 'babel-runtime/helpers/get' )['default'];
+
+var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
 
 var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
 
@@ -47,20 +47,22 @@ var _scriptJs = require( './script.js' );
 var _scriptJs2 = _interopRequireDefault( _scriptJs );
 
 var TextScript = (function( _Script ) {
+    _inherits( TextScript, _Script );
+
     function TextScript() {
         _classCallCheck( this, TextScript );
 
         _get( Object.getPrototypeOf( TextScript.prototype ), 'constructor', this ).apply( this, arguments );
     }
 
-    _inherits( TextScript, _Script );
-
-    _createClass( TextScript, [{
-        key: 'textMode',
-        get: function get() {
-            return true;
+    _createClass( TextScript, [
+        {
+            key: 'textMode',
+            get: function get() {
+                return true;
+            }
         }
-    }] );
+    ] );
 
     return TextScript;
 })( _scriptJs2['default'] );

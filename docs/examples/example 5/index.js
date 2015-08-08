@@ -3,7 +3,7 @@ var Reference = Scriptor.Reference;
 
 var ref = Reference.resolve( 'World!' );
 
-ref = ref.transform( function*(left) {
+ref = ref.transform( function*( left ) {
     return 'Hello, ' + (yield left.value());
 } );
 

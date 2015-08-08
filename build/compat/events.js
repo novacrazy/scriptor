@@ -28,9 +28,9 @@
 
 'use strict';
 
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
 var _get = require( 'babel-runtime/helpers/get' )['default'];
+
+var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
 
 var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
 
@@ -42,7 +42,7 @@ var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-def
 
 var _defaults = require( 'babel-runtime/helpers/defaults' )['default'];
 
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
+var _interopExportWildcard = require( 'babel-runtime/helpers/interop-export-wildcard' )['default'];
 
 Object.defineProperty( exports, '__esModule', {
     value: true
@@ -58,9 +58,11 @@ var _events = require( 'events' );
 
 var _lodash = require( 'lodash' );
 
-_defaults( exports, _interopRequireWildcard( _events ) );
+_defaults( exports, _interopExportWildcard( _events, _defaults ) );
 
 var EventPropagator = (function( _EventEmitter ) {
+    _inherits( EventPropagator, _EventEmitter );
+
     function EventPropagator() {
         _classCallCheck( this, EventPropagator );
 
@@ -69,91 +71,91 @@ var EventPropagator = (function( _EventEmitter ) {
         this._propagateEvents = false;
     }
 
-    _inherits( EventPropagator, _EventEmitter );
+    _createClass( EventPropagator, [
+        {
+            key:   'propagateEvents',
+            value: function propagateEvents() {
+                var enable = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
 
-    _createClass( EventPropagator, [{
-        key:   'propagateEvents',
-        value: function propagateEvents() {
-            var enable = arguments[0] === undefined ? true : arguments[0];
+                this._propagateEvents = enable;
+            }
+        }, {
+            key:   'isPropagatingFrom',
+            value: function isPropagatingFrom( emitter, event ) {
+                var listeners = emitter.listeners( event );
 
-            this._propagateEvents = enable;
-        }
-    }, {
-        key:   'isPropagatingFrom',
-        value: function isPropagatingFrom( emitter, event ) {
-            var listeners = emitter.listeners( event );
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
 
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
+                var _iteratorError = void 0;
 
-            var _iteratorError = void 0;
-
-            try {
-                for( var _iterator = _getIterator( listeners ), _step;
-                     !(_iteratorNormalCompletion = (_step = _iterator.next()).done);
-                     _iteratorNormalCompletion = true ) {
-                    var listener = _step.value;
-
-                    if( listener.__target__ === this ) {
-                        return true;
-                    }
-                }
-            } catch( err ) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
                 try {
-                    if( !_iteratorNormalCompletion && _iterator['return'] ) {
-                        _iterator['return']();
+                    for( var _iterator = _getIterator( listeners ), _step;
+                         !(_iteratorNormalCompletion = (_step = _iterator.next()).done);
+                         _iteratorNormalCompletion = true ) {
+                        var listener = _step.value;
+
+                        if( listener.__target__ === this ) {
+                            return true;
+                        }
                     }
+                } catch( err ) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
                 } finally {
-                    if( _didIteratorError ) {
-                        throw _iteratorError;
+                    try {
+                        if( !_iteratorNormalCompletion && _iterator['return'] ) {
+                            _iterator['return']();
+                        }
+                    } finally {
+                        if( _didIteratorError ) {
+                            throw _iteratorError;
+                        }
                     }
                 }
+
+                return false;
             }
+        }, {
+            key:   'isPropagatingTo',
+            value: function isPropagatingTo( emitter, event ) {
+                return emitter.isPropagatingFrom( this, event );
+            }
+        }, {
+            key:   'propagateFrom',
+            value: function propagateFrom( emitter, event, handler ) {
+                var _this = this;
 
-            return false;
-        }
-    }, {
-        key:   'isPropagatingTo',
-        value: function isPropagatingTo( emitter, event ) {
-            return emitter.isPropagatingFrom( this, event );
-        }
-    }, {
-        key:   'propagateFrom',
-        value: function propagateFrom( emitter, event, handler ) {
-            var _this = this;
+                if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
 
-            if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
+                    var propagate = (0, _lodash.once)( function() {
+                        if( !propagate._hasPropagated && _this._propagateEvents ) {
+                            handler.call( _this );
+                            propagate._hasPropagated = true;
+                        }
 
-                var propagate = (0, _lodash.once)( function() {
-                    if( !propagate._hasPropagated && _this._propagateEvents ) {
-                        handler.call( _this );
-                        propagate._hasPropagated = true;
-                    }
+                        emitter.removeListener( event, propagate );
+                    } );
 
-                    emitter.removeListener( event, propagate );
-                } );
+                    propagate.__target__ = this;
 
-                propagate.__target__ = this;
+                    emitter.on( event, propagate );
 
-                emitter.on( event, propagate );
-
-                propagate._hasPropagated = false;
+                    propagate._hasPropagated = false;
+                }
+            }
+        }, {
+            key:   'propagateTo',
+            value: function propagateTo( emitter, event, handler ) {
+                emitter.propagateFrom( this, event, handler );
+            }
+        }, {
+            key:   'isPropagatingEvents',
+            value: function isPropagatingEvents() {
+                return this._propagateEvents;
             }
         }
-    }, {
-        key:   'propagateTo',
-        value: function propagateTo( emitter, event, handler ) {
-            emitter.propagateFrom( this, event, handler );
-        }
-    }, {
-        key:   'isPropagatingEvents',
-        value: function isPropagatingEvents() {
-            return this._propagateEvents;
-        }
-    }] );
+    ] );
 
     return EventPropagator;
 })( _events.EventEmitter );

@@ -64,6 +64,8 @@ function identity( left, right ) {
 }
 
 var ReferenceBase = (function( _EventEmitter ) {
+    _inherits( ReferenceBase, _EventEmitter );
+
     function ReferenceBase() {
         _classCallCheck( this, ReferenceBase );
 
@@ -77,8 +79,6 @@ var ReferenceBase = (function( _EventEmitter ) {
         this._left = void 0;
         this._right = void 0;
     }
-
-    _inherits( ReferenceBase, _EventEmitter );
 
     ReferenceBase.prototype._run = function _run() {
         this.emit( 'value_error', new Error( 'Cannot get value from ReferenceBase' ) );
@@ -102,8 +102,8 @@ var ReferenceBase = (function( _EventEmitter ) {
         return new JoinedTransformReference( this, ref, transform );
     };
 
-    ReferenceBase.prototype.transform = function transform( _transform2 ) {
-        return new TransformReference( this, _transform2 );
+    ReferenceBase.prototype.transform = function transform( _transform ) {
+        return new TransformReference( this, _transform );
     };
 
     ReferenceBase.prototype.left = function left() {
@@ -129,27 +129,31 @@ var ReferenceBase = (function( _EventEmitter ) {
         this._closed = true;
     };
 
-    _createClass( ReferenceBase, [{
-        key: 'ran',
-        get: function get() {
-            return this._ran;
+    _createClass( ReferenceBase, [
+        {
+            key: 'ran',
+            get: function get() {
+                return this._ran;
+            }
+        }, {
+            key: 'running',
+            get: function get() {
+                return this._running;
+            }
+        }, {
+            key: 'closed',
+            get: function get() {
+                return this._closed;
+            }
         }
-    }, {
-        key: 'running',
-        get: function get() {
-            return this._running;
-        }
-    }, {
-        key: 'closed',
-        get: function get() {
-            return this._closed;
-        }
-    }] );
+    ] );
 
     return ReferenceBase;
 })( _eventsJs.EventEmitter );
 
 var Reference = (function( _ReferenceBase ) {
+    _inherits( Reference, _ReferenceBase );
+
     function Reference( script, args ) {
         var _this = this;
 
@@ -172,8 +176,6 @@ var Reference = (function( _ReferenceBase ) {
 
         script.on( 'change', this._onChange );
     }
-
-    _inherits( Reference, _ReferenceBase );
 
     Reference.prototype._run = function _run() {
         var _this2 = this;
@@ -248,8 +250,8 @@ var Reference = (function( _ReferenceBase ) {
         }
     };
 
-    Reference.transform = function transform( ref, _transform3 ) {
-        return new TransformReference( ref, _transform3 );
+    Reference.transform = function transform( ref, _transform2 ) {
+        return new TransformReference( ref, _transform2 );
     };
 
     return Reference;
@@ -258,10 +260,12 @@ var Reference = (function( _ReferenceBase ) {
 exports.default = Reference;
 
 var TransformReference = (function( _ReferenceBase2 ) {
+    _inherits( TransformReference, _ReferenceBase2 );
+
     function TransformReference( ref ) {
         var _this3 = this;
 
-        var transform = arguments[1] === undefined ? identity : arguments[1];
+        var transform = arguments.length <= 1 || arguments[1] === undefined ? identity : arguments[1];
 
         _classCallCheck( this, TransformReference );
 
@@ -288,8 +292,6 @@ var TransformReference = (function( _ReferenceBase2 ) {
 
         ref.on( 'change', this._onChange );
     }
-
-    _inherits( TransformReference, _ReferenceBase2 );
 
     TransformReference.prototype._run = function _run() {
         var _this4 = this;
@@ -321,7 +323,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
     };
 
     TransformReference.prototype.close = function close() {
-        var recursive = arguments[0] === undefined ? false : arguments[0];
+        var recursive = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
 
         if( !this._closed ) {
             this._ref.removeListener( 'change', this._onChange );
@@ -340,17 +342,19 @@ var TransformReference = (function( _ReferenceBase2 ) {
 })( ReferenceBase );
 
 var JoinedTransformReference = (function( _ReferenceBase3 ) {
+    _inherits( JoinedTransformReference, _ReferenceBase3 );
+
     function JoinedTransformReference( left, right ) {
         var _this5 = this;
 
-        var transform = arguments[2] === undefined ? identity : arguments[2];
+        var transform = arguments.length <= 2 || arguments[2] === undefined ? identity : arguments[2];
 
         _classCallCheck( this, JoinedTransformReference );
 
         _ReferenceBase3.call( this );
 
         _assert2.default( left instanceof ReferenceBase && right instanceof ReferenceBase,
-                          'join will only work on References' );
+            'join will only work on References' );
         _assert2.default.notEqual( left, right, 'Cannot join to self' );
         _assert2.default.strictEqual( typeof transform, 'function', 'transform function must be a function' );
 
@@ -372,8 +376,6 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
         left.on( 'change', this._onChange );
         right.on( 'change', this._onChange );
     }
-
-    _inherits( JoinedTransformReference, _ReferenceBase3 );
 
     JoinedTransformReference.prototype._run = function _run() {
         var _this6 = this;
@@ -405,7 +407,7 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
     };
 
     JoinedTransformReference.prototype.close = function close() {
-        var recursive = arguments[0] === undefined ? false : arguments[0];
+        var recursive = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
 
         if( !this._closed ) {
             this._left.removeListener( 'change', this._onChange );
@@ -424,6 +426,8 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
 })( ReferenceBase );
 
 var ResolvedReference = (function( _ReferenceBase4 ) {
+    _inherits( ResolvedReference, _ReferenceBase4 );
+
     function ResolvedReference( value ) {
         _classCallCheck( this, ResolvedReference );
 
@@ -433,8 +437,6 @@ var ResolvedReference = (function( _ReferenceBase4 ) {
 
         this._run();
     }
-
-    _inherits( ResolvedReference, _ReferenceBase4 );
 
     ResolvedReference.prototype._run = function _run() {
         var _this7 = this;

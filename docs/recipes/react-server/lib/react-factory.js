@@ -2,7 +2,7 @@
  * Created by novacrazy on 3/22/2015.
  */
 
-define( ['react'], function(React, require) {
+define( ['react'], function( React, require ) {
     //Create a cache map to be used in storing the references
     var cache = new Map();
 
@@ -12,7 +12,7 @@ define( ['react'], function(React, require) {
     } );
 
     //Scriptor supports coroutines as the 'main' function of a script, so this takes advantage of that
-    return function*(view) {
+    return function*( view ) {
         var ref;
 
         //If the view reference already exists, just return it
@@ -24,7 +24,7 @@ define( ['react'], function(React, require) {
             var script = yield require( 'include!' + view );
 
             //Use the script reference function to do a transform that creates a React factory
-            ref = script.reference().transform( function*(left) {
+            ref = script.reference().transform( function*( left ) {
                 return React.createFactory( yield left.value() );
             } );
 

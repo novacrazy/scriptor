@@ -38,12 +38,14 @@ module.exports = function( grunt ) {
                         'es7.classProperties'
                     ]
                 },
-                files:   [{
-                    expand: true,
-                    cwd:    './src/',
-                    src:    './**/*.js',
-                    dest:   './build/modern/'
-                }]
+                files: [
+                    {
+                        expand: true,
+                        cwd:    './src/',
+                        src:    './**/*.js',
+                        dest:   './build/modern/'
+                    }
+                ]
             },
             build_compat: {
                 loose: [],
@@ -57,12 +59,14 @@ module.exports = function( grunt ) {
                         'es7.classProperties'
                     ]
                 },
-                files:   [{
-                    expand: true,
-                    cwd:    './src/',
-                    src:    './**/*.js',
-                    dest:   './build/compat/'
-                }]
+                files: [
+                    {
+                        expand: true,
+                        cwd:    './src/',
+                        src:    './**/*.js',
+                        dest:   './build/compat/'
+                    }
+                ]
             },
             build_binary: {
                 loose: "all",
@@ -75,13 +79,15 @@ module.exports = function( grunt ) {
                         'es7.classProperties'
                     ]
                 },
-                files:   [{
-                    expand: true,
-                    cwd:    './bin/',
-                    src:    './**/*.es6',
-                    dest:   './bin/',
-                    ext:    '.js'
-                }]
+                files: [
+                    {
+                        expand: true,
+                        cwd:    './bin/',
+                        src:    './**/*.es6',
+                        dest:   './bin/',
+                        ext:    '.js'
+                    }
+                ]
             },
             build_tests:  {
                 loose: "all",
@@ -99,12 +105,14 @@ module.exports = function( grunt ) {
                         'minification.propertyLiterals'
                     ]
                 },
-                files:   [{
-                    expand: true,
-                    cwd:    './test/src/',
-                    src:    './**/*.js',
-                    dest:   './test/build/'
-                }]
+                files: [
+                    {
+                        expand: true,
+                        cwd:    './test/src/',
+                        src:    './**/*.js',
+                        dest:   './test/build/'
+                    }
+                ]
             }
         },
         usebanner: {
@@ -129,11 +137,13 @@ module.exports = function( grunt ) {
         }
     } );
 
-    grunt.registerTask( 'build', ['clean:build',
-                                  'babel:build_modern',
-                                  'babel:build_compat',
-                                  'babel:build_binary',
-                                  'usebanner:license'] );
+    grunt.registerTask( 'build', [
+        'clean:build',
+        'babel:build_modern',
+        'babel:build_compat',
+        'babel:build_binary',
+        'usebanner:license'
+    ] );
 
     grunt.registerTask( 'build-tests', ['clean:tests', 'babel:build_tests'] );
 

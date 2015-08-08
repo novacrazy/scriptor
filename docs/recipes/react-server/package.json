@@ -1,22 +1,22 @@
 {
-  "name": "scriptor-react-server-example",
-  "version": "1.0.0",
-  "description": "Basic Server Using Scriptor ===========================",
-  "main": "app.js",
-  "scripts": {
+  "name":         "scriptor-react-server-example",
+  "version":      "1.0.0",
+  "description":  "Basic Server Using Scriptor ===========================",
+  "main":         "app.js",
+  "scripts":      {
     "setup": "npm install && npm install -g scriptor@latest",
     "server": "scriptor -awvlp --use_strict --debounce 500ms app.js"
   },
-  "author": "Aaron Trent <novacrazy@gmail.com>",
-  "license": "MIT",
+  "author":       "Aaron Trent <novacrazy@gmail.com>",
+  "license":      "MIT",
   "dependencies": {
-    "dot": "^1.0.3",
-    "koa": "^0.18.1",
+    "dot":        "^1.0.3",
+    "koa":        "^0.18.1",
     "koa-router": "^4.2.0",
-    "react": "^0.13.1",
+    "react":      "^0.13.1",
     "react-tools": "^0.13.1"
   },
-  "engines": {
+  "engines":      {
     "iojs": ">= 1.0.0",
     "node": ">= 0.12.0"
   }

@@ -9,7 +9,6 @@ import assert from 'assert';
 
 var Module = require( 'module' );
 
-
 let tests = ( Scriptor, build ) => {
     describe( `Script initialization (${build} build)`, function() {
         let Script = Scriptor.Script;

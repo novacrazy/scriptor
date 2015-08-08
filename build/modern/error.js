@@ -32,7 +32,7 @@ exports.__esModule = true;
 exports.normalizeError = normalizeError;
 
 function normalizeError( id, type ) {
-    var err = arguments[2] === undefined ? {} : arguments[2];
+    var err = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
     if( Array.isArray( err.requireModules ) && !Array.isArray( id ) && err.requireModules.indexOf( id ) === -1 ) {
         err.requireModules.push( id );

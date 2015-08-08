@@ -58,8 +58,8 @@ var _scriptJs2 = _interopRequireDefault( _scriptJs );
 var _referenceJs = require( './reference.js' );
 
 function compile( src ) {
-    var watch = arguments[1] === undefined ? true : arguments[1];
-    var parent = arguments[2] === undefined ? null : arguments[2];
+    var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+    var parent = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
 
     var script = new SourceScript( src, parent );
 
@@ -71,8 +71,10 @@ function compile( src ) {
 }
 
 var SourceScript = (function( _Script ) {
+    _inherits( SourceScript, _Script );
+
     function SourceScript( src ) {
-        var parent = arguments[1] === undefined ? module : arguments[1];
+        var parent = arguments.length <= 1 || arguments[1] === undefined ? module : arguments[1];
 
         _classCallCheck( this, SourceScript );
 
@@ -83,8 +85,6 @@ var SourceScript = (function( _Script ) {
             this.load( src );
         }
     }
-
-    _inherits( SourceScript, _Script );
 
     SourceScript.prototype._do_load = function _do_load() {
         var _this = this;
@@ -169,7 +169,7 @@ var SourceScript = (function( _Script ) {
 
     SourceScript.prototype._normalizeSource = function _normalizeSource( src ) {
         assert( typeof src === 'string' || Buffer.isBuffer( src ),
-                'Reference source must return string or Buffer as value' );
+            'Reference source must return string or Buffer as value' );
 
         src = _utilsJs.stripBOM( src );
 
@@ -199,10 +199,10 @@ var SourceScript = (function( _Script ) {
     };
 
     SourceScript.prototype.load = function load( src ) {
-        var watch = arguments[1] === undefined ? true : arguments[1];
+        var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
         assert( typeof src === 'string' || Buffer.isBuffer( src ) || src instanceof _referenceJs.ReferenceBase,
-                'Source must be a string or Reference' );
+            'Source must be a string or Reference' );
 
         this.close( false );
 
@@ -226,30 +226,32 @@ var SourceScript = (function( _Script ) {
         _Script.prototype.unwatch.call( this );
     };
 
-    _createClass( SourceScript, [{
-        key: 'filename',
-        get: function get() {
-            return this._script.filename;
-        },
-        set: function set( value ) {
-            this._script.filename = value;
-        }
-    }, {
-        key: 'baseUrl',
-        get: function get() {
-            return _path.dirname( this.filename );
-        },
-        set: function set( value ) {
-            value = _path.dirname( value );
+    _createClass( SourceScript, [
+        {
+            key: 'filename',
+            get: function get() {
+                return this._script.filename;
+            },
+            set: function set( value ) {
+                this._script.filename = value;
+            }
+        }, {
+            key: 'baseUrl',
+            get: function get() {
+                return _path.dirname( this.filename );
+            },
+            set: function set( value ) {
+                value = _path.dirname( value );
 
-            this.filename = value + _path.basename( this.filename );
+                this.filename = value + _path.basename( this.filename );
+            }
+        }, {
+            key: 'watched',
+            get: function get() {
+                return typeof this._onChange === 'function';
+            }
         }
-    }, {
-        key: 'watched',
-        get: function get() {
-            return typeof this._onChange === 'function';
-        }
-    }] );
+    ] );
 
     return SourceScript;
 })( _scriptJs2.default );

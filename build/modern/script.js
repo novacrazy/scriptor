@@ -84,8 +84,8 @@ var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
 var promisifyCache = new _Map();
 
 function load( filename ) {
-    var watch = arguments[1] === undefined ? true : arguments[1];
-    var parent = arguments[2] === undefined ? null : arguments[2];
+    var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+    var parent = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
 
     filename = _path.resolve( filename );
 
@@ -97,52 +97,6 @@ function load( filename ) {
 }
 
 var Script = (function( _EventPropagator ) {
-    function Script( filename, parent ) {
-        _classCallCheck( this, Script );
-
-        _EventPropagator.call( this );
-
-        this._script = null;
-        this._source = null;
-        this._factory = null;
-        this._watcher = null;
-        this._willWatch = false;
-        this._watchPersistent = false;
-        this._maxListeners = 10;
-        this._recursion = 0;
-        this._maxRecursion = _defaultsJs.default_max_recursion;
-        this._debounceMaxWait = _defaultsJs.default_max_debounceMaxWait;
-        this._textMode = false;
-        this._defineCache = new _Map();
-        this._loadCache = new _Map();
-        this._pending = false;
-        this._loading = false;
-        this._loadingText = false;
-        this._runningFactory = false;
-        this._config = _utilsJs.normalizeConfig( null );
-        this._dependencies = [];
-        this.require = null;
-        this.define = null;
-        this.imports = {};
-        if( parent === void 0 || parent === null ) {
-            if( filename instanceof _module3.default.Module ) {
-                parent = filename;
-                filename = null;
-            } else {
-                parent = module;
-            }
-        }
-
-        this._script = new _module3.default( null, parent );
-
-        //Explicit comparisons to appease JSHint
-        if( filename !== void 0 && filename !== null ) {
-            this.load( filename );
-        }
-
-        this._init();
-    }
-
     _inherits( Script, _EventPropagator );
 
     Script.hasExtension = function hasExtension( ext ) {
@@ -156,7 +110,7 @@ var Script = (function( _EventPropagator ) {
         var define = this._define.bind( this );
 
         require.toUrl = function() {
-            var filepath = arguments[0] === undefined ? _this.filename : arguments[0];
+            var filepath = arguments.length <= 0 || arguments[0] === undefined ? _this.filename : arguments[0];
 
             _assert2.default.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
 
@@ -208,6 +162,68 @@ var Script = (function( _EventPropagator ) {
         this.define = define;
     };
 
+    _createClass( Script, null, [
+        {
+            key:        'Scriptor',
+            value:      null,
+            enumerable: true
+        }, {
+            key:        'extensions_enabled',
+            value:      true,
+            enumerable: true
+        }, {
+            key:        'extensions',
+            value:      _extensionsJs2.default,
+            enumerable: true
+        }
+    ] );
+
+    function Script( filename, parent ) {
+        _classCallCheck( this, Script );
+
+        _EventPropagator.call( this );
+
+        this._script = null;
+        this._source = null;
+        this._factory = null;
+        this._watcher = null;
+        this._willWatch = false;
+        this._watchPersistent = false;
+        this._maxListeners = 10;
+        this._recursion = 0;
+        this._maxRecursion = _defaultsJs.default_max_recursion;
+        this._debounceMaxWait = _defaultsJs.default_max_debounceMaxWait;
+        this._textMode = false;
+        this._defineCache = new _Map();
+        this._loadCache = new _Map();
+        this._pending = false;
+        this._loading = false;
+        this._loadingText = false;
+        this._runningFactory = false;
+        this._config = _utilsJs.normalizeConfig( null );
+        this._dependencies = [];
+        this.require = null;
+        this.define = null;
+        this.imports = {};
+        if( parent === void 0 || parent === null ) {
+            if( filename instanceof _module3.default.Module ) {
+                parent = filename;
+                filename = null;
+            } else {
+                parent = module;
+            }
+        }
+
+        this._script = new _module3.default( null, parent );
+
+        //Explicit comparisons to appease JSHint
+        if( filename !== void 0 && filename !== null ) {
+            this.load( filename );
+        }
+
+        this._init();
+    }
+
     Script.prototype.setMaxListeners = function setMaxListeners( num ) {
         num = Math.floor( num );
 
@@ -226,14 +242,14 @@ var Script = (function( _EventPropagator ) {
         }
     };
 
-    Script.prototype.config = function config( _config2 ) {
-        var alreadyNormalized = arguments[1] === undefined ? false : arguments[1];
+    Script.prototype.config = function config( _config ) {
+        var alreadyNormalized = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
-        if( _config2 !== void 0 && _config2 !== null ) {
+        if( _config !== void 0 && _config !== null ) {
             if( alreadyNormalized ) {
-                this._config = _config2;
+                this._config = _config;
             } else {
-                this._config = _utilsJs.normalizeConfig( _config2 );
+                this._config = _utilsJs.normalizeConfig( _config );
             }
         }
     };
@@ -242,11 +258,14 @@ var Script = (function( _EventPropagator ) {
         return this.manager !== null && this.manager !== void 0;
     };
 
+    //Based on the RequireJS 'standard' for relative locations
+    //For SourceScripts, just set the filename to something relative
+
     Script.prototype._callWrapper = function _callWrapper( func ) {
         var _this2 = this;
 
-        var context = arguments[1] === undefined ? this : arguments[1];
-        var args = arguments[2] === undefined ? [] : arguments[2];
+        var context = arguments.length <= 1 || arguments[1] === undefined ? this : arguments[1];
+        var args = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
 
         //Just in case, always use recursion protection
         if( this._recursion > this._maxRecursion ) {
@@ -412,7 +431,7 @@ var Script = (function( _EventPropagator ) {
 
                     _assert2.default( plugin !== void 0 && plugin !== null, 'Invalid AMD plugin: ' + plugin_id );
                     _assert2.default.strictEqual( typeof plugin.load, 'function',
-                                                  '.load function on AMD plugin not found' );
+                        '.load function on AMD plugin not found' );
 
                     id = parts[1];
 
@@ -576,30 +595,30 @@ var Script = (function( _EventPropagator ) {
 
                     this._loading = true;
 
-                    if( this._willWatch ) {
-                        try {
+                    try {
+                        if( this._willWatch ) {
                             this._do_watch( this._watchPersistent );
+                        }
 
-                            _utilsJs.tryPromise( Script.extensions[ext]( this._script,
-                                                                         this.filename ) ).then( function( src ) {
-                                if( _this7._loading ) {
-                                    _this7._source = src;
-                                    _this7._script.loaded = true;
+                        _utilsJs.tryPromise( Script.extensions[ext]( this._script,
+                            this.filename ) ).then( function( src ) {
+                            if( _this7._loading ) {
+                                _this7._source = src;
+                                _this7._script.loaded = true;
 
-                                    _this7._loading = false;
-
-                                    _this7.emit( 'loaded', _this7._script.exports );
-                                }
-                            }, function( err ) {
                                 _this7._loading = false;
 
-                                _this7.emit( 'loading_error', err );
-                            } );
-                        } catch( err ) {
-                            this._loading = false;
+                                _this7.emit( 'loaded', _this7._script.exports );
+                            }
+                        }, function( err ) {
+                            _this7._loading = false;
 
-                            this.emit( 'loading_error', err );
-                        }
+                            _this7.emit( 'loading_error', err );
+                        } );
+                    } catch( err ) {
+                        this._loading = false;
+
+                        this.emit( 'loading_error', err );
                     }
                 } else {
                     /*
@@ -729,7 +748,7 @@ var Script = (function( _EventPropagator ) {
     Script.prototype.source = function source() {
         var _this9 = this;
 
-        var encoding = arguments[0] === undefined ? null : arguments[0];
+        var encoding = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
         if( this.loaded ) {
             if( encoding !== null && encoding !== void 0 ) {
@@ -742,7 +761,7 @@ var Script = (function( _EventPropagator ) {
              * This is a special one were it doesn't matter which event triggers first.
              * */
             var waiting = _eventsJs.makeMultiEventPromise( this, ['loaded', 'loaded_src'],
-                                                           ['loading_error', 'loading_src_error'] );
+                ['loading_error', 'loading_src_error'] );
 
             return _bluebird2.default.all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
                 return _this9.source( encoding );
@@ -815,7 +834,7 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype.load = function load( filename ) {
-        var watch = arguments[1] === undefined ? true : arguments[1];
+        var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
         filename = _path.resolve( filename );
 
@@ -862,7 +881,7 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype.watch = function watch() {
-        var persistent = arguments[0] === undefined ? false : arguments[0];
+        var persistent = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
 
         if( !this.watched ) {
             this._willWatch = true;
@@ -911,7 +930,7 @@ var Script = (function( _EventPropagator ) {
     };
 
     Script.prototype.close = function close() {
-        var permanent = arguments[0] === undefined ? true : arguments[0];
+        var permanent = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
 
         this.unload();
         this.unwatch();
@@ -944,119 +963,106 @@ var Script = (function( _EventPropagator ) {
         throw new Error( 'Cannot include script "' + filename + '" from an unmanaged script' );
     };
 
-    _createClass( Script, [{
-        key: 'watched',
-        get: function get() {
-            return this._watcher instanceof _eventsJs.EventEmitter;
-        }
-    }, {
-        key: 'willWatch',
-        get: function get() {
-            return !this.watched && this._willWatch;
-        }
-    }, {
-        key: 'id',
-        get: function get() {
-            return this._script.id;
-        },
-        set: function set( value ) {
-            this._script.id = value;
-        }
-    }, {
-        key: 'children',
-        get: function get() {
-            return this._script.children;
-        }
-    }, {
-        key: 'parent',
-        get: function get() {
-            return this._script.parent;
-        }
-    }, {
-        key: 'loaded',
-        get: function get() {
-            return this._script.loaded;
-        }
-    }, {
-        key: 'pending',
-        get: function get() {
-            return this._pending;
-        }
-    }, {
-        key: 'loading',
-        get: function get() {
-            return this._loading;
-        }
-    }, {
-        key: 'dependencies',
-        get: function get() {
-            return this._dependencies;
-        }
-    }, {
-        key: 'filename',
+    _createClass( Script, [
+        {
+            key: 'watched',
+            get: function get() {
+                return this._watcher instanceof _eventsJs.EventEmitter;
+            }
+        }, {
+            key: 'willWatch',
+            get: function get() {
+                return !this.watched && this._willWatch;
+            }
+        }, {
+            key: 'id',
+            get: function get() {
+                return this._script.id;
+            },
+            set: function set( value ) {
+                this._script.id = value;
+            }
+        }, {
+            key: 'children',
+            get: function get() {
+                return this._script.children;
+            }
+        }, {
+            key: 'parent',
+            get: function get() {
+                return this._script.parent;
+            }
+        }, {
+            key: 'loaded',
+            get: function get() {
+                return this._script.loaded;
+            }
+        }, {
+            key: 'pending',
+            get: function get() {
+                return this._pending;
+            }
+        }, {
+            key: 'loading',
+            get: function get() {
+                return this._loading;
+            }
+        }, {
+            key: 'dependencies',
+            get: function get() {
+                return this._dependencies;
+            }
 
-        //Only allow getting the filename, setting should be done through .load
-        get: function get() {
-            return this._script.filename;
-        }
-    }, {
-        key: 'manager',
-        get: function get() {
-            return null;
-        }
-    }, {
-        key: 'baseUrl',
+            //Only allow getting the filename, setting should be done through .load
+        }, {
+            key: 'filename',
+            get: function get() {
+                return this._script.filename;
+            }
+        }, {
+            key: 'manager',
+            get: function get() {
+                return null;
+            }
+        }, {
+            key: 'baseUrl',
+            get: function get() {
+                return _path.posix.dirname( this.filename );
+            }
+        }, {
+            key: 'maxRecursion',
+            set: function set( value ) {
+                value = Math.floor( value );
 
-        //Based on the RequireJS 'standard' for relative locations
-        //For SourceScripts, just set the filename to something relative
-        get: function get() {
-            return _path.posix.dirname( this.filename );
-        }
-    }, {
-        key: 'maxRecursion',
-        set: function set( value ) {
-            value = Math.floor( value );
+                _assert2.default( !isNaN( value ), 'maxRecursion must be set to a number' );
 
-            _assert2.default( !isNaN( value ), 'maxRecursion must be set to a number' );
+                this._maxRecursion = value;
+            },
+            get: function get() {
+                return this._maxRecursion;
+            }
+        }, {
+            key: 'debounceMaxWait',
+            set: function set( time ) {
+                time = Math.floor( time );
 
-            this._maxRecursion = value;
-        },
-        get: function get() {
-            return this._maxRecursion;
-        }
-    }, {
-        key: 'debounceMaxWait',
-        set: function set( time ) {
-            time = Math.floor( time );
+                _assert2.default( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
-            _assert2.default( !isNaN( time ), 'debounceMaxWait must be set to a number' );
-
-            this._debounceMaxWait = time;
-        },
-        get: function get() {
-            return this._debounceMaxWait;
+                this._debounceMaxWait = time;
+            },
+            get: function get() {
+                return this._debounceMaxWait;
+            }
+        }, {
+            key: 'textMode',
+            get: function get() {
+                return this._textMode;
+            },
+            set: function set( value ) {
+                this._textMode = !!value;
+            }
         }
-    }, {
-        key: 'textMode',
-        get: function get() {
-            return this._textMode;
-        },
-        set: function set( value ) {
-            this._textMode = !!value;
-        }
-    }], [{
-        key:        'Scriptor',
-        value:      null,
-        enumerable: true
-    }, {
-        key:        'extensions_enabled',
-        value:      true,
-        enumerable: true
-    }, {
-        key:        'extensions',
-        value:      _extensionsJs2.default,
-        enumerable: true
-    }] );
+    ] );
 
     return Script;
 })( _eventsJs.EventPropagator );

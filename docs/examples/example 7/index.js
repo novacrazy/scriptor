@@ -7,7 +7,7 @@ for( var i = 0; i < 10; i++ ) {
     refs.push( Reference.resolve( i ) );
 }
 
-var root = Reference.join_all( refs, function(left, right) {
+var root = Reference.join_all( refs, function( left, right ) {
     return left.value() + ', ' + right.value();
 } );
 

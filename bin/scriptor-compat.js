@@ -116,28 +116,24 @@ var EXIT_SUCCESS = 0,
 
 _commander2['default'].version( _packageJson2['default'].version
                                 + '-compat' ).usage( '[options] files...' ).option( '-d, --dir <path>',
-                                                                                    'Directory to run Scriptor in' ).option( '-c, --concurrency <n>',
-                                                                                                                             'Limit asynchronous script concurrency to n (default: max_recursion + 1)' ).option( '-q, --close',
-                                                                                                                                                                                                                 'End the process when all scripts finish' ).option( '-w, --watch',
-                                                                                                                                                                                                                                                                     'Watch scripts for changes and re-run them when changed' ).option( '-p, --propagate',
-                                                                                                                                                                                                                                                                                                                                        'Propagate changes upwards when watching scripts' ).option( '-l, --long_stack_traces',
-                                                                                                                                                                                                                                                                                                                                                                                                    'Display long stack trace for errors' ).option( '-r, --repeat <n>',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    'Run script n times (in parallel if possible)' ).option( '-u, --unique',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             'Only run unique scripts (will ignore duplicates in file arguments)' ).option( '--debounce <n>',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'Wait n milliseconds for debounce on file watching events (default: '
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            + _buildCompatDefaultsJs.default_debounceMaxWait
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            + 'ms)' ).option( '--use_strict',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              'Enforce strict mode' ).option( '--max_listeners <n>',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              'Set the maximum number of listeners on any particular script' ).option( '--max_recursion <n>',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       'Set the maximum recursion depth of scripts (default: '
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       + _buildCompatDefaultsJs.default_max_recursion
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       + ')' ).option( '-v, --verbose [n]',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' ).option( '--cork',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          'Cork stdout before calling scripts' ).option( '-s, --silent',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         'Do not echo anything' ).option( '--no_signal',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          'Do not intercept process signals' ).option( '--no_glob',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       'Do not match glob patterns' ).option( '--no_title',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              'Do not set process title' );
+    'Directory to run Scriptor in' ).option( '-c, --concurrency <n>',
+    'Limit asynchronous script concurrency to n (default: max_recursion + 1)' ).option( '-q, --close',
+    'End the process when all scripts finish' ).option( '-w, --watch',
+    'Watch scripts for changes and re-run them when changed' ).option( '-p, --propagate',
+    'Propagate changes upwards when watching scripts' ).option( '-l, --long_stack_traces',
+    'Display long stack trace for errors' ).option( '-r, --repeat <n>',
+    'Run script n times (in parallel if possible)' ).option( '-u, --unique',
+    'Only run unique scripts (will ignore duplicates in file arguments)' ).option( '--debounce <n>',
+    'Wait n milliseconds for debounce on file watching events (default: '
+    + _buildCompatDefaultsJs.default_debounceMaxWait + 'ms)' ).option( '--use_strict',
+    'Enforce strict mode' ).option( '--max_listeners <n>',
+    'Set the maximum number of listeners on any particular script' ).option( '--max_recursion <n>',
+    'Set the maximum recursion depth of scripts (default: ' + _buildCompatDefaultsJs.default_max_recursion
+    + ')' ).option( '-v, --verbose [n]',
+    'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' ).option( '--cork',
+    'Cork stdout before calling scripts' ).option( '-s, --silent', 'Do not echo anything' ).option( '--no_signal',
+    'Do not intercept process signals' ).option( '--no_glob', 'Do not match glob patterns' ).option( '--no_title',
+    'Do not set process title' );
 
 exports['default'] = function( argv ) {
     process.options = _commander2['default'].parse( argv );
@@ -285,8 +281,8 @@ exports['default'] = function( argv ) {
 
             var maxRecursion = undefined,
                 concurrency = undefined,
-                watch = undefined,
-                debounce = undefined;
+                watch       = undefined,
+                debounce    = undefined;
 
             if( typeof _commander2['default'].debounce === 'string' ) {
                 debounce = manager.debounceMaxWait = toMilliseconds( _commander2['default'].debounce );
@@ -336,7 +332,7 @@ exports['default'] = function( argv ) {
 
                         if( maxRecursion > _buildCompatDefaultsJs.default_max_recursion ) {
                             logger.warn( 'Increasing max_recursion to %d to handle increased concurrency',
-                                         maxRecursion );
+                                maxRecursion );
                         }
                     }
                 } else {
@@ -353,8 +349,8 @@ exports['default'] = function( argv ) {
 
             var run_script = undefined,
                 script_start = process.hrtime(),
-                place = 0,
-                instances = [];
+                place      = 0,
+                instances  = [];
 
             if( !_commander2['default'].no_signal ) {
                 (function() {
@@ -376,6 +372,10 @@ exports['default'] = function( argv ) {
 
                                     instance.unload();
                                 }
+
+                                //Close on the next tick so close events can propagate.
+                                //Exit code for Ctrl-C signals is 128 + sig according to
+                                // http://www.tldp.org/LDP/abs/html/exitcodes.html
                             } catch( err ) {
                                 _didIteratorError2 = true;
                                 _iteratorError2 = err;
@@ -391,9 +391,6 @@ exports['default'] = function( argv ) {
                                 }
                             }
 
-                            //Close on the next tick so close events can propagate.
-                            //Exit code for Ctrl-C signals is 128 + sig according to
-                            // http://www.tldp.org/LDP/abs/html/exitcodes.html
                             process.nextTick( process.exit.bind( null, 128 + signal ) );
 
                             closed = true;

@@ -3,7 +3,7 @@ var Reference = Scriptor.Reference;
 
 var ref = Reference.resolve( 32 );
 
-ref = ref.transform( function(left) {
+ref = ref.transform( function( left ) {
     return left.value() + 10;
 } );
 

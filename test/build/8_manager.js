@@ -54,7 +54,7 @@ var tests = function tests( Scriptor, build ) {
 
                 (0, _assert2.default)( script instanceof Script );
                 _assert2.default.strictEqual( script.filename,
-                                              (0, _path.resolve)( process.cwd(), './fixtures/empty.js' ) );
+                    (0, _path.resolve)( process.cwd(), './fixtures/empty.js' ) );
             } );
         } );
     } );

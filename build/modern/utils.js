@@ -205,7 +205,7 @@ function parseDeps( deps, paths ) {
             return k;
         } );
     } else if( !_lodash2.default.isArray( deps ) ) {
-        return [];
+        return [/*No valid dependencies*/];
     } else {
         return deps;
     }
@@ -270,5 +270,3 @@ function normalizeConfig( config ) {
 
     return config;
 }
-
-/*No valid dependencies*/

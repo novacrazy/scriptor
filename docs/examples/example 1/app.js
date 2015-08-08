@@ -1,6 +1,6 @@
 //app.js
 //NOTE: Coroutines only work for the asynchronous build
-define( ['koa'], function*(koa, require) {
+define( ['koa'], function*( koa, require ) {
     //require returns a promise, which can be yielded to the coroutine
     var router = yield require( 'koa-router' );
 

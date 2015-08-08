@@ -4,6 +4,6 @@ Scriptor.enableCustomExtensions(); //Enable asynchronous file loading and AMD in
 
 var main = new Scriptor.Script( 'app.js' );
 
-main.call().then( function(app) {
+main.call().then( function( app ) {
     app.listen( 8080 );
 } );

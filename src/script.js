@@ -616,31 +616,31 @@ export default class Script extends EventPropagator {
 
                     this._loading = true;
 
-                    if( this._willWatch ) {
-                        try {
+                    try {
+                        if( this._willWatch ) {
                             this._do_watch( this._watchPersistent );
+                        }
 
-                            tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
-                                if( this._loading ) {
-                                    this._source = src;
-                                    this._script.loaded = true;
+                        tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
+                            if( this._loading ) {
+                                this._source = src;
+                                this._script.loaded = true;
 
-                                    this._loading = false;
-
-                                    this.emit( 'loaded', this._script.exports );
-                                }
-
-                            }, err => {
                                 this._loading = false;
 
-                                this.emit( 'loading_error', err );
-                            } );
+                                this.emit( 'loaded', this._script.exports );
+                            }
 
-                        } catch( err ) {
+                        }, err => {
                             this._loading = false;
 
                             this.emit( 'loading_error', err );
-                        }
+                        } );
+
+                    } catch( err ) {
+                        this._loading = false;
+
+                        this.emit( 'loading_error', err );
                     }
 
                 } else {
@@ -650,7 +650,7 @@ export default class Script extends EventPropagator {
 
                     if( !Module._extensions.hasOwnProperty( ext ) ) {
                         this.emit( 'warning',
-                                   `The extension handler for ${this.filename} does not exist, defaulting to .js handler` );
+                            `The extension handler for ${this.filename} does not exist, defaulting to .js handler` );
                     }
 
                     this._loading = true;
@@ -790,8 +790,8 @@ export default class Script extends EventPropagator {
              * This is a special one were it doesn't matter which event triggers first.
              * */
             let waiting = makeMultiEventPromise( this,
-                                                 ['loaded', 'loaded_src'],
-                                                 ['loading_error', 'loading_src_error'] );
+                ['loaded', 'loaded_src'],
+                ['loading_error', 'loading_src_error'] );
 
             return Promise.all( [this._callWrapper( this._do_load ), waiting] ).then( () => {
                 return this.source( encoding );

@@ -141,7 +141,7 @@ export default class SourceScript extends Script {
 
     _normalizeSource( src ) {
         assert( typeof src === 'string' || Buffer.isBuffer( src ),
-                'Reference source must return string or Buffer as value' );
+            'Reference source must return string or Buffer as value' );
 
         src = stripBOM( src );
 

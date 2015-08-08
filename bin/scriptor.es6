@@ -90,7 +90,7 @@ options
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if possible)' )
     .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
     .option( '--debounce <n>',
-             `Wait n milliseconds for debounce on file watching events (default: ${default_debounceMaxWait}ms)` )
+    `Wait n milliseconds for debounce on file watching events (default: ${default_debounceMaxWait}ms)` )
     .option( '--use_strict', 'Enforce strict mode' )
     .option( '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' )
     .option( '--max_recursion <n>', `Set the maximum recursion depth of scripts (default: ${default_max_recursion})` )
@@ -296,7 +296,7 @@ export default function( argv ) {
 
         let run_script,
             script_start = process.hrtime(),
-            place = 0,
+            place     = 0,
             instances = [];
 
         if( !options.no_signal ) {

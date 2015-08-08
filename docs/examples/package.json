@@ -1,16 +1,16 @@
 {
-  "name": "examples",
-  "version": "1.0.0",
-  "description": "Example files for Scriptor",
-  "main": "null",
-  "scripts": {
+  "name":         "examples",
+  "version":      "1.0.0",
+  "description":  "Example files for Scriptor",
+  "main":         "null",
+  "scripts":      {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Aaron Trent <novacrazy@gmail.com>",
-  "license": "MIT",
-  "private": true,
+  "author":       "Aaron Trent <novacrazy@gmail.com>",
+  "license":      "MIT",
+  "private":      true,
   "dependencies": {
-    "koa": "^0.18.1",
+    "koa":      "^0.18.1",
     "koa-router": "^4.2.0",
     "scriptor": "^2.0.0-beta.25"
   }

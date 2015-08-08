@@ -38,7 +38,7 @@ var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-def
 
 var _defaults = require( 'babel-runtime/helpers/defaults' ).default;
 
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
+var _interopExportWildcard = require( 'babel-runtime/helpers/interop-export-wildcard' ).default;
 
 exports.__esModule = true;
 exports.makeEventPromise = makeEventPromise;
@@ -52,9 +52,11 @@ var _events = require( 'events' );
 
 var _lodash = require( 'lodash' );
 
-_defaults( exports, _interopRequireWildcard( _events ) );
+_defaults( exports, _interopExportWildcard( _events, _defaults ) );
 
 var EventPropagator = (function( _EventEmitter ) {
+    _inherits( EventPropagator, _EventEmitter );
+
     function EventPropagator() {
         _classCallCheck( this, EventPropagator );
 
@@ -63,10 +65,8 @@ var EventPropagator = (function( _EventEmitter ) {
         this._propagateEvents = false;
     }
 
-    _inherits( EventPropagator, _EventEmitter );
-
     EventPropagator.prototype.propagateEvents = function propagateEvents() {
-        var enable = arguments[0] === undefined ? true : arguments[0];
+        var enable = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
 
         this._propagateEvents = enable;
     };

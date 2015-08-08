@@ -57,6 +57,8 @@ var _scriptJs = require( './script.js' );
 var _scriptJs2 = _interopRequireDefault( _scriptJs );
 
 var ScriptAdapter = (function( _Script ) {
+    _inherits( ScriptAdapter, _Script );
+
     function ScriptAdapter( manager, filename, parent ) {
         var _this = this;
 
@@ -75,12 +77,10 @@ var ScriptAdapter = (function( _Script ) {
         } );
     }
 
-    _inherits( ScriptAdapter, _Script );
-
     ScriptAdapter.prototype.include = function include( filename ) {
         var _this2 = this;
 
-        var load = arguments[1] === undefined ? false : arguments[1];
+        var load = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
         //make sure filename can be relative to the current script
         var real_filename = _path.resolve( this.baseUrl, filename );
@@ -117,12 +117,14 @@ var ScriptAdapter = (function( _Script ) {
         return _Script.prototype.close.call( this, permanent );
     };
 
-    _createClass( ScriptAdapter, [{
-        key: 'manager',
-        get: function get() {
-            return this._manager;
+    _createClass( ScriptAdapter, [
+        {
+            key: 'manager',
+            get: function get() {
+                return this._manager;
+            }
         }
-    }] );
+    ] );
 
     return ScriptAdapter;
 })( _scriptJs2.default );
@@ -170,12 +172,12 @@ var Manager = (function() {
         return this._maxListeners;
     };
 
-    Manager.prototype.config = function config( _config2 ) {
-        this._config = _utilsJs.normalizeConfig( _config2 );
+    Manager.prototype.config = function config( _config ) {
+        this._config = _utilsJs.normalizeConfig( _config );
     };
 
     Manager.prototype.propagateEvents = function propagateEvents() {
-        var enable = arguments[0] === undefined ? true : arguments[0];
+        var enable = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
 
         var wasPropagating = this._propagateEvents;
 
@@ -225,7 +227,7 @@ var Manager = (function() {
     //from watching a file.
 
     Manager.prototype.add = function add( filename ) {
-        var watch = arguments[1] === undefined ? true : arguments[1];
+        var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
         filename = _path.resolve( this.cwd(), filename );
 
@@ -255,7 +257,7 @@ var Manager = (function() {
     //However, that is quite rare so close defaults to true
 
     Manager.prototype.remove = function remove( filename ) {
-        var close = arguments[1] === undefined ? true : arguments[1];
+        var close = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
         filename = _path.resolve( this.cwd(), filename );
 
@@ -320,7 +322,7 @@ var Manager = (function() {
     //Make closing optional for the same reason as .remove
 
     Manager.prototype.clear = function clear() {
-        var close = arguments[0] === undefined ? true : arguments[0];
+        var close = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
 
         if( close ) {
             this._scripts.forEach( function( script ) {
@@ -331,50 +333,52 @@ var Manager = (function() {
         this._scripts.clear();
     };
 
-    _createClass( Manager, [{
-        key: 'parent',
-        get: function get() {
-            return this._parent;
-        }
-    }, {
-        key: 'scripts',
-        get: function get() {
-            return this._scripts;
-        }
-    }, {
-        key: 'debounceMaxWait',
-        get: function get() {
-            return this._debounceMaxWait;
-        },
-        set: function set( time ) {
-            if( time !== null && time !== void 0 ) {
-                time = Math.floor( time );
+    _createClass( Manager, [
+        {
+            key: 'parent',
+            get: function get() {
+                return this._parent;
+            }
+        }, {
+            key: 'scripts',
+            get: function get() {
+                return this._scripts;
+            }
+        }, {
+            key: 'debounceMaxWait',
+            get: function get() {
+                return this._debounceMaxWait;
+            },
+            set: function set( time ) {
+                if( time !== null && time !== void 0 ) {
+                    time = Math.floor( time );
 
-                _assert2.default( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+                    _assert2.default( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
-                this._debounceMaxWait = time;
-            } else {
-                this._debounceMaxWait = null;
+                    this._debounceMaxWait = time;
+                } else {
+                    this._debounceMaxWait = null;
+                }
+            }
+        }, {
+            key: 'maxRecursion',
+            set: function set( value ) {
+                if( value !== null && value !== void 0 ) {
+
+                    value = Math.floor( value );
+
+                    _assert2.default( !isNaN( value ), 'maxRecursion must be set to a number' );
+
+                    this._maxRecursion = value;
+                } else {
+                    this._maxRecursion = null;
+                }
+            },
+            get: function get() {
+                return this._maxRecursion;
             }
         }
-    }, {
-        key: 'maxRecursion',
-        set: function set( value ) {
-            if( value !== null && value !== void 0 ) {
-
-                value = Math.floor( value );
-
-                _assert2.default( !isNaN( value ), 'maxRecursion must be set to a number' );
-
-                this._maxRecursion = value;
-            } else {
-                this._maxRecursion = null;
-            }
-        },
-        get: function get() {
-            return this._maxRecursion;
-        }
-    }] );
+    ] );
 
     return Manager;
 })();
