@@ -173,10 +173,12 @@ var Manager = (function() {
     };
 
     Manager.prototype.config = function config( _config ) {
+        var _this3 = this;
+
         this._config = _utilsJs.normalizeConfig( _config );
 
         this._scripts.forEach( function( script ) {
-            return script.unload();
+            return script.config( _this3._config, true );
         } );
     };
 

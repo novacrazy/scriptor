@@ -187,6 +187,8 @@ export default class Script extends EventPropagator {
             } else {
                 this._config = normalizeConfig( config );
             }
+
+            this.unload();
         }
     }
 
