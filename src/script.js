@@ -757,7 +757,7 @@ export default class Script extends EventPropagator {
                     //actually is. So we have to get the directory of the last filename and combine it with the new name
                     filename = resolve( this.baseUrl, filename );
 
-                    if( event === 'change' && this.loaded ) {
+                    if( event === 'change' ) {
                         onChange( event, filename )
 
                     } else if( event === 'rename' && filename !== this.filename ) {

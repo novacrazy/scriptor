@@ -727,7 +727,7 @@ var Script = (function( _EventPropagator ) {
                     //actually is. So we have to get the directory of the last filename and combine it with the new name
                     filename = _path.resolve( _this8.baseUrl, filename );
 
-                    if( event === 'change' && _this8.loaded ) {
+                    if( event === 'change' ) {
                         onChange( event, filename );
                     } else if( event === 'rename' && filename !== _this8.filename ) {
                         onRename( event, filename );
