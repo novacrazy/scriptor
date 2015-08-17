@@ -174,6 +174,10 @@ var Manager = (function() {
 
     Manager.prototype.config = function config( _config ) {
         this._config = _utilsJs.normalizeConfig( _config );
+
+        this._scripts.forEach( function( script ) {
+            return script.unload();
+        } );
     };
 
     Manager.prototype.propagateEvents = function propagateEvents() {

@@ -187,6 +187,10 @@ var Manager = (function() {
             key:   'config',
             value: function config( _config ) {
                 this._config = (0, _utilsJs.normalizeConfig)( _config );
+
+                this._scripts.forEach( function( script ) {
+                    return script.unload();
+                } );
             }
         }, {
             key:   'propagateEvents',
