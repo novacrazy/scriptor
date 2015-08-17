@@ -159,7 +159,10 @@ export default class Manager {
     config( config ) {
         this._config = normalizeConfig( config );
 
-        this._scripts.forEach( script => script.config( this._config, true ) );
+        this._scripts.forEach( script => {
+            script.config( this._config, true );
+            script.unload();
+        } );
     }
 
     propagateEvents( enable = true ) {

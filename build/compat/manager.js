@@ -191,7 +191,8 @@ var Manager = (function() {
                 this._config = (0, _utilsJs.normalizeConfig)( _config );
 
                 this._scripts.forEach( function( script ) {
-                    return script.config( _this3._config, true );
+                    script.config( _this3._config, true );
+                    script.unload();
                 } );
             }
         }, {

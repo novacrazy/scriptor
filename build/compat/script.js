@@ -271,8 +271,6 @@ var Script = (function( _EventPropagator ) {
                     } else {
                         this._config = (0, _utilsJs.normalizeConfig)( _config );
                     }
-
-                    this.unload();
                 }
             }
         }, {
