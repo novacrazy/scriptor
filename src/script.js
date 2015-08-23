@@ -13,20 +13,18 @@ import {resolve as resolveURL} from 'url';
 import {extname, dirname, basename, resolve, posix as path} from 'path';
 
 import {normalizeError} from './error.js';
+import defaultExtensions from './extensions.js';
 
 import {EventPropagator, EventEmitter, makeEventPromise, makeMultiEventPromise} from './events.js';
 import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
 
-import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative,
-    bind, normalizeConfig, parseDefine} from './utils.js';
-
-import defaultExtensions from './extensions.js';
+import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
 
 import Reference from './reference.js';
 
-let readFileAsync = Promise.promisify( readFile );
-
 let promisifyCache = new Map();
+
+let readFileAsync = Promise.promisify( readFile );
 
 export function load( filename, watch = true, parent = null ) {
 

@@ -65,23 +65,23 @@ var _path = require( 'path' );
 
 var _errorJs = require( './error.js' );
 
+var _extensionsJs = require( './extensions.js' );
+
+var _extensionsJs2 = _interopRequireDefault( _extensionsJs );
+
 var _eventsJs = require( './events.js' );
 
 var _defaultsJs = require( './defaults.js' );
 
 var _utilsJs = require( './utils.js' );
 
-var _extensionsJs = require( './extensions.js' );
-
-var _extensionsJs2 = _interopRequireDefault( _extensionsJs );
-
 var _referenceJs = require( './reference.js' );
 
 var _referenceJs2 = _interopRequireDefault( _referenceJs );
 
-var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
-
 var promisifyCache = new _Map();
+
+var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
 
 function load( filename ) {
     var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
