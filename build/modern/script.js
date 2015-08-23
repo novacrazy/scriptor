@@ -272,18 +272,24 @@ var Script = (function( _EventPropagator ) {
             return _bluebird2.default.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion
                                                               + ' for script ' + this.filename ) );
         } else {
-            var res = new _bluebird2.default( function( resolve, reject ) {
-                _this2._recursion++;
+            return new _bluebird2.default( function( resolve, reject ) {
+                try {
+                    _this2._recursion++;
 
-                resolve( func.apply( context, args ) );
-            } );
+                    var res = func.apply( context, args );
 
-            return res.catch( function( e ) {
-                _this2.unload();
+                    if( _utilsJs.isThenable( res ) ) {
+                        res.then( resolve, reject );
+                    } else {
+                        resolve( res );
+                    }
+                } catch( err ) {
+                    _this2.unload();
 
-                return _bluebird2.default.reject( e );
-            } ).finally( function() {
-                _this2._recursion--;
+                    reject( err );
+                } finally {
+                    _this2._recursion--;
+                }
             } );
         }
     };

@@ -17,7 +17,8 @@ import {normalizeError} from './error.js';
 import {EventPropagator, EventEmitter, makeEventPromise, makeMultiEventPromise} from './events.js';
 import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
 
-import {tryPromise, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
+import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative,
+    bind, normalizeConfig, parseDefine} from './utils.js';
 
 import defaultExtensions from './extensions.js';
 
@@ -287,19 +288,27 @@ export default class Script extends EventPropagator {
             return Promise.reject( new RangeError( `Script recursion limit reached at ${this._recursion} for script ${this.filename}` ) );
 
         } else {
-            let res = new Promise( ( resolve, reject ) => {
-                this._recursion++;
+            return new Promise( ( resolve, reject ) => {
+                try {
+                    this._recursion++;
 
-                resolve( func.apply( context, args ) );
-            } );
+                    let res = func.apply( context, args );
 
-            return res.catch( e => {
-                this.unload();
+                    if( isThenable( res ) ) {
+                        res.then( resolve, reject );
 
-                return Promise.reject( e );
+                    } else {
+                        resolve( res );
+                    }
 
-            } ).finally( () => {
-                this._recursion--;
+                } catch( err ) {
+                    this.unload();
+
+                    reject( err );
+
+                } finally {
+                    this._recursion--;
+                }
             } );
         }
     }
