@@ -812,21 +812,22 @@ var Script = (function( _EventPropagator ) {
 
         if( !this.textMode ) {
             return this.exports().then( function( main ) {
-                if( typeof main === 'function' || main !== void 0 && main !== null && typeof main['default']
-                                                                                      === 'function' ) {
+                if( main !== null && main !== void 0 ) {
 
-                    if( typeof main['default'] === 'function' ) {
+                    if( main['default'] ) {
                         main = main['default'];
                     }
 
-                    if( _utilsJs.isGeneratorFunction( main ) ) {
-                        main = _bluebird2.default.coroutine( main );
-                    }
+                    if( typeof main === 'function' ) {
+                        if( _utilsJs.isGeneratorFunction( main ) ) {
+                            main = _bluebird2.default.coroutine( main );
+                        }
 
-                    return _this11._callWrapper( main, null, args );
-                } else {
-                    return main;
+                        return _this11._callWrapper( main, null, args );
+                    }
                 }
+
+                return main;
             } );
         } else {
             return this.source.apply( this, args );

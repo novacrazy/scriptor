@@ -835,22 +835,22 @@ export default class Script extends EventPropagator {
     apply( args ) {
         if( !this.textMode ) {
             return this.exports().then( main => {
-                if( typeof main === 'function' ||
-                    (main !== void 0 && main !== null && typeof main['default'] === 'function') ) {
+                if( main !== null && main !== void 0 ) {
 
-                    if( typeof main['default'] === 'function' ) {
+                    if( main['default'] ) {
                         main = main['default'];
                     }
 
-                    if( isGeneratorFunction( main ) ) {
-                        main = Promise.coroutine( main );
+                    if( typeof main === 'function' ) {
+                        if( isGeneratorFunction( main ) ) {
+                            main = Promise.coroutine( main );
+                        }
+
+                        return this._callWrapper( main, null, args );
                     }
-
-                    return this._callWrapper( main, null, args );
-
-                } else {
-                    return main;
                 }
+
+                return main;
             } );
 
         } else {
