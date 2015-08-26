@@ -115,8 +115,13 @@ var Script = (function( _EventPropagator ) {
             value: function _init() {
                 var _this = this;
 
-                var require = this._require.bind( this );
-                var define = this._define.bind( this );
+                var require = function require() {
+                    return _this._require.apply( _this, arguments );
+                };
+
+                var define = function define() {
+                    return _this._define.apply( _this, arguments );
+                };
 
                 require.toUrl = function() {
                     var filepath = arguments.length <= 0 || arguments[0] === undefined ? _this.filename : arguments[0];
@@ -744,7 +749,9 @@ var Script = (function( _EventPropagator ) {
 
                 this._script.define = (0, _utilsJs.bind)( this.define, this );
 
-                this._script.include = this.include.bind( this );
+                this._script.include = function() {
+                    return _this7.include.apply( _this7, arguments );
+                };
 
                 this._script.on = this._script.addListener = this._script.once = function( event, cb ) {
                     _assert2['default'].equal( event, 'unload', 'modules can only listen for the unload event' );

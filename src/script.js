@@ -81,8 +81,13 @@ export default class Script extends EventPropagator {
     }
 
     _init() {
-        let require = this._require.bind( this );
-        let define = this._define.bind( this );
+        let require = ( ...args ) => {
+            return this._require( ...args );
+        };
+
+        let define = ( ...args ) => {
+            return this._define( ...args );
+        };
 
         require.toUrl = ( filepath = this.filename ) => {
             assert.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
@@ -599,7 +604,9 @@ export default class Script extends EventPropagator {
 
         this._script.define = bind( this.define, this );
 
-        this._script.include = this.include.bind( this );
+        this._script.include = ( ...args ) => {
+            return this.include( ...args );
+        };
 
         this._script.on = this._script.addListener = this._script.once = ( event, cb ) => {
             assert.equal( event, 'unload', 'modules can only listen for the unload event' );
