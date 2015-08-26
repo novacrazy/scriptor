@@ -364,7 +364,7 @@ export default class Script extends EventPropagator {
             }, err => {
                 this._runningFactory = false;
 
-                this.emit( 'exports_error', err );
+                this.emit( 'error', err );
             } );
         }
     }
@@ -636,18 +636,22 @@ export default class Script extends EventPropagator {
                                 this._loading = false;
 
                                 this.emit( 'loaded', this._script.exports );
+
+                            } else {
+                                this.emit( 'error',
+                                    new Error( `The script ${this.filename} was unloaded while performing an asynchronous operation.` ) );
                             }
 
                         }, err => {
                             this._loading = false;
 
-                            this.emit( 'loading_error', err );
+                            this.emit( 'error', err );
                         } );
 
                     } catch( err ) {
                         this._loading = false;
 
-                        this.emit( 'loading_error', err );
+                        this.emit( 'error', err );
                     }
 
                 } else {
@@ -671,10 +675,14 @@ export default class Script extends EventPropagator {
 
                         if( this._loading ) {
                             this.emit( 'loaded', this.loaded );
+
+                        } else {
+                            this.emit( 'error',
+                                new Error( `The script ${this.filename} was unloaded while performing an asynchronous operation.` ) );
                         }
 
                     } catch( err ) {
-                        this.emit( 'loading_error', err );
+                        this.emit( 'error', err );
 
                     } finally {
                         this._loading = false;
@@ -693,7 +701,7 @@ export default class Script extends EventPropagator {
                         this._loading = false;
                         this._loadingText = false;
 
-                        this.emit( 'loading_src_error', err );
+                        this.emit( 'error', err );
                     }
                 }
 
@@ -706,13 +714,17 @@ export default class Script extends EventPropagator {
                         this._loadingText = false;
 
                         this.emit( 'loaded_src', this.loaded );
+
+                    } else if( !this._loading ) {
+                        this.emit( 'error',
+                            new Error( `The script ${this.filename} was unloaded while performing an asynchronous operation.` ) );
                     }
 
                 }, err => {
                     this._loading = false;
                     this._loadingText = false;
 
-                    this.emit( 'loading_src_error', err );
+                    this.emit( 'error', err );
                 } );
             }
         }
@@ -796,9 +808,7 @@ export default class Script extends EventPropagator {
             /*
              * This is a special one were it doesn't matter which event triggers first.
              * */
-            let waiting = makeMultiEventPromise( this,
-                ['loaded', 'loaded_src'],
-                ['loading_error', 'loading_src_error'] );
+            let waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'], ['error'] );
 
             return Promise.all( [this._callWrapper( this._do_load ), waiting] ).then( () => {
                 return this.source( encoding );
@@ -810,7 +820,7 @@ export default class Script extends EventPropagator {
         if( this.loaded ) {
             if( this.pending ) {
                 //Add the event listeners first
-                let waiting = makeEventPromise( this, 'exports', 'exports_error' );
+                let waiting = makeEventPromise( this, 'exports', 'error' );
 
                 this._runMainFactory();
 
@@ -825,7 +835,7 @@ export default class Script extends EventPropagator {
 
         } else {
             //Add the event listeners first
-            let waiting = makeEventPromise( this, 'loaded', 'loading_error' );
+            let waiting = makeEventPromise( this, 'loaded', 'error' );
 
             this._callWrapper( this._do_load );
 

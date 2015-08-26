@@ -373,7 +373,7 @@ var Script = (function( _EventPropagator ) {
                     }, function( err ) {
                         _this4._runningFactory = false;
 
-                        _this4.emit( 'exports_error', err );
+                        _this4.emit( 'error', err );
                     } );
                 }
             }
@@ -787,16 +787,19 @@ var Script = (function( _EventPropagator ) {
                                         _this8._loading = false;
 
                                         _this8.emit( 'loaded', _this8._script.exports );
+                                    } else {
+                                        _this8.emit( 'error', new Error( 'The script ' + _this8.filename
+                                                                         + ' was unloaded while performing an asynchronous operation.' ) );
                                     }
                                 }, function( err ) {
                                     _this8._loading = false;
 
-                                    _this8.emit( 'loading_error', err );
+                                    _this8.emit( 'error', err );
                                 } );
                             } catch( err ) {
                                 this._loading = false;
 
-                                this.emit( 'loading_error', err );
+                                this.emit( 'error', err );
                             }
                         } else {
                             /*
@@ -819,9 +822,12 @@ var Script = (function( _EventPropagator ) {
 
                                 if( this._loading ) {
                                     this.emit( 'loaded', this.loaded );
+                                } else {
+                                    this.emit( 'error', new Error( 'The script ' + this.filename
+                                                                   + ' was unloaded while performing an asynchronous operation.' ) );
                                 }
                             } catch( err ) {
-                                this.emit( 'loading_error', err );
+                                this.emit( 'error', err );
                             } finally {
                                 this._loading = false;
                             }
@@ -837,7 +843,7 @@ var Script = (function( _EventPropagator ) {
                                 this._loading = false;
                                 this._loadingText = false;
 
-                                this.emit( 'loading_src_error', err );
+                                this.emit( 'error', err );
                             }
                         }
 
@@ -850,12 +856,15 @@ var Script = (function( _EventPropagator ) {
                                 _this8._loadingText = false;
 
                                 _this8.emit( 'loaded_src', _this8.loaded );
+                            } else if( !_this8._loading ) {
+                                _this8.emit( 'error', new Error( 'The script ' + _this8.filename
+                                                                 + ' was unloaded while performing an asynchronous operation.' ) );
                             }
                         }, function( err ) {
                             _this8._loading = false;
                             _this8._loadingText = false;
 
-                            _this8.emit( 'loading_src_error', err );
+                            _this8.emit( 'error', err );
                         } );
                     }
                 }
@@ -940,8 +949,7 @@ var Script = (function( _EventPropagator ) {
                     /*
                      * This is a special one were it doesn't matter which event triggers first.
                      * */
-                    var waiting = (0, _eventsJs.makeMultiEventPromise)( this, ['loaded', 'loaded_src'],
-                        ['loading_error', 'loading_src_error'] );
+                    var waiting = (0, _eventsJs.makeMultiEventPromise)( this, ['loaded', 'loaded_src'], ['error'] );
 
                     return _bluebird2['default'].all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
                         return _this10.source( encoding );
@@ -956,7 +964,7 @@ var Script = (function( _EventPropagator ) {
                 if( this.loaded ) {
                     if( this.pending ) {
                         //Add the event listeners first
-                        var waiting = (0, _eventsJs.makeEventPromise)( this, 'exports', 'exports_error' );
+                        var waiting = (0, _eventsJs.makeEventPromise)( this, 'exports', 'error' );
 
                         this._runMainFactory();
 
@@ -970,7 +978,7 @@ var Script = (function( _EventPropagator ) {
                     } );
                 } else {
                     //Add the event listeners first
-                    var waiting = (0, _eventsJs.makeEventPromise)( this, 'loaded', 'loading_error' );
+                    var waiting = (0, _eventsJs.makeEventPromise)( this, 'loaded', 'error' );
 
                     this._callWrapper( this._do_load );
 
