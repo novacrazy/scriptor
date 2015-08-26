@@ -31,9 +31,6 @@
 Object.defineProperty( exports, '__esModule', {
     value: true
 } );
-var default_max_recursion = 9;
-
-exports.default_max_recursion = default_max_recursion;
 var default_max_debounceMaxWait = 50;
 
 exports.default_max_debounceMaxWait = default_max_debounceMaxWait;

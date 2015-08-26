@@ -12,7 +12,7 @@ import _ from 'lodash';
 
 let constants = process.binding( 'constants' );
 
-import {default_debounceMaxWait, default_max_recursion} from './../build/modern/defaults.js';
+import {default_debounceMaxWait} from './../build/modern/defaults.js';
 import {Logger, LogLevel} from './tools/cli.js';
 
 import Scriptor from './../build/modern/index.js';
@@ -82,7 +82,7 @@ options
     .version( package_json.version )
     .usage( '[options] files...' )
     .option( '-d, --dir <path>', 'Directory to run Scriptor in' )
-    .option( '-c, --concurrency <n>', 'Limit asynchronous script concurrency to n (default: max_recursion + 1)' )
+    .option( '-c, --concurrency <n>', 'Limit asynchronous script concurrency to n (default: 10)' )
     .option( '-q, --close', 'End the process when all scripts finish' )
     .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
     .option( '-p, --propagate', 'Propagate changes upwards when watching scripts' )
@@ -93,7 +93,6 @@ options
     `Wait n milliseconds for debounce on file watching events (default: ${default_debounceMaxWait}ms)` )
     .option( '--use_strict', 'Enforce strict mode' )
     .option( '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' )
-    .option( '--max_recursion <n>', `Set the maximum recursion depth of scripts (default: ${default_max_recursion})` )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
     .option( '--cork', 'Cork stdout before calling scripts' )
     .option( '-s, --silent', 'Do not echo anything' )
@@ -223,7 +222,7 @@ export default function( argv ) {
             manager.propagateEvents();
         }
 
-        let maxRecursion, concurrency, watch, debounce;
+        let concurrency = 10, watch, debounce;
 
         if( typeof options.debounce === 'string' ) {
             debounce = manager.debounceMaxWait = toMilliseconds( options.debounce );
@@ -241,51 +240,13 @@ export default function( argv ) {
             }
         }
 
-        //Basically, if both max_recursion and concurrency are set, they have to play along
-        //Otherwise, each will increase or whatever to not crash the application
-        if( options.max_recursion ) {
-            maxRecursion = parseIntOrInfinity( options.max_recursion );
 
-            if( isNaN( maxRecursion ) ) {
-                logger.error( 'Not a Number value for option --max_recursion' );
+        if( options.concurrency ) {
+            concurrency = parseIntOrInfinity( options.concurrency );
+
+            if( isNaN( concurrency ) ) {
+                logger.error( 'Not a Number value for option -c, --concurrency' );
                 process.exit( EXIT_FAILURE );
-
-            } else if( options.concurrency ) {
-                concurrency = parseIntOrInfinity( options.concurrency );
-
-                if( isNaN( concurrency ) ) {
-                    logger.error( 'Not a Number value for option -c, --concurrency' );
-                    process.exit( EXIT_FAILURE );
-
-                } else if( concurrency > maxRecursion ) {
-                    logger.error( 'Concurrency set higher than max_recursion.\n\tScriptor will report false positives for exceeded recursion limits.' );
-                    process.exit( EXIT_FAILURE );
-                }
-
-            } else {
-                concurrency = maxRecursion + 1;
-            }
-
-        } else {
-            if( options.concurrency ) {
-                concurrency = parseIntOrInfinity( options.concurrency );
-
-                if( isNaN( concurrency ) ) {
-                    logger.error( 'Not a Number value for option -c, --concurrency' );
-                    process.exit( EXIT_FAILURE );
-
-                } else {
-                    maxRecursion = concurrency - 1;
-
-                    if( maxRecursion > default_max_recursion ) {
-                        logger.warn( 'Increasing max_recursion to %d to handle increased concurrency', maxRecursion );
-                    }
-                }
-
-            } else {
-                maxRecursion = default_max_recursion;
-
-                concurrency = maxRecursion + 1;
             }
         }
 
@@ -324,8 +285,6 @@ export default function( argv ) {
 
         run_script = ( instance, script, num ) => {
             let start = process.hrtime();
-
-            instance.maxRecursion = maxRecursion;
 
             if( log_level === LogLevel.LOG_SILENT || options.cork ) {
                 process.stdout.cork();

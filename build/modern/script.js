@@ -195,8 +195,6 @@ var Script = (function( _EventPropagator ) {
         this._willWatch = false;
         this._watchPersistent = false;
         this._maxListeners = 10;
-        this._recursion = 0;
-        this._maxRecursion = _defaultsJs.default_max_recursion;
         this._debounceMaxWait = _defaultsJs.default_max_debounceMaxWait;
         this._textMode = false;
         this._defineCache = new _Map();
@@ -272,31 +270,21 @@ var Script = (function( _EventPropagator ) {
         var context = arguments.length <= 1 || arguments[1] === undefined ? this : arguments[1];
         var args = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
 
-        //Just in case, always use recursion protection
-        if( this._recursion > this._maxRecursion ) {
-            return _bluebird2.default.reject( new RangeError( 'Script recursion limit reached at ' + this._recursion
-                                                              + ' for script ' + this.filename ) );
-        } else {
-            return new _bluebird2.default( function( resolve, reject ) {
-                try {
-                    _this2._recursion++;
+        return new _bluebird2.default( function( resolve, reject ) {
+            try {
+                var res = func.apply( context, args );
 
-                    var res = func.apply( context, args );
-
-                    if( _utilsJs.isThenable( res ) ) {
-                        res.then( resolve, reject );
-                    } else {
-                        resolve( res );
-                    }
-                } catch( err ) {
-                    _this2.unload();
-
-                    reject( err );
-                } finally {
-                    _this2._recursion--;
+                if( _utilsJs.isThenable( res ) ) {
+                    res.then( resolve, reject );
+                } else {
+                    resolve( res );
                 }
-            } );
-        }
+            } catch( err ) {
+                _this2.unload();
+
+                reject( err );
+            }
+        } );
     };
 
     Script.prototype._runFactory = function _runFactory( id, deps, factory ) {
@@ -505,8 +493,6 @@ var Script = (function( _EventPropagator ) {
                     } );
 
                     script.propagateEvents( this.isPropagatingEvents() );
-
-                    script.maxRecursion = this.maxRecursion;
                 }
 
                 return script.exports();
@@ -1053,18 +1039,6 @@ var Script = (function( _EventPropagator ) {
             key: 'baseUrl',
             get: function get() {
                 return _path.posix.dirname( this.filename );
-            }
-        }, {
-            key: 'maxRecursion',
-            set: function set( value ) {
-                value = Math.floor( value );
-
-                _assert2.default( !isNaN( value ), 'maxRecursion must be set to a number' );
-
-                this._maxRecursion = value;
-            },
-            get: function get() {
-                return this._maxRecursion;
             }
         }, {
             key: 'debounceMaxWait',

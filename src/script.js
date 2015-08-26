@@ -16,7 +16,7 @@ import {normalizeError} from './error.js';
 import defaultExtensions from './extensions.js';
 
 import {EventPropagator, EventEmitter, makeEventPromise, makeMultiEventPromise} from './events.js';
-import {default_max_recursion, default_max_debounceMaxWait} from './defaults.js';
+import {default_max_debounceMaxWait} from './defaults.js';
 
 import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
 
@@ -48,8 +48,6 @@ export default class Script extends EventPropagator {
 
     _maxListeners = 10; //Node default maxListeners
 
-    _recursion = 0;
-    _maxRecursion = default_max_recursion;
     _debounceMaxWait = default_max_debounceMaxWait;
 
     _textMode = false;
@@ -253,18 +251,6 @@ export default class Script extends EventPropagator {
         return path.dirname( this.filename );
     }
 
-    set maxRecursion( value ) {
-        value = Math.floor( value );
-
-        assert( !isNaN( value ), 'maxRecursion must be set to a number' );
-
-        this._maxRecursion = value;
-    }
-
-    get maxRecursion() {
-        return this._maxRecursion;
-    }
-
     set debounceMaxWait( time ) {
         time = Math.floor( time );
 
@@ -286,34 +272,24 @@ export default class Script extends EventPropagator {
     }
 
     _callWrapper( func, context = this, args = [] ) {
-        //Just in case, always use recursion protection
-        if( this._recursion > this._maxRecursion ) {
-            return Promise.reject( new RangeError( `Script recursion limit reached at ${this._recursion} for script ${this.filename}` ) );
+        return new Promise( ( resolve, reject ) => {
+            try {
+                let res = func.apply( context, args );
 
-        } else {
-            return new Promise( ( resolve, reject ) => {
-                try {
-                    this._recursion++;
+                if( isThenable( res ) ) {
+                    res.then( resolve, reject );
 
-                    let res = func.apply( context, args );
-
-                    if( isThenable( res ) ) {
-                        res.then( resolve, reject );
-
-                    } else {
-                        resolve( res );
-                    }
-
-                } catch( err ) {
-                    this.unload();
-
-                    reject( err );
-
-                } finally {
-                    this._recursion--;
+                } else {
+                    resolve( res );
                 }
-            } );
-        }
+
+            } catch( err ) {
+                this.unload();
+
+                reject( err );
+
+            }
+        } );
     }
 
     _runFactory( id, deps, factory ) {
@@ -520,8 +496,6 @@ export default class Script extends EventPropagator {
                     } );
 
                     script.propagateEvents( this.isPropagatingEvents() );
-
-                    script.maxRecursion = this.maxRecursion;
                 }
 
                 return script.exports();

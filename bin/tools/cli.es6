@@ -36,7 +36,6 @@ function print_message( level, message ) {
 
 }
 
-
 export class Logger extends EventEmitter {
     _level = null;
 

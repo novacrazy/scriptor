@@ -52,8 +52,6 @@ class ScriptAdapter extends Script {
 
         script.propagateEvents( this.isPropagatingEvents() );
 
-        script.maxRecursion = this.maxRecursion;
-
         return script;
     }
 
@@ -71,7 +69,6 @@ class ScriptAdapter extends Script {
 export default class Manager {
     _debounceMaxWait = null;
     _maxListeners = null;
-    _maxRecursion = null;
 
     _config = null;
     _cwd = process.cwd();
@@ -138,24 +135,6 @@ export default class Manager {
         return this._maxListeners;
     }
 
-    set maxRecursion( value ) {
-        if( value !== null && value !== void 0 ) {
-
-            value = Math.floor( value );
-
-            assert( !isNaN( value ), 'maxRecursion must be set to a number' );
-
-            this._maxRecursion = value;
-
-        } else {
-            this._maxRecursion = null;
-        }
-    }
-
-    get maxRecursion() {
-        return this._maxRecursion;
-    }
-
     config( config ) {
         this._config = normalizeConfig( config );
 
@@ -191,10 +170,6 @@ export default class Manager {
 
             if( this.debounceMaxWait !== null && this.debounceMaxWait !== void 0 ) {
                 script.debounceMaxWait = this.debounceMaxWait;
-            }
-
-            if( this.maxRecursion !== null && this.maxRecursion !== void 0 ) {
-                script.maxRecursion = this.maxRecursion;
             }
 
             if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
