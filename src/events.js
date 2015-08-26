@@ -66,16 +66,20 @@ export function makeEventPromise( emitter, resolve_event, reject_event ) {
     return new Promise( ( resolve, reject ) => {
         function resolve_handler( ...args ) {
             emitter.removeListener( reject_event, reject_handler );
+            emitter.removeListener( resolve_event, resolve_handler );
+
             resolve( ...args );
         }
 
         function reject_handler( ...args ) {
             emitter.removeListener( resolve_event, resolve_handler );
+            emitter.removeListener( reject_event, reject_handler );
+
             reject( ...args );
         }
 
-        emitter.once( resolve_event, resolve_handler );
-        emitter.once( reject_event, reject_handler );
+        emitter.addListener( resolve_event, resolve_handler );
+        emitter.addListener( reject_event, reject_handler );
     } );
 }
 
@@ -89,10 +93,18 @@ export function makeMultiEventPromise( emitter, resolve_events, reject_events ) 
                 emitter.removeListener( event, reject_handler );
             }
 
+            for( let event of resolve_events ) {
+                emitter.removeListener( event, resolve_handler );
+            }
+
             resolve( ...args );
         }
 
         function reject_handler( ...args ) {
+            for( let event of reject_events ) {
+                emitter.removeListener( event, reject_handler );
+            }
+
             for( let event of resolve_events ) {
                 emitter.removeListener( event, resolve_handler );
             }
@@ -101,11 +113,11 @@ export function makeMultiEventPromise( emitter, resolve_events, reject_events ) 
         }
 
         for( let event of resolve_events ) {
-            emitter.once( event, resolve_handler );
+            emitter.addListener( event, resolve_handler );
         }
 
         for( let event of reject_events ) {
-            emitter.once( event, reject_handler );
+            emitter.addListener( event, reject_handler );
         }
     } );
 }

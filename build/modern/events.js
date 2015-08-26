@@ -145,16 +145,20 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
     return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
             emitter.removeListener( reject_event, reject_handler );
+            emitter.removeListener( resolve_event, resolve_handler );
+
             resolve.apply( undefined, arguments );
         }
 
         function reject_handler() {
             emitter.removeListener( resolve_event, resolve_handler );
+            emitter.removeListener( reject_event, reject_handler );
+
             reject.apply( undefined, arguments );
         }
 
-        emitter.once( resolve_event, resolve_handler );
-        emitter.once( reject_event, reject_handler );
+        emitter.addListener( resolve_event, resolve_handler );
+        emitter.addListener( reject_event, reject_handler );
     } );
 }
 
@@ -188,10 +192,6 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 emitter.removeListener( _event, reject_handler );
             }
 
-            resolve.apply( undefined, arguments );
-        }
-
-        function reject_handler() {
             for( var _iterator3 = resolve_events, _isArray3 = Array.isArray( _iterator3 ), _i3 = 0, _iterator3 = _isArray3 ?
                                                                                                                  _iterator3 :
                                                                                                                  _getIterator( _iterator3 ); ; ) {
@@ -215,53 +215,103 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 emitter.removeListener( _event2, resolve_handler );
             }
 
+            resolve.apply( undefined, arguments );
+        }
+
+        function reject_handler() {
+            for( var _iterator4 = reject_events, _isArray4 = Array.isArray( _iterator4 ), _i4 = 0, _iterator4 = _isArray4 ?
+                                                                                                                _iterator4 :
+                                                                                                                _getIterator( _iterator4 ); ; ) {
+                var _ref4;
+
+                if( _isArray4 ) {
+                    if( _i4 >= _iterator4.length ) {
+                        break;
+                    }
+                    _ref4 = _iterator4[_i4++];
+                } else {
+                    _i4 = _iterator4.next();
+                    if( _i4.done ) {
+                        break;
+                    }
+                    _ref4 = _i4.value;
+                }
+
+                var _event3 = _ref4;
+
+                emitter.removeListener( _event3, reject_handler );
+            }
+
+            for( var _iterator5 = resolve_events, _isArray5 = Array.isArray( _iterator5 ), _i5 = 0, _iterator5 = _isArray5 ?
+                                                                                                                 _iterator5 :
+                                                                                                                 _getIterator( _iterator5 ); ; ) {
+                var _ref5;
+
+                if( _isArray5 ) {
+                    if( _i5 >= _iterator5.length ) {
+                        break;
+                    }
+                    _ref5 = _iterator5[_i5++];
+                } else {
+                    _i5 = _iterator5.next();
+                    if( _i5.done ) {
+                        break;
+                    }
+                    _ref5 = _i5.value;
+                }
+
+                var _event4 = _ref5;
+
+                emitter.removeListener( _event4, resolve_handler );
+            }
+
             reject.apply( undefined, arguments );
         }
 
-        for( var _iterator4 = resolve_events, _isArray4 = Array.isArray( _iterator4 ), _i4 = 0, _iterator4 = _isArray4 ?
-                                                                                                             _iterator4 :
-                                                                                                             _getIterator( _iterator4 ); ; ) {
-            var _ref4;
+        for( var _iterator6 = resolve_events, _isArray6 = Array.isArray( _iterator6 ), _i6 = 0, _iterator6 = _isArray6 ?
+                                                                                                             _iterator6 :
+                                                                                                             _getIterator( _iterator6 ); ; ) {
+            var _ref6;
 
-            if( _isArray4 ) {
-                if( _i4 >= _iterator4.length ) {
+            if( _isArray6 ) {
+                if( _i6 >= _iterator6.length ) {
                     break;
                 }
-                _ref4 = _iterator4[_i4++];
+                _ref6 = _iterator6[_i6++];
             } else {
-                _i4 = _iterator4.next();
-                if( _i4.done ) {
+                _i6 = _iterator6.next();
+                if( _i6.done ) {
                     break;
                 }
-                _ref4 = _i4.value;
+                _ref6 = _i6.value;
             }
 
-            var _event3 = _ref4;
+            var _event5 = _ref6;
 
-            emitter.once( _event3, resolve_handler );
+            emitter.addListener( _event5, resolve_handler );
         }
 
-        for( var _iterator5 = reject_events, _isArray5 = Array.isArray( _iterator5 ), _i5 = 0, _iterator5 = _isArray5 ?
-                                                                                                            _iterator5 :
-                                                                                                            _getIterator( _iterator5 ); ; ) {
-            var _ref5;
+        for( var _iterator7 = reject_events, _isArray7 = Array.isArray( _iterator7 ), _i7 = 0, _iterator7 = _isArray7 ?
+                                                                                                            _iterator7 :
+                                                                                                            _getIterator( _iterator7 ); ; ) {
+            var _ref7;
 
-            if( _isArray5 ) {
-                if( _i5 >= _iterator5.length ) {
+            if( _isArray7 ) {
+                if( _i7 >= _iterator7.length ) {
                     break;
                 }
-                _ref5 = _iterator5[_i5++];
+                _ref7 = _iterator7[_i7++];
             } else {
-                _i5 = _iterator5.next();
-                if( _i5.done ) {
+                _i7 = _iterator7.next();
+                if( _i7.done ) {
                     break;
                 }
-                _ref5 = _i5.value;
+                _ref7 = _i7.value;
             }
 
-            var _event4 = _ref5;
+            var _event6 = _ref7;
 
-            emitter.once( _event4, reject_handler );
+            emitter.addListener( _event6, reject_handler );
         }
     } );
 }

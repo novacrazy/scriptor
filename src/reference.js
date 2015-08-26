@@ -278,8 +278,7 @@ class JoinedTransformReference extends ReferenceBase {
     constructor( left, right, transform = identity ) {
         super();
 
-        assert( left instanceof ReferenceBase && right instanceof ReferenceBase,
-            'join will only work on References' );
+        assert( left instanceof ReferenceBase && right instanceof ReferenceBase, 'join will only work on References' );
         assert.notEqual( left, right, 'Cannot join to self' );
         assert.strictEqual( typeof transform, 'function', 'transform function must be a function' );
 

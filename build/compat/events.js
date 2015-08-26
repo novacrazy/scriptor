@@ -166,16 +166,20 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
     return new _bluebird2['default']( function( resolve, reject ) {
         function resolve_handler() {
             emitter.removeListener( reject_event, reject_handler );
+            emitter.removeListener( resolve_event, resolve_handler );
+
             resolve.apply( undefined, arguments );
         }
 
         function reject_handler() {
             emitter.removeListener( resolve_event, resolve_handler );
+            emitter.removeListener( reject_event, reject_handler );
+
             reject.apply( undefined, arguments );
         }
 
-        emitter.once( resolve_event, resolve_handler );
-        emitter.once( reject_event, reject_handler );
+        emitter.addListener( resolve_event, resolve_handler );
+        emitter.addListener( reject_event, reject_handler );
     } );
 }
 
@@ -214,10 +218,6 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 }
             }
 
-            resolve.apply( undefined, arguments );
-        }
-
-        function reject_handler() {
             var _iteratorNormalCompletion3 = true;
             var _didIteratorError3 = false;
 
@@ -246,61 +246,121 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 }
             }
 
+            resolve.apply( undefined, arguments );
+        }
+
+        function reject_handler() {
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+
+            var _iteratorError4 = void 0;
+
+            try {
+                for( var _iterator4 = _getIterator( reject_events ), _step4;
+                     !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done);
+                     _iteratorNormalCompletion4 = true ) {
+                    var _event3 = _step4.value;
+
+                    emitter.removeListener( _event3, reject_handler );
+                }
+            } catch( err ) {
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
+            } finally {
+                try {
+                    if( !_iteratorNormalCompletion4 && _iterator4['return'] ) {
+                        _iterator4['return']();
+                    }
+                } finally {
+                    if( _didIteratorError4 ) {
+                        throw _iteratorError4;
+                    }
+                }
+            }
+
+            var _iteratorNormalCompletion5 = true;
+            var _didIteratorError5 = false;
+
+            var _iteratorError5 = void 0;
+
+            try {
+                for( var _iterator5 = _getIterator( resolve_events ), _step5;
+                     !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done);
+                     _iteratorNormalCompletion5 = true ) {
+                    var _event4 = _step5.value;
+
+                    emitter.removeListener( _event4, resolve_handler );
+                }
+            } catch( err ) {
+                _didIteratorError5 = true;
+                _iteratorError5 = err;
+            } finally {
+                try {
+                    if( !_iteratorNormalCompletion5 && _iterator5['return'] ) {
+                        _iterator5['return']();
+                    }
+                } finally {
+                    if( _didIteratorError5 ) {
+                        throw _iteratorError5;
+                    }
+                }
+            }
+
             reject.apply( undefined, arguments );
         }
 
-        var _iteratorNormalCompletion4 = true;
-        var _didIteratorError4 = false;
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
 
-        var _iteratorError4 = void 0;
+        var _iteratorError6 = void 0;
 
         try {
-            for( var _iterator4 = _getIterator( resolve_events ), _step4;
-                 !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done);
-                 _iteratorNormalCompletion4 = true ) {
-                var _event3 = _step4.value;
+            for( var _iterator6 = _getIterator( resolve_events ), _step6;
+                 !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done);
+                 _iteratorNormalCompletion6 = true ) {
+                var _event5 = _step6.value;
 
-                emitter.once( _event3, resolve_handler );
+                emitter.addListener( _event5, resolve_handler );
             }
         } catch( err ) {
-            _didIteratorError4 = true;
-            _iteratorError4 = err;
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
         } finally {
             try {
-                if( !_iteratorNormalCompletion4 && _iterator4['return'] ) {
-                    _iterator4['return']();
+                if( !_iteratorNormalCompletion6 && _iterator6['return'] ) {
+                    _iterator6['return']();
                 }
             } finally {
-                if( _didIteratorError4 ) {
-                    throw _iteratorError4;
+                if( _didIteratorError6 ) {
+                    throw _iteratorError6;
                 }
             }
         }
 
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
+        var _iteratorNormalCompletion7 = true;
+        var _didIteratorError7 = false;
 
-        var _iteratorError5 = void 0;
+        var _iteratorError7 = void 0;
 
         try {
-            for( var _iterator5 = _getIterator( reject_events ), _step5;
-                 !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done);
-                 _iteratorNormalCompletion5 = true ) {
-                var _event4 = _step5.value;
+            for( var _iterator7 = _getIterator( reject_events ), _step7;
+                 !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done);
+                 _iteratorNormalCompletion7 = true ) {
+                var _event6 = _step7.value;
 
-                emitter.once( _event4, reject_handler );
+                emitter.addListener( _event6, reject_handler );
             }
         } catch( err ) {
-            _didIteratorError5 = true;
-            _iteratorError5 = err;
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
         } finally {
             try {
-                if( !_iteratorNormalCompletion5 && _iterator5['return'] ) {
-                    _iterator5['return']();
+                if( !_iteratorNormalCompletion7 && _iterator7['return'] ) {
+                    _iterator7['return']();
                 }
             } finally {
-                if( _didIteratorError5 ) {
-                    throw _iteratorError5;
+                if( _didIteratorError7 ) {
+                    throw _iteratorError7;
                 }
             }
         }
