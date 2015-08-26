@@ -369,6 +369,9 @@ var Script = (function( _EventPropagator ) {
                             _this4._runningFactory = false;
 
                             _this4.emit( 'exports', _this4._script.exports );
+                        } else {
+                            _this4.emit( 'error', new Error( 'The script ' + _this4.filename
+                                                             + ' was unloaded while performing an asynchronous operation.' ) );
                         }
                     }, function( err ) {
                         _this4._runningFactory = false;

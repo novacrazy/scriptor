@@ -359,6 +359,10 @@ export default class Script extends EventPropagator {
                     this._runningFactory = false;
 
                     this.emit( 'exports', this._script.exports );
+
+                } else {
+                    this.emit( 'error',
+                        new Error( `The script ${this.filename} was unloaded while performing an asynchronous operation.` ) );
                 }
 
             }, err => {
