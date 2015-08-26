@@ -81,14 +81,14 @@ var ReferenceBase = (function( _EventEmitter ) {
     }
 
     ReferenceBase.prototype._run = function _run() {
-        this.emit( 'value_error', new Error( 'Cannot get value from ReferenceBase' ) );
+        this.emit( 'error', new Error( 'Cannot get value from ReferenceBase' ) );
     };
 
     ReferenceBase.prototype.value = function value() {
         if( this._ran ) {
             return _bluebird2.default.resolve( this._value );
         } else if( !this._closed ) {
-            var waiting = _eventsJs.makeEventPromise( this, 'value', 'value_error' );
+            var waiting = _eventsJs.makeEventPromise( this, 'value', 'error' );
 
             this._run();
 
@@ -116,7 +116,7 @@ var ReferenceBase = (function( _EventEmitter ) {
 
     ReferenceBase.prototype.close = function close() {
         if( this._running ) {
-            this.emit( 'value_error', new Error( 'Reference closed' ) );
+            this.emit( 'error', new Error( 'Reference closed' ) );
         }
 
         this._running = false;
@@ -174,7 +174,7 @@ var Reference = (function( _ReferenceBase ) {
             _this._ran = false;
         };
 
-        script.on( 'change', this._onChange );
+        script.addListener( 'change', this._onChange );
     }
 
     Reference.prototype._run = function _run() {
@@ -197,11 +197,14 @@ var Reference = (function( _ReferenceBase ) {
                     _this2._running = false;
 
                     _this2.emit( 'value', _this2._value );
+                } else {
+                    _this2.emit( 'error',
+                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this2._running = false;
 
-                _this2.emit( 'value_error', err );
+                _this2.emit( 'error', err );
             } );
         }
     };
@@ -290,7 +293,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
             _this3._ran = false;
         };
 
-        ref.on( 'change', this._onChange );
+        ref.addListener( 'change', this._onChange );
     }
 
     TransformReference.prototype._run = function _run() {
@@ -313,11 +316,14 @@ var TransformReference = (function( _ReferenceBase2 ) {
                     _this4._running = false;
 
                     _this4.emit( 'value', _this4._value );
+                } else {
+                    _this4.emit( 'error',
+                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this4._running = false;
 
-                _this4.emit( 'value_error', err );
+                _this4.emit( 'error', err );
             } );
         }
     };
@@ -373,8 +379,8 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
             _this5._ran = false;
         };
 
-        left.on( 'change', this._onChange );
-        right.on( 'change', this._onChange );
+        left.addListener( 'change', this._onChange );
+        right.addListener( 'change', this._onChange );
     }
 
     JoinedTransformReference.prototype._run = function _run() {
@@ -397,11 +403,14 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
                     _this6._running = false;
 
                     _this6.emit( 'value', _this6._value );
+                } else {
+                    _this6.emit( 'error',
+                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this6._running = false;
 
-                _this6.emit( 'value_error', err );
+                _this6.emit( 'error', err );
             } );
         }
     };
@@ -456,11 +465,14 @@ var ResolvedReference = (function( _ReferenceBase4 ) {
                     _this7._running = false;
 
                     _this7.emit( 'value', _this7._value );
+                } else {
+                    _this7.emit( 'error',
+                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this7._running = false;
 
-                _this7.emit( 'value_error', err );
+                _this7.emit( 'error', err );
             } );
         }
     };

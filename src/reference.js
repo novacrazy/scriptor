@@ -29,7 +29,7 @@ class ReferenceBase extends EventEmitter {
     _right = void 0;
 
     _run() {
-        this.emit( 'value_error', new Error( 'Cannot get value from ReferenceBase' ) );
+        this.emit( 'error', new Error( 'Cannot get value from ReferenceBase' ) );
     }
 
     get ran() {
@@ -49,7 +49,7 @@ class ReferenceBase extends EventEmitter {
             return Promise.resolve( this._value );
 
         } else if( !this._closed ) {
-            let waiting = makeEventPromise( this, 'value', 'value_error' );
+            let waiting = makeEventPromise( this, 'value', 'error' );
 
             this._run();
 
@@ -78,7 +78,7 @@ class ReferenceBase extends EventEmitter {
 
     close() {
         if( this._running ) {
-            this.emit( 'value_error', new Error( 'Reference closed' ) );
+            this.emit( 'error', new Error( 'Reference closed' ) );
         }
 
         this._running = false;
@@ -110,7 +110,7 @@ export default class Reference extends ReferenceBase {
             this._ran = false;
         };
 
-        script.on( 'change', this._onChange );
+        script.addListener( 'change', this._onChange );
     }
 
     _run() {
@@ -132,12 +132,16 @@ export default class Reference extends ReferenceBase {
                     this._running = false;
 
                     this.emit( 'value', this._value );
+
+                } else {
+                    this.emit( 'error',
+                        new Error( `Reference was reset while performing an asynchronous operation.` ) );
                 }
 
             } ).catch( err => {
                 this._running = false;
 
-                this.emit( 'value_error', err );
+                this.emit( 'error', err );
             } );
         }
     }
@@ -219,7 +223,7 @@ class TransformReference extends ReferenceBase {
             this._ran = false;
         };
 
-        ref.on( 'change', this._onChange );
+        ref.addListener( 'change', this._onChange );
     }
 
     _run() {
@@ -241,12 +245,16 @@ class TransformReference extends ReferenceBase {
                     this._running = false;
 
                     this.emit( 'value', this._value );
+
+                } else {
+                    this.emit( 'error',
+                        new Error( `Reference was reset while performing an asynchronous operation.` ) );
                 }
 
             } ).catch( err => {
                 this._running = false;
 
-                this.emit( 'value_error', err );
+                this.emit( 'error', err );
             } );
         }
     }
@@ -291,8 +299,8 @@ class JoinedTransformReference extends ReferenceBase {
             this._ran = false;
         };
 
-        left.on( 'change', this._onChange );
-        right.on( 'change', this._onChange );
+        left.addListener( 'change', this._onChange );
+        right.addListener( 'change', this._onChange );
     }
 
     _run() {
@@ -314,12 +322,16 @@ class JoinedTransformReference extends ReferenceBase {
                     this._running = false;
 
                     this.emit( 'value', this._value );
+
+                } else {
+                    this.emit( 'error',
+                        new Error( `Reference was reset while performing an asynchronous operation.` ) );
                 }
 
             } ).catch( err => {
                 this._running = false;
 
-                this.emit( 'value_error', err );
+                this.emit( 'error', err );
             } );
         }
     }
@@ -365,12 +377,16 @@ class ResolvedReference extends ReferenceBase {
                     this._running = false;
 
                     this.emit( 'value', this._value );
+
+                } else {
+                    this.emit( 'error',
+                        new Error( `Reference was reset while performing an asynchronous operation.` ) );
                 }
 
             } ).catch( err => {
                 this._running = false;
 
-                this.emit( 'value_error', err );
+                this.emit( 'error', err );
             } );
         }
     }
