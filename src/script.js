@@ -746,7 +746,7 @@ export default class Script extends EventPropagator {
 
             var onRename = _.debounce( ( event, filename ) => {
                 if( this._unloadOnRename ) {
-                    this.reopen();
+                    this.unload();
 
                     this.emit( 'change', event, filename );
 
@@ -780,8 +780,13 @@ export default class Script extends EventPropagator {
                     if( event === 'change' ) {
                         onChange( event, filename )
 
-                    } else if( event === 'rename' && filename !== this.filename ) {
-                        onRename( event, filename );
+                    } else if( event === 'rename' ) {
+                        if( filename !== this.filename ) {
+                            onRename( event, filename );
+
+                        } else {
+                            this.reopen();
+                        }
                     }
                 }
             } );
