@@ -76,8 +76,7 @@ var EventPropagator = (function( _EventEmitter ) {
 
         for( var _iterator = listeners, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
                                                                                                    _iterator :
-                                                                                                   _getIterator(
-                                                                                                       _iterator ); ; ) {
+                                                                                                   _getIterator( _iterator ); ; ) {
             var _ref;
 
             if( _isArray ) {
@@ -170,8 +169,9 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
 function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
     return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
-            for( var _iterator2   = reject_events, _isArray2 = Array.isArray(
-                _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator( _iterator2 ); ; ) {
+            for( var _iterator2 = reject_events, _isArray2 = Array.isArray( _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ?
+                                                                                                                _iterator2 :
+                                                                                                                _getIterator( _iterator2 ); ; ) {
                 var _ref2;
 
                 if( _isArray2 ) {
@@ -192,8 +192,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 emitter.removeListener( _event, reject_handler );
             }
 
-            for( var _iterator3   = resolve_events, _isArray3 = Array.isArray(
-                _iterator3 ), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator( _iterator3 ); ; ) {
+            for( var _iterator3 = resolve_events, _isArray3 = Array.isArray( _iterator3 ), _i3 = 0, _iterator3 = _isArray3 ?
+                                                                                                                 _iterator3 :
+                                                                                                                 _getIterator( _iterator3 ); ; ) {
                 var _ref3;
 
                 if( _isArray3 ) {
@@ -218,8 +219,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
         }
 
         function reject_handler() {
-            for( var _iterator4   = reject_events, _isArray4 = Array.isArray(
-                _iterator4 ), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : _getIterator( _iterator4 ); ; ) {
+            for( var _iterator4 = reject_events, _isArray4 = Array.isArray( _iterator4 ), _i4 = 0, _iterator4 = _isArray4 ?
+                                                                                                                _iterator4 :
+                                                                                                                _getIterator( _iterator4 ); ; ) {
                 var _ref4;
 
                 if( _isArray4 ) {
@@ -240,8 +242,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 emitter.removeListener( _event3, reject_handler );
             }
 
-            for( var _iterator5   = resolve_events, _isArray5 = Array.isArray(
-                _iterator5 ), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : _getIterator( _iterator5 ); ; ) {
+            for( var _iterator5 = resolve_events, _isArray5 = Array.isArray( _iterator5 ), _i5 = 0, _iterator5 = _isArray5 ?
+                                                                                                                 _iterator5 :
+                                                                                                                 _getIterator( _iterator5 ); ; ) {
                 var _ref5;
 
                 if( _isArray5 ) {
@@ -267,8 +270,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
 
         for( var _iterator6 = resolve_events, _isArray6 = Array.isArray( _iterator6 ), _i6 = 0, _iterator6 = _isArray6 ?
                                                                                                              _iterator6 :
-                                                                                                             _getIterator(
-                                                                                                                 _iterator6 ); ; ) {
+                                                                                                             _getIterator( _iterator6 ); ; ) {
             var _ref6;
 
             if( _isArray6 ) {
@@ -291,8 +293,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
 
         for( var _iterator7 = reject_events, _isArray7 = Array.isArray( _iterator7 ), _i7 = 0, _iterator7 = _isArray7 ?
                                                                                                             _iterator7 :
-                                                                                                            _getIterator(
-                                                                                                                _iterator7 ); ; ) {
+                                                                                                            _getIterator( _iterator7 ); ; ) {
             var _ref7;
 
             if( _isArray7 ) {

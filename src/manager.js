@@ -78,6 +78,8 @@ export default class Manager {
 
     _propagateEvents = false;
 
+    _unloadOnRename = null;
+
     constructor( grandParent ) {
         this._parent = new Module( 'ScriptManager', grandParent );
     }
@@ -105,6 +107,14 @@ export default class Manager {
         } else {
             this._debounceMaxWait = null;
         }
+    }
+
+    set unloadOnRename( value ) {
+        this._unloadOnRename = !!value;
+    }
+
+    get unloadOnRename() {
+        return this._unloadOnRename;
     }
 
     cwd() {
@@ -178,6 +188,10 @@ export default class Manager {
 
             if( this._config !== null && this._config !== void 0 ) {
                 script.config( this._config, true );
+            }
+
+            if( this._unloadOnRename !== null && this._unloadOnRename !== void 0 ) {
+                script.unloadOnRename = this._unloadOnRename;
             }
         }
 

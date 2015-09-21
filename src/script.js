@@ -64,6 +64,8 @@ export default class Script extends EventPropagator {
 
     _dependencies = [];
 
+    _unloadOnRename = false;
+
     require = null;
     define = null;
 
@@ -269,6 +271,14 @@ export default class Script extends EventPropagator {
 
     set textMode( value ) {
         this._textMode = !!value;
+    }
+
+    set unloadOnRename( value ) {
+        this._unloadOnRename = !!value;
+    }
+
+    get unloadOnRename() {
+        return this._unloadOnRename;
     }
 
     _callWrapper( func, context = this, args = [] ) {
@@ -735,13 +745,19 @@ export default class Script extends EventPropagator {
             }, this.debounceMaxWait );
 
             var onRename = _.debounce( ( event, filename ) => {
-                var old_filename = this._script.filename;
+                if( this._unloadOnRename ) {
+                    this.unload();
+                    this.emit( 'change', event, filename );
 
-                //A simple rename doesn't change file content, so just change the filename
-                //and leave the script loaded
-                this._script.filename = filename;
+                } else {
+                    var old_filename = this._script.filename;
 
-                this.emit( 'rename', old_filename, filename );
+                    //A simple rename doesn't change file content, so just change the filename
+                    //and leave the script loaded
+                    this._script.filename = filename;
+
+                    this.emit( 'rename', old_filename, filename );
+                }
 
             }, this.debounceMaxWait );
 

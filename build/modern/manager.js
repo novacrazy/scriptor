@@ -138,6 +138,7 @@ var Manager = (function() {
         this._scripts = new _Map();
         this._parent = null;
         this._propagateEvents = false;
+        this._unloadOnRename = null;
 
         this._parent = new _module3.default( 'ScriptManager', grandParent );
     }
@@ -215,6 +216,10 @@ var Manager = (function() {
 
             if( this._config !== null && this._config !== void 0 ) {
                 script.config( this._config, true );
+            }
+
+            if( this._unloadOnRename !== null && this._unloadOnRename !== void 0 ) {
+                script.unloadOnRename = this._unloadOnRename;
             }
         }
 
@@ -359,6 +364,14 @@ var Manager = (function() {
                 } else {
                     this._debounceMaxWait = null;
                 }
+            }
+        }, {
+            key: 'unloadOnRename',
+            set: function set( value ) {
+                this._unloadOnRename = !!value;
+            },
+            get: function get() {
+                return this._unloadOnRename;
             }
         }
     ] );

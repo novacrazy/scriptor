@@ -114,8 +114,8 @@ function parseIntOrInfinity( value ) {
 var EXIT_SUCCESS = 0,
     EXIT_FAILURE = 1;
 
-_commander2['default'].version( _packageJson2['default'].version ).usage( '[options] files...' ).option(
-    '-d, --dir <path>', 'Directory to run Scriptor in' ).option( '-c, --concurrency <n>',
+_commander2['default'].version( _packageJson2['default'].version ).usage( '[options] files...' ).option( '-d, --dir <path>',
+    'Directory to run Scriptor in' ).option( '-c, --concurrency <n>',
     'Limit asynchronous script concurrency to n (default: 10)' ).option( '-q, --close',
     'End the process when all scripts finish' ).option( '-w, --watch',
     'Watch scripts for changes and re-run them when changed' ).option( '-p, --propagate',
@@ -124,8 +124,9 @@ _commander2['default'].version( _packageJson2['default'].version ).usage( '[opti
     'Run script n times (in parallel if possible)' ).option( '-u, --unique',
     'Only run unique scripts (will ignore duplicates in file arguments)' ).option( '--debounce <n>',
     'Wait n milliseconds for debounce on file watching events (default: '
-    + _buildModernDefaultsJs.default_debounceMaxWait + 'ms)' ).option( '--use_strict', 'Enforce strict mode' ).option(
-    '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' ).option( '-v, --verbose [n]',
+    + _buildModernDefaultsJs.default_debounceMaxWait + 'ms)' ).option( '--use_strict',
+    'Enforce strict mode' ).option( '--max_listeners <n>',
+    'Set the maximum number of listeners on any particular script' ).option( '-v, --verbose [n]',
     'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' ).option( '--cork',
     'Cork stdout before calling scripts' ).option( '-s, --silent', 'Do not echo anything' ).option( '--no_signal',
     'Do not intercept process signals' ).option( '--no_glob', 'Do not match glob patterns' ).option( '--no_title',

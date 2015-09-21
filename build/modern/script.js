@@ -205,6 +205,7 @@ var Script = (function( _EventPropagator ) {
         this._runningFactory = false;
         this._config = _utilsJs.normalizeConfig( null );
         this._dependencies = [];
+        this._unloadOnRename = false;
         this.require = null;
         this.define = null;
         this.imports = {};
@@ -602,24 +603,24 @@ var Script = (function( _EventPropagator ) {
                             this._do_watch( this._watchPersistent );
                         }
 
-                        _utilsJs.tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then(
-                            function( src ) {
-                                if( _this7._loading ) {
-                                    _this7._source = src;
-                                    _this7._script.loaded = true;
+                        return _utilsJs.tryPromise( Script.extensions[ext]( this._script,
+                            this.filename ) ).then( function( src ) {
+                            if( _this7._loading ) {
+                                _this7._source = src;
+                                _this7._script.loaded = true;
 
-                                    _this7._loading = false;
-
-                                    _this7.emit( 'loaded', _this7._script.exports );
-                                } else {
-                                    _this7.emit( 'error', new Error( 'The script ' + _this7.filename
-                                                                     + ' was unloaded while performing an asynchronous operation.' ) );
-                                }
-                            }, function( err ) {
                                 _this7._loading = false;
 
-                                _this7.emit( 'error', err );
-                            } );
+                                _this7.emit( 'loaded', _this7._script.exports );
+                            } else {
+                                _this7.emit( 'error', new Error( 'The script ' + _this7.filename
+                                                                 + ' was unloaded while performing an asynchronous operation.' ) );
+                            }
+                        }, function( err ) {
+                            _this7._loading = false;
+
+                            _this7.emit( 'error', err );
+                        } );
                     } catch( err ) {
                         this._loading = false;
 
@@ -715,13 +716,18 @@ var Script = (function( _EventPropagator ) {
             }, this.debounceMaxWait );
 
             var onRename = _lodash2.default.debounce( function( event, filename ) {
-                var old_filename = _this8._script.filename;
+                if( _this8._unloadOnRename ) {
+                    _this8.unload();
+                    _this8.emit( 'change', event, filename );
+                } else {
+                    var old_filename = _this8._script.filename;
 
-                //A simple rename doesn't change file content, so just change the filename
-                //and leave the script loaded
-                _this8._script.filename = filename;
+                    //A simple rename doesn't change file content, so just change the filename
+                    //and leave the script loaded
+                    _this8._script.filename = filename;
 
-                _this8.emit( 'rename', old_filename, filename );
+                    _this8.emit( 'rename', old_filename, filename );
+                }
             }, this.debounceMaxWait );
 
             watcher.on( 'change', function( event, filename ) {
@@ -1061,6 +1067,14 @@ var Script = (function( _EventPropagator ) {
             },
             set: function set( value ) {
                 this._textMode = !!value;
+            }
+        }, {
+            key: 'unloadOnRename',
+            set: function set( value ) {
+                this._unloadOnRename = !!value;
+            },
+            get: function get() {
+                return this._unloadOnRename;
             }
         }
     ] );
