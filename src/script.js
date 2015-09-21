@@ -287,7 +287,6 @@ export default class Script extends EventPropagator {
                 this.unload();
 
                 reject( err );
-
             }
         } );
     }
@@ -613,7 +612,7 @@ export default class Script extends EventPropagator {
                             this._do_watch( this._watchPersistent );
                         }
 
-                        tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
+                        return tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
                             if( this._loading ) {
                                 this._source = src;
                                 this._script.loaded = true;
@@ -795,7 +794,9 @@ export default class Script extends EventPropagator {
              * */
             let waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'], ['error'] );
 
-            return Promise.all( [this._callWrapper( this._do_load ), waiting] ).then( () => {
+            this._callWrapper( this._do_load );
+
+            return waiting.then( () => {
                 return this.source( encoding );
             } );
         }

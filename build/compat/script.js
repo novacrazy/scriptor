@@ -380,327 +380,332 @@ var Script = (function( _EventPropagator ) {
                 return _regeneratorRuntime.async( function _require$( context$2$0 ) {
                     var _this5 = this;
 
-                    while( 1 ) switch( context$2$0.prev = context$2$0.next ) {
-                        case 0:
-                            normalize = _path.resolve.bind( null, this.baseUrl );
+                    while( 1 ) {
+                        switch( context$2$0.prev = context$2$0.next ) {
+                            case 0:
+                                normalize = _path.resolve.bind( null, this.baseUrl );
 
-                            if( !Array.isArray( id ) ) {
-                                context$2$0.next = 5;
-                                break;
-                            }
+                                if( !Array.isArray( id ) ) {
+                                    context$2$0.next = 5;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', _bluebird2['default'].map( id, function( id ) {
-                                return _this5._require( id );
-                            } ) );
+                                return context$2$0.abrupt( 'return', _bluebird2['default'].map( id, function( id ) {
+                                    return _this5._require( id );
+                                } ) );
 
-                        case 5:
-                            _assert2['default'].strictEqual( typeof id, 'string',
-                                'require id must be a string or array of strings' );
+                            case 5:
+                                _assert2['default'].strictEqual( typeof id, 'string',
+                                    'require id must be a string or array of strings' );
 
-                            //Plugins ARE supported, but they have to work like a normal module
+                                //Plugins ARE supported, but they have to work like a normal module
 
-                            if( !(id.indexOf( '!' ) !== -1) ) {
-                                context$2$0.next = 14;
-                                break;
-                            }
+                                if( !(id.indexOf( '!' ) !== -1) ) {
+                                    context$2$0.next = 14;
+                                    break;
+                                }
 
-                            context$2$0.next = 9;
-                            return _regeneratorRuntime.awrap( (function callee$2$0() {
-                                var parts, plugin, plugin_id;
-                                return _regeneratorRuntime.async( function callee$2$0$( context$3$0 ) {
-                                    var _this6 = this;
+                                context$2$0.next = 9;
+                                return _regeneratorRuntime.awrap( (function callee$2$0() {
+                                    var parts, plugin, plugin_id;
+                                    return _regeneratorRuntime.async( function callee$2$0$( context$3$0 ) {
+                                        var _this6 = this;
 
-                                    while( 1 ) {
-                                        switch( context$3$0.prev = context$3$0.next ) {
-                                            case 0:
-                                                parts = id.split( '!', 2 );
-                                                plugin = undefined, plugin_id = parts[0];
+                                        while( 1 ) {
+                                            switch( context$3$0.prev = context$3$0.next ) {
+                                                case 0:
+                                                    parts = id.split( '!', 2 );
+                                                    plugin = undefined, plugin_id = parts[0];
 
-                                                if( !(plugin_id === 'include') ) {
-                                                    context$3$0.next = 6;
-                                                    break;
-                                                }
-
-                                                plugin = {
-                                                    normalize: function normalize( id, defaultNormalize ) {
-                                                        return defaultNormalize( id );
-                                                    },
-                                                    load:      function load( id, require, _onLoad, config ) {
-                                                        try {
-                                                            var script = _this6.include( id );
-
-                                                            script.textMode = false;
-
-                                                            _onLoad( script );
-                                                        } catch( err ) {
-                                                            _onLoad.error( err );
-                                                        }
+                                                    if( !(plugin_id === 'include') ) {
+                                                        context$3$0.next = 6;
+                                                        break;
                                                     }
-                                                };
 
-                                                context$3$0.next = 17;
-                                                break;
+                                                    plugin = {
+                                                        normalize: function normalize( id, defaultNormalize ) {
+                                                            return defaultNormalize( id );
+                                                        },
+                                                        load:      function load( id, require, _onLoad, config ) {
+                                                            try {
+                                                                var script = _this6.include( id );
 
-                                            case 6:
-                                                if( !(plugin_id === 'promisify') ) {
-                                                    context$3$0.next = 10;
+                                                                script.textMode = false;
+
+                                                                _onLoad( script );
+                                                            } catch( err ) {
+                                                                _onLoad.error( err );
+                                                            }
+                                                        }
+                                                    };
+
+                                                    context$3$0.next = 17;
                                                     break;
-                                                }
 
-                                                plugin = {
-                                                    load: function load( id, require, _onLoad, config ) {
-                                                        if( promisifyCache.has( id ) ) {
-                                                            _onLoad( promisifyCache.get( id ) );
-                                                        } else {
-                                                            _this6._require( id ).then( function( obj ) {
-                                                                if( typeof obj === 'function' ) {
-                                                                    return _bluebird2['default'].promisify( obj );
-                                                                } else if( typeof obj === 'object' ) {
-                                                                    var newObj = _lodash2['default'].clone( obj );
-
-                                                                    return _bluebird2['default'].promisifyAll( newObj );
-                                                                } else {
-                                                                    return null;
-                                                                }
-                                                            } ).then( function( obj ) {
-                                                                promisifyCache.set( id, obj );
-
-                                                                return obj;
-                                                            } ).then( _onLoad, _onLoad.error );
-                                                        }
+                                                case 6:
+                                                    if( !(plugin_id === 'promisify') ) {
+                                                        context$3$0.next = 10;
+                                                        break;
                                                     }
-                                                };
 
-                                                context$3$0.next = 17;
-                                                break;
+                                                    plugin = {
+                                                        load: function load( id, require, _onLoad, config ) {
+                                                            if( promisifyCache.has( id ) ) {
+                                                                _onLoad( promisifyCache.get( id ) );
+                                                            } else {
+                                                                _this6._require( id ).then( function( obj ) {
+                                                                    if( typeof obj === 'function' ) {
+                                                                        return _bluebird2['default'].promisify( obj );
+                                                                    } else if( typeof obj === 'object' ) {
+                                                                        var newObj = _lodash2['default'].clone( obj );
 
-                                            case 10:
-                                                if( !(plugin_id === 'text') ) {
-                                                    context$3$0.next = 14;
+                                                                        return _bluebird2['default'].promisifyAll(
+                                                                            newObj );
+                                                                    } else {
+                                                                        return null;
+                                                                    }
+                                                                } ).then( function( obj ) {
+                                                                    promisifyCache.set( id, obj );
+
+                                                                    return obj;
+                                                                } ).then( _onLoad, _onLoad.error );
+                                                            }
+                                                        }
+                                                    };
+
+                                                    context$3$0.next = 17;
                                                     break;
-                                                }
 
-                                                plugin = {
-                                                    normalize: function normalize( id, defaultNormalize ) {
-                                                        return defaultNormalize( id );
-                                                    },
-                                                    load:      function load( id, require, _onLoad, config ) {
-                                                        try {
-                                                            var script = _this6.include( id );
-
-                                                            script.textMode = true;
-
-                                                            _onLoad( script );
-                                                        } catch( err ) {
-                                                            _onLoad.error( err );
-                                                        }
+                                                case 10:
+                                                    if( !(plugin_id === 'text') ) {
+                                                        context$3$0.next = 14;
+                                                        break;
                                                     }
-                                                };
 
-                                                context$3$0.next = 17;
-                                                break;
+                                                    plugin = {
+                                                        normalize: function normalize( id, defaultNormalize ) {
+                                                            return defaultNormalize( id );
+                                                        },
+                                                        load:      function load( id, require, _onLoad, config ) {
+                                                            try {
+                                                                var script = _this6.include( id );
 
-                                            case 14:
-                                                context$3$0.next = 16;
-                                                return _regeneratorRuntime.awrap( this._require( plugin_id ) );
+                                                                script.textMode = true;
 
-                                            case 16:
-                                                plugin = context$3$0.sent;
-
-                                            case 17:
-
-                                                (0, _assert2['default'])( plugin !== void 0 && plugin !== null,
-                                                    'Invalid AMD plugin: ' + plugin_id );
-                                                _assert2['default'].strictEqual( typeof plugin.load, 'function',
-                                                    '.load function on AMD plugin not found' );
-
-                                                id = parts[1];
-
-                                                if( typeof plugin.normalize === 'function' ) {
-                                                    id = plugin.normalize( id, normalize );
-                                                } else if( id.charAt( 0 ) === '.' ) {
-                                                    id = normalize( id );
-                                                }
-
-                                                return context$3$0.abrupt( 'return', {
-                                                    v: new _bluebird2['default']( function( resolve, reject ) {
-                                                        if( _this6._loadCache.has( id ) ) {
-                                                            resolve( _this6._loadCache.get( id ) );
-                                                        } else {
-                                                            (function() {
-                                                                var onLoad = function onLoad( value ) {
-                                                                    _this6._loadCache.set( id, value );
-
-                                                                    resolve( value );
-                                                                };
-
-                                                                onLoad.fromText = function( text ) {
-                                                                    //Exploit Scriptor as much as possible
-                                                                    compile( text ).exports().then( onLoad,
-                                                                        onLoad.error );
-                                                                };
-
-                                                                onLoad.error = function( err ) {
-                                                                    reject( (0, _errorJs.normalizeError)( id,
-                                                                        'scripterror',
-                                                                        err ) );
-                                                                };
-
-                                                                //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                                                                plugin.load( id, _this6.require, onLoad,
-                                                                    _this6._config );
-                                                            })();
+                                                                _onLoad( script );
+                                                            } catch( err ) {
+                                                                _onLoad.error( err );
+                                                            }
                                                         }
-                                                    } )
-                                                } );
+                                                    };
 
-                                            case 22:
-                                            case 'end':
-                                                return context$3$0.stop();
+                                                    context$3$0.next = 17;
+                                                    break;
+
+                                                case 14:
+                                                    context$3$0.next = 16;
+                                                    return _regeneratorRuntime.awrap( this._require( plugin_id ) );
+
+                                                case 16:
+                                                    plugin = context$3$0.sent;
+
+                                                case 17:
+
+                                                    (0, _assert2['default'])( plugin !== void 0 && plugin !== null,
+                                                        'Invalid AMD plugin: ' + plugin_id );
+                                                    _assert2['default'].strictEqual( typeof plugin.load, 'function',
+                                                        '.load function on AMD plugin not found' );
+
+                                                    id = parts[1];
+
+                                                    if( typeof plugin.normalize === 'function' ) {
+                                                        id = plugin.normalize( id, normalize );
+                                                    } else if( id.charAt( 0 ) === '.' ) {
+                                                        id = normalize( id );
+                                                    }
+
+                                                    return context$3$0.abrupt( 'return', {
+                                                        v: new _bluebird2['default']( function( resolve, reject ) {
+                                                            if( _this6._loadCache.has( id ) ) {
+                                                                resolve( _this6._loadCache.get( id ) );
+                                                            } else {
+                                                                (function() {
+                                                                    var onLoad = function onLoad( value ) {
+                                                                        _this6._loadCache.set( id, value );
+
+                                                                        resolve( value );
+                                                                    };
+
+                                                                    onLoad.fromText = function( text ) {
+                                                                        //Exploit Scriptor as much as possible
+                                                                        compile( text ).exports().then( onLoad,
+                                                                            onLoad.error );
+                                                                    };
+
+                                                                    onLoad.error = function( err ) {
+                                                                        reject(
+                                                                            (0, _errorJs.normalizeError)( id,
+                                                                                'scripterror',
+                                                                                err ) );
+                                                                    };
+
+                                                                    //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                                                                    plugin.load( id, _this6.require, onLoad,
+                                                                        _this6._config );
+                                                                })();
+                                                            }
+                                                        } )
+                                                    } );
+
+                                                case 22:
+                                                case 'end':
+                                                    return context$3$0.stop();
+                                            }
                                         }
-                                    }
-                                }, null, _this5 );
-                            })() );
+                                    }, null, _this5 );
+                                })() );
 
-                        case 9:
-                            _ret = context$2$0.sent;
+                            case 9:
+                                _ret = context$2$0.sent;
 
-                            if( !(typeof _ret === 'object') ) {
-                                context$2$0.next = 12;
+                                if( !(typeof _ret === 'object') ) {
+                                    context$2$0.next = 12;
+                                    break;
+                                }
+
+                                return context$2$0.abrupt( 'return', _ret.v );
+
+                            case 12:
+                                context$2$0.next = 61;
                                 break;
-                            }
 
-                            return context$2$0.abrupt( 'return', _ret.v );
+                            case 14:
+                                if( !(0, _utilsJs.isAbsoluteOrRelative)( id ) ) {
+                                    context$2$0.next = 21;
+                                    break;
+                                }
 
-                        case 12:
-                            context$2$0.next = 61;
-                            break;
+                                id = _module3['default']._resolveFilename( normalize( id ), this.parent );
 
-                        case 14:
-                            if( !(0, _utilsJs.isAbsoluteOrRelative)( id ) ) {
-                                context$2$0.next = 21;
-                                break;
-                            }
+                                script = undefined;
 
-                            id = _module3['default']._resolveFilename( normalize( id ), this.parent );
+                                if( this.isManaged() ) {
+                                    script = this.include( id );
 
-                            script = undefined;
+                                    script.textMode = false;
+                                } else {
+                                    script = load( id, this.watched, this._script );
 
-                            if( this.isManaged() ) {
-                                script = this.include( id );
+                                    script.propagateTo( this, 'change', function() {
+                                        _this5.unload();
+                                        _this5.emit( 'change', _this5.filename );
+                                    } );
 
-                                script.textMode = false;
-                            } else {
-                                script = load( id, this.watched, this._script );
+                                    script.propagateEvents( this.isPropagatingEvents() );
+                                }
 
-                                script.propagateTo( this, 'change', function() {
-                                    _this5.unload();
-                                    _this5.emit( 'change', _this5.filename );
-                                } );
+                                return context$2$0.abrupt( 'return', script.exports() );
 
-                                script.propagateEvents( this.isPropagatingEvents() );
-                            }
+                            case 21:
+                                if( !(id === 'require') ) {
+                                    context$2$0.next = 25;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', script.exports() );
+                                return context$2$0.abrupt( 'return', this.require );
 
-                        case 21:
-                            if( !(id === 'require') ) {
-                                context$2$0.next = 25;
-                                break;
-                            }
+                            case 25:
+                                if( !(id === 'exports') ) {
+                                    context$2$0.next = 29;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', this.require );
+                                return context$2$0.abrupt( 'return', this._script.exports );
 
-                        case 25:
-                            if( !(id === 'exports') ) {
-                                context$2$0.next = 29;
-                                break;
-                            }
+                            case 29:
+                                if( !(id === 'module') ) {
+                                    context$2$0.next = 33;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', this._script.exports );
+                                return context$2$0.abrupt( 'return', this._script );
 
-                        case 29:
-                            if( !(id === 'module') ) {
-                                context$2$0.next = 33;
-                                break;
-                            }
+                            case 33:
+                                if( !(id === 'imports') ) {
+                                    context$2$0.next = 37;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', this._script );
+                                return context$2$0.abrupt( 'return', this.imports );
 
-                        case 33:
-                            if( !(id === 'imports') ) {
-                                context$2$0.next = 37;
-                                break;
-                            }
+                            case 37:
+                                if( !(id === 'Promise') ) {
+                                    context$2$0.next = 41;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', this.imports );
+                                return context$2$0.abrupt( 'return', _bluebird2['default'] );
 
-                        case 37:
-                            if( !(id === 'Promise') ) {
-                                context$2$0.next = 41;
-                                break;
-                            }
+                            case 41:
+                                if( !(id === 'Scriptor') ) {
+                                    context$2$0.next = 45;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', _bluebird2['default'] );
+                                return context$2$0.abrupt( 'return', Script.Scriptor );
 
-                        case 41:
-                            if( !(id === 'Scriptor') ) {
-                                context$2$0.next = 45;
-                                break;
-                            }
+                            case 45:
+                                if( !this._loadCache.has( id ) ) {
+                                    context$2$0.next = 49;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', Script.Scriptor );
+                                return context$2$0.abrupt( 'return', this._loadCache.get( id ) );
 
-                        case 45:
-                            if( !this._loadCache.has( id ) ) {
-                                context$2$0.next = 49;
-                                break;
-                            }
+                            case 49:
+                                if( !this._defineCache.has( id ) ) {
+                                    context$2$0.next = 54;
+                                    break;
+                                }
 
-                            return context$2$0.abrupt( 'return', this._loadCache.get( id ) );
+                                args = this._defineCache.get( id );
+                                return context$2$0.abrupt( 'return',
+                                    this._runFactory.apply( this, _toConsumableArray( args ) ).then(
+                                        function( exported ) {
+                                            _this5._loadCache.set( id, exported );
 
-                        case 49:
-                            if( !this._defineCache.has( id ) ) {
-                                context$2$0.next = 54;
-                                break;
-                            }
+                                            return exported;
+                                        } ) );
 
-                            args = this._defineCache.get( id );
-                            return context$2$0.abrupt( 'return',
-                                this._runFactory.apply( this, _toConsumableArray( args ) ).then( function( exported ) {
-                                    _this5._loadCache.set( id, exported );
+                            case 54:
+                                if( !this._config.paths.hasOwnProperty( id ) ) {
+                                    context$2$0.next = 60;
+                                    break;
+                                }
 
-                                    return exported;
-                                } ) );
+                                filepath = this._config.paths[id];
 
-                        case 54:
-                            if( !this._config.paths.hasOwnProperty( id ) ) {
-                                context$2$0.next = 60;
-                                break;
-                            }
+                                if( filepath.charAt( 0 ) === '.' ) {
+                                    filepath = (0, _path.resolve)( this.baseUrl, filepath );
+                                }
 
-                            filepath = this._config.paths[id];
+                                return context$2$0.abrupt( 'return', this.require( filepath ) );
 
-                            if( filepath.charAt( 0 ) === '.' ) {
-                                filepath = (0, _path.resolve)( this.baseUrl, filepath );
-                            }
+                            case 60:
+                                return context$2$0.abrupt( 'return',
+                                    new _bluebird2['default']( function( resolve, reject ) {
+                                        try {
+                                            //Normal module loading akin to the real 'require' function
+                                            resolve( _this5._script.require( id ) );
+                                        } catch( err ) {
+                                            reject( (0, _errorJs.normalizeError)( id, 'nodefine', err ) );
+                                        }
+                                    } ) );
 
-                            return context$2$0.abrupt( 'return', this.require( filepath ) );
-
-                        case 60:
-                            return context$2$0.abrupt( 'return',
-                                new _bluebird2['default']( function( resolve, reject ) {
-                                    try {
-                                        //Normal module loading akin to the real 'require' function
-                                        resolve( _this5._script.require( id ) );
-                                    } catch( err ) {
-                                        reject( (0, _errorJs.normalizeError)( id, 'nodefine', err ) );
-                                    }
-                                } ) );
-
-                        case 61:
-                        case 'end':
-                            return context$2$0.stop();
+                            case 61:
+                            case 'end':
+                                return context$2$0.stop();
+                        }
                     }
                 }, null, this );
             }
@@ -763,8 +768,8 @@ var Script = (function( _EventPropagator ) {
 
                         //Use custom extension if available
                         if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
-                            this._script.paths
-                                = _module3['default']._nodeModulePaths( (0, _path.dirname)( this.filename ) );
+                            this._script.paths = _module3['default']._nodeModulePaths(
+                                (0, _path.dirname)( this.filename ) );
 
                             this._loading = true;
 
@@ -773,24 +778,24 @@ var Script = (function( _EventPropagator ) {
                                     this._do_watch( this._watchPersistent );
                                 }
 
-                                (0, _utilsJs.tryPromise)( Script.extensions[ext]( this._script,
-                                    this.filename ) ).then( function( src ) {
-                                    if( _this8._loading ) {
-                                        _this8._source = src;
-                                        _this8._script.loaded = true;
+                                (0, _utilsJs.tryPromise)( Script.extensions[ext]( this._script, this.filename ) ).then(
+                                    function( src ) {
+                                        if( _this8._loading ) {
+                                            _this8._source = src;
+                                            _this8._script.loaded = true;
 
+                                            _this8._loading = false;
+
+                                            _this8.emit( 'loaded', _this8._script.exports );
+                                        } else {
+                                            _this8.emit( 'error', new Error( 'The script ' + _this8.filename
+                                                                             + ' was unloaded while performing an asynchronous operation.' ) );
+                                        }
+                                    }, function( err ) {
                                         _this8._loading = false;
 
-                                        _this8.emit( 'loaded', _this8._script.exports );
-                                    } else {
-                                        _this8.emit( 'error', new Error( 'The script ' + _this8.filename
-                                                                         + ' was unloaded while performing an asynchronous operation.' ) );
-                                    }
-                                }, function( err ) {
-                                    _this8._loading = false;
-
-                                    _this8.emit( 'error', err );
-                                } );
+                                        _this8.emit( 'error', err );
+                                    } );
                             } catch( err ) {
                                 this._loading = false;
 
@@ -946,7 +951,9 @@ var Script = (function( _EventPropagator ) {
                      * */
                     var waiting = (0, _eventsJs.makeMultiEventPromise)( this, ['loaded', 'loaded_src'], ['error'] );
 
-                    return _bluebird2['default'].all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
+                    this._callWrapper( this._do_load );
+
+                    return waiting.then( function() {
                         return _this10.source( encoding );
                     } );
                 }

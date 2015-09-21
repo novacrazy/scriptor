@@ -366,7 +366,7 @@ var Script = (function( _EventPropagator ) {
                 var _ret = yield* (function* () {
                     var parts = id.split( '!', 2 );
 
-                    var plugin = undefined,
+                    var plugin    = undefined,
                         plugin_id = parts[0];
 
                     if( plugin_id === 'include' ) {
@@ -602,24 +602,24 @@ var Script = (function( _EventPropagator ) {
                             this._do_watch( this._watchPersistent );
                         }
 
-                        _utilsJs.tryPromise( Script.extensions[ext]( this._script,
-                            this.filename ) ).then( function( src ) {
-                            if( _this7._loading ) {
-                                _this7._source = src;
-                                _this7._script.loaded = true;
+                        _utilsJs.tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then(
+                            function( src ) {
+                                if( _this7._loading ) {
+                                    _this7._source = src;
+                                    _this7._script.loaded = true;
 
+                                    _this7._loading = false;
+
+                                    _this7.emit( 'loaded', _this7._script.exports );
+                                } else {
+                                    _this7.emit( 'error', new Error( 'The script ' + _this7.filename
+                                                                     + ' was unloaded while performing an asynchronous operation.' ) );
+                                }
+                            }, function( err ) {
                                 _this7._loading = false;
 
-                                _this7.emit( 'loaded', _this7._script.exports );
-                            } else {
-                                _this7.emit( 'error', new Error( 'The script ' + _this7.filename
-                                                                 + ' was unloaded while performing an asynchronous operation.' ) );
-                            }
-                        }, function( err ) {
-                            _this7._loading = false;
-
-                            _this7.emit( 'error', err );
-                        } );
+                                _this7.emit( 'error', err );
+                            } );
                     } catch( err ) {
                         this._loading = false;
 
@@ -773,7 +773,9 @@ var Script = (function( _EventPropagator ) {
              * */
             var waiting = _eventsJs.makeMultiEventPromise( this, ['loaded', 'loaded_src'], ['error'] );
 
-            return _bluebird2.default.all( [this._callWrapper( this._do_load ), waiting] ).then( function() {
+            this._callWrapper( this._do_load );
+
+            return waiting.then( function() {
                 return _this9.source( encoding );
             } );
         }
