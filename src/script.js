@@ -746,7 +746,8 @@ export default class Script extends EventPropagator {
 
             var onRename = _.debounce( ( event, filename ) => {
                 if( this._unloadOnRename ) {
-                    this.unload();
+                    this.reopen();
+
                     this.emit( 'change', event, filename );
 
                 } else {

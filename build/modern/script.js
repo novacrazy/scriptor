@@ -717,7 +717,8 @@ var Script = (function( _EventPropagator ) {
 
             var onRename = _lodash2.default.debounce( function( event, filename ) {
                 if( _this8._unloadOnRename ) {
-                    _this8.unload();
+                    _this8.reopen();
+
                     _this8.emit( 'change', event, filename );
                 } else {
                     var old_filename = _this8._script.filename;
