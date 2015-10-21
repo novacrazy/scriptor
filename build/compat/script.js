@@ -700,11 +700,11 @@ var Script = (function( _EventPropagator ) {
 
                             filepath = config_paths[p];
 
-                            if( filepath.charAt( 0 ) === '.' ) {
-                                filepath = (0, _path.resolve)( this.baseUrl, filepath );
+                            if( (0, _utilsJs.isAbsoluteOrRelative)( filename ) ) {
+                                filepath = (0, _path.resolve)( this.baseUrl, filepath, rel );
                             }
 
-                            return context$2$0.abrupt( 'return', this.require( (0, _path.resolve)( filepath, rel ) ) );
+                            return context$2$0.abrupt( 'return', this.require( filepath ) );
 
                         case 64:
                             context$2$0.next = 56;

@@ -550,11 +550,11 @@ export default class Script extends EventPropagator {
                             if( rel.indexOf( '..' ) === -1 ) {
                                 let filepath = config_paths[p];
 
-                                if( filepath.charAt( 0 ) === '.' ) {
-                                    filepath = resolve( this.baseUrl, filepath );
+                                if( isAbsoluteOrRelative( filename ) ) {
+                                    filepath = resolve( this.baseUrl, filepath, rel );
                                 }
 
-                                return this.require( resolve( filepath, rel ) );
+                                return this.require( filepath );
                             }
                         }
                     }

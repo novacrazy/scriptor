@@ -530,11 +530,11 @@ var Script = (function( _EventPropagator ) {
                             if( rel.indexOf( '..' ) === -1 ) {
                                 var filepath = config_paths[p];
 
-                                if( filepath.charAt( 0 ) === '.' ) {
-                                    filepath = _path.resolve( this.baseUrl, filepath );
+                                if( _utilsJs.isAbsoluteOrRelative( filename ) ) {
+                                    filepath = _path.resolve( this.baseUrl, filepath, rel );
                                 }
 
-                                return this.require( _path.resolve( filepath, rel ) );
+                                return this.require( filepath );
                             }
                         }
                     }
