@@ -376,7 +376,7 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   '_require',
             value: function _require( id ) {
-                var normalize, _ret, script, args, filepath;
+                var normalize, _ret, script, args, config_paths, p, rel, filepath;
 
                 return _regeneratorRuntime.async( function _require$( context$2$0 ) {
                     var _this5 = this;
@@ -574,7 +574,7 @@ var Script = (function( _EventPropagator ) {
                             return context$2$0.abrupt( 'return', _ret.v );
 
                         case 12:
-                            context$2$0.next = 61;
+                            context$2$0.next = 67;
                             break;
 
                         case 14:
@@ -675,20 +675,42 @@ var Script = (function( _EventPropagator ) {
                                 } ) );
 
                         case 54:
-                            if( !this._config.paths.hasOwnProperty( id ) ) {
-                                context$2$0.next = 60;
+                            config_paths = this._config.paths;
+                            context$2$0.t0 = _regeneratorRuntime.keys( config_paths );
+
+                        case 56:
+                            if( (context$2$0.t1 = context$2$0.t0()).done ) {
+                                context$2$0.next = 66;
                                 break;
                             }
 
-                            filepath = this._config.paths[id];
+                            p = context$2$0.t1.value;
+
+                            if( !config_paths.hasOwnProperty( p ) ) {
+                                context$2$0.next = 64;
+                                break;
+                            }
+
+                            rel = (0, _path.relative)( p, id );
+
+                            if( !(rel.indexOf( '..' ) === -1) ) {
+                                context$2$0.next = 64;
+                                break;
+                            }
+
+                            filepath = config_paths[p];
 
                             if( filepath.charAt( 0 ) === '.' ) {
                                 filepath = (0, _path.resolve)( this.baseUrl, filepath );
                             }
 
-                            return context$2$0.abrupt( 'return', this.require( filepath ) );
+                            return context$2$0.abrupt( 'return', this.require( (0, _path.resolve)( filepath, rel ) ) );
 
-                        case 60:
+                        case 64:
+                            context$2$0.next = 56;
+                            break;
+
+                        case 66:
                             return context$2$0.abrupt( 'return',
                                 new _bluebird2['default']( function( resolve, reject ) {
                                     try {
@@ -699,7 +721,7 @@ var Script = (function( _EventPropagator ) {
                                     }
                                 } ) );
 
-                        case 61:
+                        case 67:
                         case 'end':
                             return context$2$0.stop();
                     }

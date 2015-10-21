@@ -10,7 +10,7 @@ import _ from 'lodash';
 
 import {readFile, watch as watchFile} from 'fs';
 import {resolve as resolveURL} from 'url';
-import {extname, dirname, basename, resolve, posix as path} from 'path';
+import {extname, dirname, basename, resolve, relative, posix as path} from 'path';
 
 import {normalizeError} from './error.js';
 import defaultExtensions from './extensions.js';
@@ -540,16 +540,25 @@ export default class Script extends EventPropagator {
                         return exported;
                     } );
 
-                } else if( this._config.paths.hasOwnProperty( id ) ) {
-                    let filepath = this._config.paths[id];
+                } else {
+                    const config_paths = this._config.paths;
 
-                    if( filepath.charAt( 0 ) === '.' ) {
-                        filepath = resolve( this.baseUrl, filepath );
+                    for( let p in config_paths ) {
+                        if( config_paths.hasOwnProperty( p ) ) {
+                            let rel = relative( p, id );
+
+                            if( rel.indexOf( '..' ) === -1 ) {
+                                let filepath = config_paths[p];
+
+                                if( filepath.charAt( 0 ) === '.' ) {
+                                    filepath = resolve( this.baseUrl, filepath );
+                                }
+
+                                return this.require( resolve( filepath, rel ) );
+                            }
+                        }
                     }
 
-                    return this.require( filepath );
-
-                } else {
                     return new Promise( ( resolve, reject ) => {
                         try {
                             //Normal module loading akin to the real 'require' function

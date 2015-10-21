@@ -520,15 +520,25 @@ var Script = (function( _EventPropagator ) {
 
                         return exported;
                     } );
-                } else if( this._config.paths.hasOwnProperty( id ) ) {
-                    var filepath = this._config.paths[id];
+                } else {
+                    var config_paths = this._config.paths;
 
-                    if( filepath.charAt( 0 ) === '.' ) {
-                        filepath = _path.resolve( this.baseUrl, filepath );
+                    for( var p in config_paths ) {
+                        if( config_paths.hasOwnProperty( p ) ) {
+                            var rel = _path.relative( p, id );
+
+                            if( rel.indexOf( '..' ) === -1 ) {
+                                var filepath = config_paths[p];
+
+                                if( filepath.charAt( 0 ) === '.' ) {
+                                    filepath = _path.resolve( this.baseUrl, filepath );
+                                }
+
+                                return this.require( _path.resolve( filepath, rel ) );
+                            }
+                        }
                     }
 
-                    return this.require( filepath );
-                } else {
                     return new _bluebird2.default( function( resolve, reject ) {
                         try {
                             //Normal module loading akin to the real 'require' function
