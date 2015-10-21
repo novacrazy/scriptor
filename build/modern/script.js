@@ -530,7 +530,7 @@ var Script = (function( _EventPropagator ) {
                             if( rel.indexOf( '..' ) === -1 ) {
                                 var filepath = config_paths[p];
 
-                                if( _utilsJs.isAbsoluteOrRelative( filename ) ) {
+                                if( _utilsJs.isAbsoluteOrRelative( filepath ) ) {
                                     filepath = _path.resolve( this.baseUrl, filepath, rel );
                                 }
 

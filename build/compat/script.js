@@ -700,7 +700,7 @@ var Script = (function( _EventPropagator ) {
 
                             filepath = config_paths[p];
 
-                            if( (0, _utilsJs.isAbsoluteOrRelative)( filename ) ) {
+                            if( (0, _utilsJs.isAbsoluteOrRelative)( filepath ) ) {
                                 filepath = (0, _path.resolve)( this.baseUrl, filepath, rel );
                             }
 
