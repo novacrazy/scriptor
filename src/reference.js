@@ -6,7 +6,7 @@ import assert from 'assert';
 
 import Promise from 'bluebird';
 
-import _ from 'lodash';
+import * as _ from 'lodash';
 
 import {EventEmitter, makeEventPromise} from './events.js';
 

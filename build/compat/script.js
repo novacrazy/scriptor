@@ -46,6 +46,8 @@ var _regeneratorRuntime = require( 'babel-runtime/regenerator' )['default'];
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
+var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
+
 Object.defineProperty( exports, '__esModule', {
     value: true
 } );
@@ -65,7 +67,7 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _lodash = require( 'lodash' );
 
-var _lodash2 = _interopRequireDefault( _lodash );
+var _ = _interopRequireWildcard( _lodash );
 
 var _fs = require( 'fs' );
 
@@ -457,7 +459,7 @@ var Script = (function( _EventPropagator ) {
                                                                 if( typeof obj === 'function' ) {
                                                                     return _bluebird2['default'].promisify( obj );
                                                                 } else if( typeof obj === 'object' ) {
-                                                                    var newObj = _lodash2['default'].clone( obj );
+                                                                    var newObj = _.clone( obj );
 
                                                                     return _bluebird2['default'].promisifyAll( newObj );
                                                                 } else {
@@ -904,12 +906,12 @@ var Script = (function( _EventPropagator ) {
                     }
 
                     //These are separated out so rename and change events can be debounced separately.
-                    var onChange = _lodash2['default'].debounce( function( event, filename ) {
+                    var onChange = _.debounce( function( event, filename ) {
                         _this9.unload();
                         _this9.emit( 'change', event, filename );
                     }, this.debounceMaxWait );
 
-                    var onRename = _lodash2['default'].debounce( function( event, filename ) {
+                    var onRename = _.debounce( function( event, filename ) {
                         if( _this9._unloadOnRename ) {
                             _this9.unload();
 

@@ -4,7 +4,7 @@
 
 import Promise from 'bluebird';
 
-import _ from 'lodash';
+import * as _ from 'lodash';
 
 import {isAbsolute, resolve, posix as path} from 'path';
 
@@ -145,7 +145,7 @@ function toPosix( filepath ) {
 }
 
 export function parseDeps( deps, paths ) {
-    if( _.isObject( deps ) && !_.isArray( deps ) ) {
+    if( _.isObject( deps ) && !Array.isArray( deps ) ) {
         return _.map( deps, function( v, k ) {
 
             //If deps have a specified path, use that instead, but only if it hasn't already been defined
@@ -156,7 +156,7 @@ export function parseDeps( deps, paths ) {
             return k;
         } );
 
-    } else if( !_.isArray( deps ) ) {
+    } else if( !Array.isArray( deps ) ) {
         return [/*No valid dependencies*/];
 
     } else {
@@ -220,7 +220,7 @@ export function normalizeConfig( config ) {
 
     //Normalize paths
     config.paths = _( config.paths ).mapValues( function( p ) {
-        if( _.isString( p ) ) {
+        if( typeof p === 'string' ) {
             return toPosix( p );
         }
 

@@ -40,6 +40,8 @@ var _Map = require( 'babel-runtime/core-js/map' ).default;
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
 
+var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
+
 exports.__esModule = true;
 exports.load = load;
 
@@ -55,7 +57,7 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _lodash = require( 'lodash' );
 
-var _lodash2 = _interopRequireDefault( _lodash );
+var _ = _interopRequireWildcard( _lodash );
 
 var _fs = require( 'fs' );
 
@@ -397,7 +399,7 @@ var Script = (function( _EventPropagator ) {
                                         if( typeof obj === 'function' ) {
                                             return _bluebird2.default.promisify( obj );
                                         } else if( typeof obj === 'object' ) {
-                                            var newObj = _lodash2.default.clone( obj );
+                                            var newObj = _.clone( obj );
 
                                             return _bluebird2.default.promisifyAll( newObj );
                                         } else {
@@ -720,12 +722,12 @@ var Script = (function( _EventPropagator ) {
             }
 
             //These are separated out so rename and change events can be debounced separately.
-            var onChange = _lodash2.default.debounce( function( event, filename ) {
+            var onChange = _.debounce( function( event, filename ) {
                 _this8.unload();
                 _this8.emit( 'change', event, filename );
             }, this.debounceMaxWait );
 
-            var onRename = _lodash2.default.debounce( function( event, filename ) {
+            var onRename = _.debounce( function( event, filename ) {
                 if( _this8._unloadOnRename ) {
                     _this8.unload();
 

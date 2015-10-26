@@ -38,6 +38,8 @@ var _Object$freeze = require( 'babel-runtime/core-js/object/freeze' ).default;
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
 
+var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
+
 exports.__esModule = true;
 exports.identity = identity;
 
@@ -51,7 +53,7 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _lodash = require( 'lodash' );
 
-var _lodash2 = _interopRequireDefault( _lodash );
+var _ = _interopRequireWildcard( _lodash );
 
 var _eventsJs = require( './events.js' );
 
@@ -186,7 +188,7 @@ var Reference = (function( _ReferenceBase ) {
             this._script.apply( this._args ).then( function( value ) {
                 if( _this2._running ) {
                     if( typeof value === 'object' ) {
-                        _this2._value = _lodash2.default.clone( value );
+                        _this2._value = _.clone( value );
 
                         _Object$freeze( _this2._value );
                     } else {
@@ -305,7 +307,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
             _utilsJs.tryReject( this._transform, null, this._ref, null ).then( function( value ) {
                 if( _this4._running ) {
                     if( typeof value === 'object' ) {
-                        _this4._value = _lodash2.default.clone( value );
+                        _this4._value = _.clone( value );
 
                         _Object$freeze( _this4._value );
                     } else {
@@ -392,7 +394,7 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
             _utilsJs.tryReject( this._transform, null, this._left, this._right ).then( function( value ) {
                 if( _this6._running ) {
                     if( typeof value === 'object' ) {
-                        _this6._value = _lodash2.default.clone( value );
+                        _this6._value = _.clone( value );
 
                         _Object$freeze( _this6._value );
                     } else {

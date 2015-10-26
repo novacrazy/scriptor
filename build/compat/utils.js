@@ -30,6 +30,8 @@
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
 
+var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
+
 Object.defineProperty( exports, '__esModule', {
     value: true
 } );
@@ -54,7 +56,7 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _lodash = require( 'lodash' );
 
-var _lodash2 = _interopRequireDefault( _lodash );
+var _ = _interopRequireWildcard( _lodash );
 
 var _path = require( 'path' );
 
@@ -196,8 +198,8 @@ function toPosix( filepath ) {
 }
 
 function parseDeps( deps, paths ) {
-    if( _lodash2['default'].isObject( deps ) && !_lodash2['default'].isArray( deps ) ) {
-        return _lodash2['default'].map( deps, function( v, k ) {
+    if( _.isObject( deps ) && !Array.isArray( deps ) ) {
+        return _.map( deps, function( v, k ) {
 
             //If deps have a specified path, use that instead, but only if it hasn't already been defined
             if( !paths[k] ) {
@@ -206,7 +208,7 @@ function parseDeps( deps, paths ) {
 
             return k;
         } );
-    } else if( !_lodash2['default'].isArray( deps ) ) {
+    } else if( !Array.isArray( deps ) ) {
         return [/*No valid dependencies*/];
     } else {
         return deps;
@@ -214,7 +216,7 @@ function parseDeps( deps, paths ) {
 }
 
 function normalizeConfig( config ) {
-    var isObject = _lodash2['default'].isObject( config ) && !Array.isArray( config );
+    var isObject = _.isObject( config ) && !Array.isArray( config );
 
     var defaultConfig = {
         baseUrl: '.' + _path.posix.sep, //String
@@ -224,7 +226,7 @@ function normalizeConfig( config ) {
     };
 
     if( isObject ) {
-        config = _lodash2['default'].defaults( config, defaultConfig );
+        config = _.defaults( config, defaultConfig );
     } else {
         return defaultConfig;
     }
@@ -237,12 +239,12 @@ function normalizeConfig( config ) {
     }
 
     //Make sure paths is an object
-    if( !_lodash2['default'].isObject( config.paths ) || Array.isArray( config.paths ) ) {
+    if( !_.isObject( config.paths ) || Array.isArray( config.paths ) ) {
         config.paths = defaultConfig.paths;
     }
 
     //Make sure shim is an object
-    if( !_lodash2['default'].isObject( config.shim ) || Array.isArray( config.shim ) ) {
+    if( !_.isObject( config.shim ) || Array.isArray( config.shim ) ) {
         config.shim = defaultConfig.shim;
     }
 
@@ -250,12 +252,12 @@ function normalizeConfig( config ) {
     config.deps = parseDeps( config.deps, config.paths );
 
     //Normalize shims
-    config.shim = (0, _lodash2['default'])( config.shim ).mapValues( function( shim ) {
+    config.shim = _( config.shim ).mapValues( function( shim ) {
         if( Array.isArray( shim ) ) {
             return {
                 deps: parseDeps( shim, config.paths )
             };
-        } else if( _lodash2['default'].isObject( shim ) && typeof shim.exports === 'string' ) {
+        } else if( _.isObject( shim ) && typeof shim.exports === 'string' ) {
             return {
                 deps:    parseDeps( shim.deps, config.paths ),
                 exports: shim.exports
@@ -264,8 +266,8 @@ function normalizeConfig( config ) {
     } ).omit( isNull ).value();
 
     //Normalize paths
-    config.paths = (0, _lodash2['default'])( config.paths ).mapValues( function( p ) {
-        if( _lodash2['default'].isString( p ) ) {
+    config.paths = _( config.paths ).mapValues( function( p ) {
+        if( typeof p === 'string' ) {
             return toPosix( p );
         }
     } ).omit( isNull ).value();

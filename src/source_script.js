@@ -4,7 +4,7 @@
 
 import Promise from 'bluebird';
 
-import _ from 'lodash';
+import * as _ from 'lodash';
 
 import {basename, dirname} from 'path';
 import {stripBOM, injectAMD} from './utils.js';

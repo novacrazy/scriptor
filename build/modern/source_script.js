@@ -36,6 +36,8 @@ var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' ).defaul
 
 var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
 
+var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
+
 exports.__esModule = true;
 exports.compile = compile;
 
@@ -45,7 +47,7 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _lodash = require( 'lodash' );
 
-var _lodash2 = _interopRequireDefault( _lodash );
+var _ = _interopRequireWildcard( _lodash );
 
 var _path = require( 'path' );
 
@@ -158,7 +160,7 @@ var SourceScript = (function( _Script ) {
 
         if( !this.watched && this._source instanceof _referenceJs.ReferenceBase ) {
 
-            this._onChange = _lodash2.default.debounce( function( event, filename ) {
+            this._onChange = _.debounce( function( event, filename ) {
                 _this2.unload();
                 _this2.emit( 'change', event, filename );
             }, this.debounceMaxWait );
