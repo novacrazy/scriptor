@@ -1,6 +1,6 @@
 {
   "name":            "scriptor",
-  "version": "4.0.0-alpha.1",
+  "version":         "4.0.0-alpha.2",
   "description":     "Scriptor is the ultimate library for dynamically loading, reloading and running scripts without having to restart the process.",
   "main":            "index.js",
   "keywords":        [
@@ -45,10 +45,11 @@
     "build": "grunt default"
   },
   "dependencies":    {
-    "babel-runtime": "^5.8.24",
-    "bluebird":      "^2.10.0",
-    "commander":     "^2.8.1",
-    "glob":          "^5.0.14",
+    "babel":         "^5.8.29",
+    "babel-runtime": "^5.8.29",
+    "bluebird":      "^3.0.0",
+    "commander":     "^2.9.0",
+    "glob":          "^5.0.15",
     "lodash":        "^3.10.1"
   }
 }
