@@ -203,7 +203,7 @@ export function normalizeConfig( config ) {
     config.deps = parseDeps( config.deps, config.paths );
 
     //Normalize shims
-    config.shim = _( config.shim ).mapValues( function( shim ) {
+    config.shim = _.chain( config.shim ).mapValues( function( shim ) {
         if( Array.isArray( shim ) ) {
             return {
                 deps: parseDeps( shim, config.paths )
@@ -219,7 +219,7 @@ export function normalizeConfig( config ) {
     } ).omit( isNull ).value();
 
     //Normalize paths
-    config.paths = _( config.paths ).mapValues( function( p ) {
+    config.paths = _.chain( config.paths ).mapValues( function( p ) {
         if( typeof p === 'string' ) {
             return toPosix( p );
         }
