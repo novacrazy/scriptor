@@ -18,7 +18,7 @@ export function identity( left, right ) {
     return left.value();
 }
 
-class ReferenceBase extends EventEmitter {
+export class ReferenceBase extends EventEmitter {
     _onChange = null;
     _value = void 0;
     _ran = false;
