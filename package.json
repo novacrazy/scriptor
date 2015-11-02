@@ -47,7 +47,7 @@
   "dependencies":    {
     "babel":         "^5.8.29",
     "babel-runtime": "^5.8.29",
-    "bluebird":      "^3.0.0",
+    "bluebird":      "^3.0.5",
     "commander":     "^2.9.0",
     "glob":          "^5.0.15",
     "lodash":        "^3.10.1"
