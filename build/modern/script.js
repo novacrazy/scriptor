@@ -615,24 +615,24 @@ var Script = (function( _EventPropagator ) {
                             this._do_watch( this._watchPersistent );
                         }
 
-                        return _utilsJs.tryPromise( Script.extensions[ext]( this._script,
-                            this.filename ) ).then( function( src ) {
-                            if( _this7._loading ) {
-                                _this7._source = src;
-                                _this7._script.loaded = true;
+                        return _utilsJs.tryPromise( Script.extensions[ext]( this._script, this.filename ) )
+                                       .then( function( src ) {
+                                           if( _this7._loading ) {
+                                               _this7._source = src;
+                                               _this7._script.loaded = true;
 
-                                _this7._loading = false;
+                                               _this7._loading = false;
 
-                                _this7.emit( 'loaded', _this7._script.exports );
-                            } else {
-                                _this7.emit( 'error', new Error( 'The script ' + _this7.filename
-                                                                 + ' was unloaded while performing an asynchronous operation.' ) );
-                            }
-                        }, function( err ) {
-                            _this7._loading = false;
+                                               _this7.emit( 'loaded', _this7._script.exports );
+                                           } else {
+                                               _this7.emit( 'error', new Error( 'The script ' + _this7.filename
+                                                                                + ' was unloaded while performing an asynchronous operation.' ) );
+                                           }
+                                       }, function( err ) {
+                                           _this7._loading = false;
 
-                            _this7.emit( 'error', err );
-                        } );
+                                           _this7.emit( 'error', err );
+                                       } );
                     } catch( err ) {
                         this._loading = false;
 

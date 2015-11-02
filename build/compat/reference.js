@@ -165,6 +165,8 @@ var ReferenceBase = (function( _EventEmitter ) {
     return ReferenceBase;
 })( _eventsJs.EventEmitter );
 
+exports.ReferenceBase = ReferenceBase;
+
 var Reference = (function( _ReferenceBase ) {
     _inherits( Reference, _ReferenceBase );
 
