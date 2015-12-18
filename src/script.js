@@ -6,7 +6,7 @@ import Module from 'module';
 import assert from 'assert';
 import Promise from 'bluebird';
 
-import * as _ from 'lodash';
+import {clone, debounce} from 'lodash';
 
 import {readFile, watch as watchFile} from 'fs';
 import {resolve as resolveURL} from 'url';
@@ -15,7 +15,9 @@ import {extname, dirname, basename, resolve, relative, posix as path} from 'path
 import {normalizeError} from './error.js';
 import defaultExtensions from './extensions.js';
 
-import {EventPropagator, EventEmitter, makeEventPromise, makeMultiEventPromise} from './events.js';
+import {EventEmitter} from 'events';
+
+import {EventPropagator, makeEventPromise, makeMultiEventPromise} from './event_handling.js';
 import {default_max_debounceMaxWait} from './defaults.js';
 
 import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
@@ -409,7 +411,7 @@ export default class Script extends EventPropagator {
                                         return Promise.promisify( obj );
 
                                     } else if( typeof obj === 'object' ) {
-                                        let newObj = _.clone( obj );
+                                        let newObj = clone( obj );
 
                                         return Promise.promisifyAll( newObj );
 
@@ -747,13 +749,13 @@ export default class Script extends EventPropagator {
             }
 
             //These are separated out so rename and change events can be debounced separately.
-            var onChange = _.debounce( ( event, filename ) => {
+            var onChange = debounce( ( event, filename ) => {
                 this.unload();
                 this.emit( 'change', event, filename );
 
             }, this.debounceMaxWait );
 
-            var onRename = _.debounce( ( event, filename ) => {
+            var onRename = debounce( ( event, filename ) => {
                 if( this._unloadOnRename ) {
                     this.unload();
 
