@@ -1,17 +1,11 @@
-/**
- * Created by Aaron on 7/6/2015.
- */
-
 'use strict';
 
-var _getIterator = require( 'babel-runtime/core-js/get-iterator' ).default;
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
-
-Object.defineProperty( exports, '__esModule', {
-    value: true
-} );
+exports.__esModule = true;
 exports.runTests = runTests;
+
+var _getIterator2 = require( 'babel-runtime/core-js/get-iterator' );
+
+var _getIterator3 = _interopRequireDefault( _getIterator2 );
 
 var _assert = require( 'assert' );
 
@@ -21,47 +15,51 @@ var _bluebird = require( 'bluebird' );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/6/2015.
+ */
+
 _bluebird2.default.longStackTraces();
 
 function runTests( build, tests ) {
     (0, _assert2.default)( build === 'compat' || build === 'modern', 'Only modern and compat builds are supported' );
 
-    var Scriptor = undefined;
+    var Scriptor = void 0;
 
     describe( 'requiring ' + build + ' build', function() {
-        Scriptor = require( '../../build/' + build + '/index.js' );
+        Scriptor = require( '../../build/' + build + '/index.js' ).default;
     } );
 
     if( typeof tests === 'function' ) {
         tests( Scriptor, build );
     } else if( Array.isArray( tests ) ) {
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
+        for( var _iterator = tests, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ? _iterator :
+                                                                                               (0, _getIterator3.default)(
+                                                                                                   _iterator ); ; ) {
+            var _ref;
 
-        var _iteratorError = void 0;
-
-        try {
-            for( var _iterator = _getIterator( tests ), _step;
-                 !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true ) {
-                var test = _step.value;
-
-                (0, _assert2.default)( typeof test === 'function', 'tests must be a function or array of functions' );
-
-                test( Scriptor, build );
-            }
-        } catch( err ) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally {
-            try {
-                if( !_iteratorNormalCompletion && _iterator['return'] ) {
-                    _iterator['return']();
+            if( _isArray ) {
+                if( _i >= _iterator.length ) {
+                    break;
                 }
-            } finally {
-                if( _didIteratorError ) {
-                    throw _iteratorError;
+                _ref = _iterator[_i++];
+            } else {
+                _i = _iterator.next();
+                if( _i.done ) {
+                    break;
                 }
+                _ref = _i.value;
             }
+
+            var test = _ref;
+
+            (0, _assert2.default)( typeof test === 'function', 'tests must be a function or array of functions' );
+
+            test( Scriptor, build );
         }
     } else {
         throw new TypeError( 'tests must be a function or array of functions' );

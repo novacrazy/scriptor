@@ -22,40 +22,50 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/7/2015.
- */
-
 'use strict';
 
-var _get = require( 'babel-runtime/helpers/get' )['default'];
-
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
-var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
 
-var _scriptJs = require( './script.js' );
+var _getPrototypeOf = require( 'babel-runtime/core-js/object/get-prototype-of' );
 
-var _scriptJs2 = _interopRequireDefault( _scriptJs );
+var _getPrototypeOf2 = _interopRequireDefault( _getPrototypeOf );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
+
+var _script = require( './script.js' );
+
+var _script2 = _interopRequireDefault( _script );
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
 
 var TextScript = (function( _Script ) {
-    _inherits( TextScript, _Script );
+    (0, _inherits3.default)( TextScript, _Script );
 
     function TextScript() {
-        _classCallCheck( this, TextScript );
-
-        _get( Object.getPrototypeOf( TextScript.prototype ), 'constructor', this ).apply( this, arguments );
+        (0, _classCallCheck3.default)( this, TextScript );
+        return (0, _possibleConstructorReturn3.default)( this,
+            (0, _getPrototypeOf2.default)( TextScript ).apply( this, arguments ) );
     }
 
-    _createClass( TextScript, [
+    (0, _createClass3.default)( TextScript, [
         {
             key: 'textMode',
             get: function get() {
@@ -63,9 +73,10 @@ var TextScript = (function( _Script ) {
             }
         }
     ] );
-
     return TextScript;
-})( _scriptJs2['default'] );
+})( _script2.default );
+/**
+ * Created by Aaron on 7/7/2015.
+ */
 
-exports['default'] = TextScript;
-module.exports = exports['default'];
+exports.default = TextScript;

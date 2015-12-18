@@ -22,19 +22,18 @@
  * SOFTWARE.
  *
  ****/
+'use strict';
+
+Object.defineProperty( exports, "__esModule", {
+    value: true
+} );
+exports.normalizeError = normalizeError;
 /**
  * Created by Aaron on 7/4/2015.
  */
 
-'use strict';
-
-Object.defineProperty( exports, '__esModule', {
-    value: true
-} );
-exports.normalizeError = normalizeError;
-
 function normalizeError( id, type ) {
-    var err = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+    var err = arguments.length <= 2 || arguments[2] === void 0 ? {} : arguments[2];
 
     if( Array.isArray( err.requireModules ) && !Array.isArray( id ) && err.requireModules.indexOf( id ) === -1 ) {
         err.requireModules.push( id );

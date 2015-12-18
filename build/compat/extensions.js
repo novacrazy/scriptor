@@ -22,15 +22,9 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/5/2015.
- */
-
 'use strict';
 
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
 
@@ -40,20 +34,27 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _fs = require( 'fs' );
 
-var _utilsJs = require( './utils.js' );
+var _utils = require( './utils.js' );
 
-var readFileAsync = _bluebird2['default'].promisify( _fs.readFile );
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
 
-exports['default'] = {
+var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
+/**
+ * Created by Aaron on 7/5/2015.
+ */
+
+exports.default = {
     '.js':   function js( module, filename ) {
-        return readFileAsync( filename ).then( _utilsJs.injectAMDAndStripBOM ).then( function( src ) {
+        return readFileAsync( filename ).then( _utils.injectAMDAndStripBOM ).then( function( src ) {
             module._compile( src.toString( 'utf-8' ), filename );
 
             return src;
         } );
     },
     '.json': function json( module, filename ) {
-        return readFileAsync( filename ).then( _utilsJs.stripBOM ).then( function( src ) {
+        return readFileAsync( filename ).then( _utils.stripBOM ).then( function( src ) {
             try {
                 module.exports = JSON.parse( src.toString( 'utf-8' ) );
             } catch( err ) {
@@ -65,4 +66,3 @@ exports['default'] = {
         } );
     }
 };
-module.exports = exports['default'];

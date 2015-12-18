@@ -22,27 +22,33 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/5/2015.
- */
-
 'use strict';
-
-var _inherits = require( 'babel-runtime/helpers/inherits' ).default;
-
-var _createClass = require( 'babel-runtime/helpers/create-class' ).default;
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' ).default;
-
-var _Map = require( 'babel-runtime/core-js/map' ).default;
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
 
 exports.__esModule = true;
 
-var _module2 = require( 'module' );
+var _map = require( 'babel-runtime/core-js/map' );
 
-var _module3 = _interopRequireDefault( _module2 );
+var _map2 = _interopRequireDefault( _map );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
+
+var _module = require( 'module' );
+
+var _module2 = _interopRequireDefault( _module );
 
 var _assert = require( 'assert' );
 
@@ -50,40 +56,44 @@ var _assert2 = _interopRequireDefault( _assert );
 
 var _path = require( 'path' );
 
-var _utilsJs = require( './utils.js' );
+var _utils = require( './utils.js' );
 
-var _scriptJs = require( './script.js' );
+var _script = require( './script.js' );
 
-var _scriptJs2 = _interopRequireDefault( _scriptJs );
+var _script2 = _interopRequireDefault( _script );
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
 
 var ScriptAdapter = (function( _Script ) {
-    _inherits( ScriptAdapter, _Script );
+    (0, _inherits3.default)( ScriptAdapter, _Script );
 
     function ScriptAdapter( manager, filename, parent ) {
-        var _this = this;
+        (0, _classCallCheck3.default)( this, ScriptAdapter );
 
-        _classCallCheck( this, ScriptAdapter );
+        var _this = (0, _possibleConstructorReturn3.default)( this, _Script.call( this, filename, parent ) );
 
-        _Script.call( this, filename, parent );
+        _this._manager = null;
 
-        this._manager = null;
-        this._manager = manager;
+        _this._manager = manager;
 
         //When a script is renamed, it should be reassigned in the manager
         //Otherwise, when it's accessed at the new location, the manager just creates a new script
-        this.on( 'rename', function( event, oldname, newname ) {
+        _this.on( 'rename', function( event, oldname, newname ) {
             _this._manager._scripts.set( newname, _this._manager._scripts.get( oldname ) );
             _this._manager._scripts.delete( oldname );
         } );
+        return _this;
     }
 
     ScriptAdapter.prototype.include = function include( filename ) {
         var _this2 = this;
 
-        var load = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+        var load = arguments.length <= 1 || arguments[1] === void 0 ? false : arguments[1];
 
         //make sure filename can be relative to the current script
-        var real_filename = _path.resolve( this.baseUrl, filename );
+        var real_filename = (0, _path.resolve)( this.baseUrl, filename );
 
         //Since add doesn't do anything to already existing scripts, but does return a script,
         //it can take care of the lookup or adding at the same time. Two birds with one lookup.
@@ -115,7 +125,7 @@ var ScriptAdapter = (function( _Script ) {
         return _Script.prototype.close.call( this, permanent );
     };
 
-    _createClass( ScriptAdapter, [
+    (0, _createClass3.default)( ScriptAdapter, [
         {
             key: 'manager',
             get: function get() {
@@ -123,24 +133,25 @@ var ScriptAdapter = (function( _Script ) {
             }
         }
     ] );
-
     return ScriptAdapter;
-})( _scriptJs2.default );
+})( _script2.default );
+/**
+ * Created by Aaron on 7/5/2015.
+ */
 
 var Manager = (function() {
     function Manager( grandParent ) {
-        _classCallCheck( this, Manager );
-
+        (0, _classCallCheck3.default)( this, Manager );
         this._debounceMaxWait = null;
         this._maxListeners = null;
         this._config = null;
         this._cwd = process.cwd();
-        this._scripts = new _Map();
+        this._scripts = new _map2.default();
         this._parent = null;
         this._propagateEvents = false;
         this._unloadOnRename = null;
 
-        this._parent = new _module3.default( 'ScriptManager', grandParent );
+        this._parent = new _module2.default( 'ScriptManager', grandParent );
     }
 
     Manager.prototype.cwd = function cwd() {
@@ -148,7 +159,7 @@ var Manager = (function() {
     };
 
     Manager.prototype.chdir = function chdir( value ) {
-        this._cwd = _path.resolve( this.cwd(), value );
+        this._cwd = (0, _path.resolve)( this.cwd(), value );
 
         return this._cwd;
     };
@@ -158,7 +169,7 @@ var Manager = (function() {
 
             value = Math.floor( value );
 
-            _assert2.default( !isNaN( value ), 'setMaxListeners must be passed a number' );
+            (0, _assert2.default)( !isNaN( value ), 'setMaxListeners must be passed a number' );
 
             this._maxListeners = value;
         } else {
@@ -173,7 +184,7 @@ var Manager = (function() {
     Manager.prototype.config = function config( _config ) {
         var _this3 = this;
 
-        this._config = _utilsJs.normalizeConfig( _config );
+        this._config = (0, _utils.normalizeConfig)( _config );
 
         this._scripts.forEach( function( script ) {
             script.config( _this3._config, true );
@@ -182,7 +193,7 @@ var Manager = (function() {
     };
 
     Manager.prototype.propagateEvents = function propagateEvents() {
-        var enable = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+        var enable = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];
 
         var wasPropagating = this._propagateEvents;
 
@@ -232,9 +243,9 @@ var Manager = (function() {
     //from watching a file.
 
     Manager.prototype.add = function add( filename ) {
-        var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+        var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
-        filename = _path.resolve( this.cwd(), filename );
+        filename = (0, _path.resolve)( this.cwd(), filename );
 
         var script = this._scripts.get( filename );
 
@@ -262,9 +273,9 @@ var Manager = (function() {
     //However, that is quite rare so close defaults to true
 
     Manager.prototype.remove = function remove( filename ) {
-        var close = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+        var close = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
-        filename = _path.resolve( this.cwd(), filename );
+        filename = (0, _path.resolve)( this.cwd(), filename );
 
         var script = this._scripts.get( filename );
 
@@ -319,7 +330,7 @@ var Manager = (function() {
     };
 
     Manager.prototype.get = function get( filename ) {
-        filename = _path.resolve( this.cwd(), filename );
+        filename = (0, _path.resolve)( this.cwd(), filename );
 
         return this._modifyScript( this._scripts.get( filename ) );
     };
@@ -327,7 +338,7 @@ var Manager = (function() {
     //Make closing optional for the same reason as .remove
 
     Manager.prototype.clear = function clear() {
-        var close = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+        var close = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];
 
         if( close ) {
             this._scripts.forEach( function( script ) {
@@ -338,7 +349,7 @@ var Manager = (function() {
         this._scripts.clear();
     };
 
-    _createClass( Manager, [
+    (0, _createClass3.default)( Manager, [
         {
             key: 'parent',
             get: function get() {
@@ -358,7 +369,7 @@ var Manager = (function() {
                 if( time !== null && time !== void 0 ) {
                     time = Math.floor( time );
 
-                    _assert2.default( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+                    (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
                     this._debounceMaxWait = time;
                 } else {
@@ -375,9 +386,7 @@ var Manager = (function() {
             }
         }
     ] );
-
     return Manager;
 })();
 
 exports.default = Manager;
-module.exports = exports.default;

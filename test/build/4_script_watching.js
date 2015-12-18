@@ -1,16 +1,18 @@
-/**
- * Created by Aaron on 7/6/2015.
- */
-
 'use strict';
 
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
-
-var _runnerJs = require( './runner.js' );
+var _runner = require( './runner.js' );
 
 var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/6/2015.
+ */
 
 var fs = require( 'fs' );
 var touch = require( 'touch' );
@@ -83,5 +85,5 @@ var tests = function tests( Scriptor, build ) {
     } );
 };
 
-(0, _runnerJs.runTests)( 'compat', tests );
-(0, _runnerJs.runTests)( 'modern', tests );
+(0, _runner.runTests)( 'compat', tests );
+(0, _runner.runTests)( 'modern', tests );

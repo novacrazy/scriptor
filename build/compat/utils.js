@@ -22,17 +22,9 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/4/2015.
- */
-
 'use strict';
 
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
 exports.isAbsolutePath = isAbsolutePath;
@@ -60,9 +52,34 @@ var _ = _interopRequireWildcard( _lodash );
 
 var _path = require( 'path' );
 
-var _defaultsJs = require( './defaults.js' );
+var _defaults = require( './defaults.js' );
 
-var AMD_Header_Buffer = new Buffer( _defaultsJs.AMD_Header );
+function _interopRequireWildcard( obj ) {
+    if( obj && obj.__esModule ) {
+        return obj;
+    } else {
+        var newObj = {};
+        if( obj != null ) {
+            for( var key in obj ) {
+                if( Object.prototype.hasOwnProperty.call( obj, key ) ) {
+                    newObj[key] = obj[key];
+                }
+            }
+        }
+        newObj.default = obj;
+        return newObj;
+    }
+}
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/4/2015.
+ */
+
+var AMD_Header_Buffer = new Buffer( _defaults.AMD_Header );
 
 function isAbsolutePath( filepath ) {
     if( typeof _path.isAbsolute === 'function' ) {
@@ -98,7 +115,7 @@ function stripBOM( content ) {
     // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
     // because the buffer-to-string conversion in `fs.readFileSync()`
     // translates it to FEFF, the UTF-16 BOM.
-    if( Buffer.isBuffer( content ) && content.length >= 2 && (content[0] === 0xFE && content[1] === 0xFF) ) {
+    if( Buffer.isBuffer( content ) && content.length >= 2 && content[0] === 0xFE && content[1] === 0xFF ) {
         content = content.slice( 2 );
     } else if( typeof content === 'string' && content.charCodeAt( 0 ) === 0xFEFF ) {
         content = content.slice( 1 );
@@ -111,7 +128,7 @@ function injectAMD( content ) {
     if( Buffer.isBuffer( content ) ) {
         return Buffer.concat( [AMD_Header_Buffer, content] );
     } else if( typeof content === 'string' ) {
-        return _defaultsJs.AMD_Header + content;
+        return _defaults.AMD_Header + content;
     } else {
         return content;
     }
@@ -138,23 +155,23 @@ function parseDefine( id, deps, factory ) {
     }
 
     if( deps === void 0 ) {
-        deps = _defaultsJs.default_dependencies;
+        deps = _defaults.default_dependencies;
     } else {
-        deps = deps.concat( _defaultsJs.default_dependencies );
+        deps = deps.concat( _defaults.default_dependencies );
     }
 
     return [id, deps, factory];
 }
 
 function isThenable( obj ) {
-    return obj !== void 0 && obj !== null && (obj instanceof _bluebird2['default'] || typeof obj.then === 'function');
+    return obj !== void 0 && obj !== null && (obj instanceof _bluebird2.default || typeof obj.then === 'function');
 }
 
 function tryPromise( value ) {
     if( isThenable( value ) ) {
         return value;
     } else {
-        return _bluebird2['default'].resolve( value );
+        return _bluebird2.default.resolve( value );
     }
 }
 
@@ -167,18 +184,15 @@ function tryReject( func, context ) {
 
         return tryPromise( func.apply( context, args ) );
     } catch( err ) {
-        return _bluebird2['default'].reject( err );
+        return _bluebird2.default.reject( err );
     }
 }
 
 //Taken from tj/co
-
 function isGenerator( obj ) {
-    return 'function' === typeof obj.next && 'function' === typeof obj['throw'];
+    return 'function' === typeof obj.next && 'function' === typeof obj.throw;
 }
-
 //Taken from tj/co
-
 function isGeneratorFunction( obj ) {
     if( !obj.constructor ) {
         return false;

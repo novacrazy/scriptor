@@ -22,31 +22,43 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/5/2015.
- */
-
 'use strict';
 
-var _get = require( 'babel-runtime/helpers/get' )['default'];
-
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
-var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
-
-var _Map = require( 'babel-runtime/core-js/map' )['default'];
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
 
-var _module2 = require( 'module' );
+var _map = require( 'babel-runtime/core-js/map' );
 
-var _module3 = _interopRequireDefault( _module2 );
+var _map2 = _interopRequireDefault( _map );
+
+var _getPrototypeOf = require( 'babel-runtime/core-js/object/get-prototype-of' );
+
+var _getPrototypeOf2 = _interopRequireDefault( _getPrototypeOf );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _get2 = require( 'babel-runtime/helpers/get' );
+
+var _get3 = _interopRequireDefault( _get2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
+
+var _module = require( 'module' );
+
+var _module2 = _interopRequireDefault( _module );
 
 var _assert = require( 'assert' );
 
@@ -54,40 +66,45 @@ var _assert2 = _interopRequireDefault( _assert );
 
 var _path = require( 'path' );
 
-var _utilsJs = require( './utils.js' );
+var _utils = require( './utils.js' );
 
-var _scriptJs = require( './script.js' );
+var _script = require( './script.js' );
 
-var _scriptJs2 = _interopRequireDefault( _scriptJs );
+var _script2 = _interopRequireDefault( _script );
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
 
 var ScriptAdapter = (function( _Script ) {
-    _inherits( ScriptAdapter, _Script );
+    (0, _inherits3.default)( ScriptAdapter, _Script );
 
     function ScriptAdapter( manager, filename, parent ) {
-        var _this = this;
+        (0, _classCallCheck3.default)( this, ScriptAdapter );
 
-        _classCallCheck( this, ScriptAdapter );
+        var _this = (0, _possibleConstructorReturn3.default)( this,
+            (0, _getPrototypeOf2.default)( ScriptAdapter ).call( this, filename, parent ) );
 
-        _get( Object.getPrototypeOf( ScriptAdapter.prototype ), 'constructor', this ).call( this, filename, parent );
+        _this._manager = null;
 
-        this._manager = null;
-        this._manager = manager;
+        _this._manager = manager;
 
         //When a script is renamed, it should be reassigned in the manager
         //Otherwise, when it's accessed at the new location, the manager just creates a new script
-        this.on( 'rename', function( event, oldname, newname ) {
+        _this.on( 'rename', function( event, oldname, newname ) {
             _this._manager._scripts.set( newname, _this._manager._scripts.get( oldname ) );
-            _this._manager._scripts['delete']( oldname );
+            _this._manager._scripts.delete( oldname );
         } );
+        return _this;
     }
 
-    _createClass( ScriptAdapter, [
+    (0, _createClass3.default)( ScriptAdapter, [
         {
             key:   'include',
             value: function include( filename ) {
                 var _this2 = this;
 
-                var load = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+                var load = arguments.length <= 1 || arguments[1] === void 0 ? false : arguments[1];
 
                 //make sure filename can be relative to the current script
                 var real_filename = (0, _path.resolve)( this.baseUrl, filename );
@@ -115,12 +132,13 @@ var ScriptAdapter = (function( _Script ) {
             key:   'close',
             value: function close( permanent ) {
                 if( permanent ) {
-                    this._manager.scripts['delete']( this.filename );
+                    this._manager.scripts.delete( this.filename );
 
                     delete this['_manager'];
                 }
 
-                return _get( Object.getPrototypeOf( ScriptAdapter.prototype ), 'close', this ).call( this, permanent );
+                return (0, _get3.default)( (0, _getPrototypeOf2.default)( ScriptAdapter.prototype ), 'close', this )
+                    .call( this, permanent );
             }
         }, {
             key: 'manager',
@@ -129,27 +147,28 @@ var ScriptAdapter = (function( _Script ) {
             }
         }
     ] );
-
     return ScriptAdapter;
-})( _scriptJs2['default'] );
+})( _script2.default );
+/**
+ * Created by Aaron on 7/5/2015.
+ */
 
 var Manager = (function() {
     function Manager( grandParent ) {
-        _classCallCheck( this, Manager );
-
+        (0, _classCallCheck3.default)( this, Manager );
         this._debounceMaxWait = null;
         this._maxListeners = null;
         this._config = null;
         this._cwd = process.cwd();
-        this._scripts = new _Map();
+        this._scripts = new _map2.default();
         this._parent = null;
         this._propagateEvents = false;
         this._unloadOnRename = null;
 
-        this._parent = new _module3['default']( 'ScriptManager', grandParent );
+        this._parent = new _module2.default( 'ScriptManager', grandParent );
     }
 
-    _createClass( Manager, [
+    (0, _createClass3.default)( Manager, [
         {
             key:   'cwd',
             value: function cwd() {
@@ -169,7 +188,7 @@ var Manager = (function() {
 
                     value = Math.floor( value );
 
-                    (0, _assert2['default'])( !isNaN( value ), 'setMaxListeners must be passed a number' );
+                    (0, _assert2.default)( !isNaN( value ), 'setMaxListeners must be passed a number' );
 
                     this._maxListeners = value;
                 } else {
@@ -186,7 +205,7 @@ var Manager = (function() {
             value: function config( _config ) {
                 var _this3 = this;
 
-                this._config = (0, _utilsJs.normalizeConfig)( _config );
+                this._config = (0, _utils.normalizeConfig)( _config );
 
                 this._scripts.forEach( function( script ) {
                     script.config( _this3._config, true );
@@ -196,7 +215,7 @@ var Manager = (function() {
         }, {
             key:   'propagateEvents',
             value: function propagateEvents() {
-                var enable = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+                var enable = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];
 
                 var wasPropagating = this._propagateEvents;
 
@@ -245,10 +264,11 @@ var Manager = (function() {
             //but this functions as a way to add and/or get a script in one fell swoop.
             //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
             //from watching a file.
+
         }, {
             key:   'add',
             value: function add( filename ) {
-                var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+                var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
                 filename = (0, _path.resolve)( this.cwd(), filename );
 
@@ -276,10 +296,11 @@ var Manager = (function() {
             //Removes a script from the manager. But closing it permenantly is optional,
             //as it may sometimes make sense to move it out of a manager and use it independently.
             //However, that is quite rare so close defaults to true
+
         }, {
             key:   'remove',
             value: function remove( filename ) {
-                var close = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+                var close = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
                 filename = (0, _path.resolve)( this.cwd(), filename );
 
@@ -290,7 +311,7 @@ var Manager = (function() {
                         script.close();
                     }
 
-                    return this._scripts['delete']( filename );
+                    return this._scripts.delete( filename );
                 }
 
                 return false;
@@ -348,10 +369,11 @@ var Manager = (function() {
             }
 
             //Make closing optional for the same reason as .remove
+
         }, {
             key:   'clear',
             value: function clear() {
-                var close = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+                var close = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];
 
                 if( close ) {
                     this._scripts.forEach( function( script ) {
@@ -380,7 +402,7 @@ var Manager = (function() {
                 if( time !== null && time !== void 0 ) {
                     time = Math.floor( time );
 
-                    (0, _assert2['default'])( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+                    (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
                     this._debounceMaxWait = time;
                 } else {
@@ -397,9 +419,7 @@ var Manager = (function() {
             }
         }
     ] );
-
     return Manager;
 })();
 
-exports['default'] = Manager;
-module.exports = exports['default'];
+exports.default = Manager;

@@ -1,16 +1,18 @@
-/**
- * Created by Aaron on 7/6/2015.
- */
-
 'use strict';
 
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
-
-var _runnerJs = require( './runner.js' );
+var _runner = require( './runner.js' );
 
 var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/6/2015.
+ */
 
 var Module = require( 'module' );
 
@@ -35,7 +37,7 @@ var tests = function tests( Scriptor, build ) {
             it( 'should call the exported function and return the result', function( done ) {
                 script.call().then( function( result ) {
                     _assert2.default.deepEqual( result, {
-                        towel: 'Don\'t Forget Yours'
+                        towel: "Don't Forget Yours"
                     } );
                     (0, _assert2.default)( script.loaded );
                 } ).then( done );
@@ -67,5 +69,5 @@ var tests = function tests( Scriptor, build ) {
     } );
 };
 
-(0, _runnerJs.runTests)( 'compat', tests );
-(0, _runnerJs.runTests)( 'modern', tests );
+(0, _runner.runTests)( 'compat', tests );
+(0, _runner.runTests)( 'modern', tests );

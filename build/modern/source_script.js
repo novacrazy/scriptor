@@ -22,24 +22,26 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/5/2015.
- */
-
 'use strict';
-
-var _inherits = require( 'babel-runtime/helpers/inherits' ).default;
-
-var _createClass = require( 'babel-runtime/helpers/create-class' ).default;
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' ).default;
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
-
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
 
 exports.__esModule = true;
 exports.compile = compile;
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
 
 var _bluebird = require( 'bluebird' );
 
@@ -51,17 +53,42 @@ var _ = _interopRequireWildcard( _lodash );
 
 var _path = require( 'path' );
 
-var _utilsJs = require( './utils.js' );
+var _utils = require( './utils.js' );
 
-var _scriptJs = require( './script.js' );
+var _script = require( './script.js' );
 
-var _scriptJs2 = _interopRequireDefault( _scriptJs );
+var _script2 = _interopRequireDefault( _script );
 
-var _referenceJs = require( './reference.js' );
+var _reference = require( './reference.js' );
+
+function _interopRequireWildcard( obj ) {
+    if( obj && obj.__esModule ) {
+        return obj;
+    } else {
+        var newObj = {};
+        if( obj != null ) {
+            for( var key in obj ) {
+                if( Object.prototype.hasOwnProperty.call( obj, key ) ) {
+                    newObj[key] = obj[key];
+                }
+            }
+        }
+        newObj.default = obj;
+        return newObj;
+    }
+}
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/5/2015.
+ */
 
 function compile( src ) {
-    var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
-    var parent = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+    var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
+    var parent = arguments.length <= 2 || arguments[2] === void 0 ? null : arguments[2];
 
     var script = new SourceScript( src, parent );
 
@@ -73,23 +100,24 @@ function compile( src ) {
 }
 
 var SourceScript = (function( _Script ) {
-    _inherits( SourceScript, _Script );
+    (0, _inherits3.default)( SourceScript, _Script );
 
     function SourceScript( src ) {
-        var parent = arguments.length <= 1 || arguments[1] === undefined ? module : arguments[1];
+        var parent = arguments.length <= 1 || arguments[1] === void 0 ? module : arguments[1];
+        (0, _classCallCheck3.default)( this, SourceScript );
 
-        _classCallCheck( this, SourceScript );
+        var _this = (0, _possibleConstructorReturn3.default)( this, _Script.call( this, null, parent ) );
 
-        _Script.call( this, null, parent );
+        _this._onChange = null;
 
-        this._onChange = null;
         if( src !== void 0 && src !== null ) {
-            this.load( src );
+            _this.load( src );
         }
+        return _this;
     }
 
     SourceScript.prototype._do_load = function _do_load() {
-        var _this = this;
+        var _this2 = this;
 
         if( !this.loading || this._loadingText && !this.textMode ) {
             this.unload();
@@ -111,17 +139,17 @@ var SourceScript = (function( _Script ) {
                 }
 
                 this.source( 'utf-8' ).then( function( src ) {
-                    _this._script._compile( src, _this.filename );
+                    _this2._script._compile( src, _this2.filename );
 
-                    _this._script.loaded = true;
+                    _this2._script.loaded = true;
 
-                    _this._loading = false;
+                    _this2._loading = false;
 
-                    _this.emit( 'loaded', _this._script.exports );
+                    _this2.emit( 'loaded', _this2._script.exports );
                 }, function( err ) {
-                    _this._loading = false;
+                    _this2._loading = false;
 
-                    _this.emit( 'loading_error', err );
+                    _this2.emit( 'loading_error', err );
                 } );
             } else {
                 this._loading = true;
@@ -139,30 +167,30 @@ var SourceScript = (function( _Script ) {
                 }
 
                 this.source( 'utf-8' ).then( function( src ) {
-                    _this._script.loaded = true;
+                    _this2._script.loaded = true;
 
-                    _this._loading = false;
-                    _this._loadingText = false;
+                    _this2._loading = false;
+                    _this2._loadingText = false;
 
-                    _this.emit( 'loaded', _this.loaded );
+                    _this2.emit( 'loaded', _this2.loaded );
                 }, function( err ) {
-                    _this._loading = false;
-                    _this._loadingText = false;
+                    _this2._loading = false;
+                    _this2._loadingText = false;
 
-                    _this.emit( 'loading_error', err );
+                    _this2.emit( 'loading_error', err );
                 } );
             }
         }
     };
 
     SourceScript.prototype._do_watch = function _do_watch() {
-        var _this2 = this;
+        var _this3 = this;
 
-        if( !this.watched && this._source instanceof _referenceJs.ReferenceBase ) {
+        if( !this.watched && this._source instanceof _reference.ReferenceBase ) {
 
             this._onChange = _.debounce( function( event, filename ) {
-                _this2.unload();
-                _this2.emit( 'change', event, filename );
+                _this3.unload();
+                _this3.emit( 'change', event, filename );
             }, this.debounceMaxWait );
 
             this._source.on( 'change', this._onChange );
@@ -173,10 +201,10 @@ var SourceScript = (function( _Script ) {
         assert( typeof src === 'string' || Buffer.isBuffer( src ),
             'Reference source must return string or Buffer as value' );
 
-        src = _utilsJs.stripBOM( src );
+        src = (0, _utils.stripBOM)( src );
 
-        if( !this.textMode && _scriptJs2.default.extensions_enabled ) {
-            src = _utilsJs.injectAMD( src );
+        if( !this.textMode && _script2.default.extensions_enabled ) {
+            src = (0, _utils.injectAMD)( src );
         }
 
         if( Buffer.isBuffer( src ) && typeof encoding === 'string' ) {
@@ -187,7 +215,7 @@ var SourceScript = (function( _Script ) {
     };
 
     SourceScript.prototype.source = function source( encoding ) {
-        if( this._source instanceof _referenceJs.ReferenceBase ) {
+        if( this._source instanceof _reference.ReferenceBase ) {
             return this._source.value().then( this._normalizeSource.bind( this ) );
         } else {
             try {
@@ -201,9 +229,9 @@ var SourceScript = (function( _Script ) {
     };
 
     SourceScript.prototype.load = function load( src ) {
-        var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+        var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
-        assert( typeof src === 'string' || Buffer.isBuffer( src ) || src instanceof _referenceJs.ReferenceBase,
+        assert( typeof src === 'string' || Buffer.isBuffer( src ) || src instanceof _reference.ReferenceBase,
             'Source must be a string or Reference' );
 
         this.close( false );
@@ -220,7 +248,7 @@ var SourceScript = (function( _Script ) {
     };
 
     SourceScript.prototype.unwatch = function unwatch() {
-        if( this.watched && this._source instanceof _referenceJs.ReferenceBase ) {
+        if( this.watched && this._source instanceof _reference.ReferenceBase ) {
             this._source.removeListener( 'change', this._onChange );
             delete this['_onChange'];
         }
@@ -228,7 +256,7 @@ var SourceScript = (function( _Script ) {
         _Script.prototype.unwatch.call( this );
     };
 
-    _createClass( SourceScript, [
+    (0, _createClass3.default)( SourceScript, [
         {
             key: 'filename',
             get: function get() {
@@ -240,12 +268,12 @@ var SourceScript = (function( _Script ) {
         }, {
             key: 'baseUrl',
             get: function get() {
-                return _path.dirname( this.filename );
+                return (0, _path.dirname)( this.filename );
             },
             set: function set( value ) {
-                value = _path.dirname( value );
+                value = (0, _path.dirname)( value );
 
-                this.filename = value + _path.basename( this.filename );
+                this.filename = value + (0, _path.basename)( this.filename );
             }
         }, {
             key: 'watched',
@@ -254,8 +282,7 @@ var SourceScript = (function( _Script ) {
             }
         }
     ] );
-
     return SourceScript;
-})( _scriptJs2.default );
+})( _script2.default );
 
 exports.default = SourceScript;

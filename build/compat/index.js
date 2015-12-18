@@ -22,6 +22,72 @@
  * SOFTWARE.
  *
  ****/
+'use strict';
+
+Object.defineProperty( exports, "__esModule", {
+    value: true
+} );
+
+var _bluebird = require( 'bluebird' );
+
+var _bluebird2 = _interopRequireDefault( _bluebird );
+
+var _script = require( './script.js' );
+
+var _script2 = _interopRequireDefault( _script );
+
+var _source_script = require( './source_script.js' );
+
+var _source_script2 = _interopRequireDefault( _source_script );
+
+var _text_script = require( './text_script.js' );
+
+var _text_script2 = _interopRequireDefault( _text_script );
+
+var _manager = require( './manager.js' );
+
+var _manager2 = _interopRequireDefault( _manager );
+
+var _reference = require( './reference.js' );
+
+var _reference2 = _interopRequireDefault( _reference );
+
+var _utils = require( './utils.js' );
+
+var utils = _interopRequireWildcard( _utils );
+
+function _interopRequireWildcard( obj ) {
+    if( obj && obj.__esModule ) {
+        return obj;
+    } else {
+        var newObj = {};
+        if( obj != null ) {
+            for( var key in obj ) {
+                if( Object.prototype.hasOwnProperty.call( obj, key ) ) {
+                    newObj[key] = obj[key];
+                }
+            }
+        }
+        newObj.default = obj;
+        return newObj;
+    }
+}
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+var Scriptor = {
+    Promise:      _bluebird2.default,
+    Script:       _script2.default,
+    SourceScript: _source_script2.default,
+    TextScript:   _text_script2.default,
+    Manager:      _manager2.default,
+    Reference:    _reference2.default,
+    load:         _script.load,
+    compile:      _source_script.compile,
+    utils:        utils
+};
 /**
  * Created by Aaron on 7/5/2015.
  */
@@ -30,57 +96,6 @@
  * This file uses ES7 export extensions
  * */
 
-'use strict';
+_script2.default.Scriptor = Scriptor;
 
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
-    value: true
-} );
-
-var _bluebird = require( 'bluebird' );
-
-var _bluebird2 = _interopRequireDefault( _bluebird );
-
-var _scriptJs = require( './script.js' );
-
-var _scriptJs2 = _interopRequireDefault( _scriptJs );
-
-var _source_scriptJs = require( './source_script.js' );
-
-var _source_scriptJs2 = _interopRequireDefault( _source_scriptJs );
-
-var _text_scriptJs = require( './text_script.js' );
-
-var _text_scriptJs2 = _interopRequireDefault( _text_scriptJs );
-
-var _managerJs = require( './manager.js' );
-
-var _managerJs2 = _interopRequireDefault( _managerJs );
-
-var _referenceJs = require( './reference.js' );
-
-var _referenceJs2 = _interopRequireDefault( _referenceJs );
-
-var _utilsJs = require( './utils.js' );
-
-var utils = _interopRequireWildcard( _utilsJs );
-
-var Scriptor = {
-    Promise:      _bluebird2['default'],
-    Script:       _scriptJs2['default'],
-    SourceScript: _source_scriptJs2['default'],
-    TextScript:   _text_scriptJs2['default'],
-    Manager:      _managerJs2['default'],
-    Reference:    _referenceJs2['default'],
-    load:         _scriptJs.load,
-    compile:      _source_scriptJs.compile,
-    utils:        utils
-};
-
-_scriptJs2['default'].Scriptor = Scriptor;
-
-exports['default'] = Scriptor;
-module.exports = exports['default'];
+exports.default = Scriptor;

@@ -1,26 +1,65 @@
-/**
- * Created by Aaron on 7/5/2015.
- */
-
+/****
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2015 Aaron Trent
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ ****/
 'use strict';
 
-var _get = require( 'babel-runtime/helpers/get' )['default'];
-
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
-var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
-
-var _toConsumableArray = require( 'babel-runtime/helpers/to-consumable-array' )['default'];
-
-var _Object$freeze = require( 'babel-runtime/core-js/object/freeze' )['default'];
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
+exports.Logger = exports.LogLevel = void 0;
+
+var _toConsumableArray2 = require( 'babel-runtime/helpers/toConsumableArray' );
+
+var _toConsumableArray3 = _interopRequireDefault( _toConsumableArray2 );
+
+var _getPrototypeOf = require( 'babel-runtime/core-js/object/get-prototype-of' );
+
+var _getPrototypeOf2 = _interopRequireDefault( _getPrototypeOf );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
+
+var _freeze = require( 'babel-runtime/core-js/object/freeze' );
+
+var _freeze2 = _interopRequireDefault( _freeze );
+
+var _typeof2 = require( 'babel-runtime/helpers/typeof' );
+
+var _typeof3 = _interopRequireDefault( _typeof2 );
 
 var _assert = require( 'assert' );
 
@@ -32,8 +71,14 @@ var _util = require( 'util' );
 
 var _util2 = _interopRequireDefault( _util );
 
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
 function Enum( values ) {
-    (0, _assert2['default'])( typeof values === 'object' && !Array.isArray( values ), 'Enum values must be an object' );
+    (0, _assert2.default)(
+        (typeof values === 'undefined' ? 'undefined' : (0, _typeof3.default)( values )) === 'object' && !Array.isArray(
+            values ), 'Enum values must be an object' );
 
     var result = {};
 
@@ -46,10 +91,13 @@ function Enum( values ) {
         }
     }
 
-    return _Object$freeze( result );
+    return (0, _freeze2.default)( result );
 }
+/**
+ * Created by Aaron on 7/5/2015.
+ */
 
-var LogLevel = Enum( {
+var LogLevel = exports.LogLevel = Enum( {
     LOG_ERROR:   -2,
     LOG_SILENT:  -1,
     LOG_WARN:    0,
@@ -58,25 +106,26 @@ var LogLevel = Enum( {
     LOG_VERBOSE: 2
 } );
 
-exports.LogLevel = LogLevel;
 function print_message( level, message ) {
 }
 
-var Logger = (function( _EventEmitter ) {
-    _inherits( Logger, _EventEmitter );
+var Logger = exports.Logger = (function( _EventEmitter ) {
+    (0, _inherits3.default)( Logger, _EventEmitter );
 
     function Logger() {
-        var level = arguments.length <= 0 || arguments[0] === undefined ? LogLevel.LOG_NORMAL : arguments[0];
+        var level = arguments.length <= 0 || arguments[0] === void 0 ? LogLevel.LOG_NORMAL : arguments[0];
+        (0, _classCallCheck3.default)( this, Logger );
 
-        _classCallCheck( this, Logger );
+        var _this = (0, _possibleConstructorReturn3.default)( this,
+            (0, _getPrototypeOf2.default)( Logger ).call( this ) );
 
-        _get( Object.getPrototypeOf( Logger.prototype ), 'constructor', this ).call( this );
+        _this._level = null;
 
-        this._level = null;
-        this.level = level;
+        _this.level = level;
+        return _this;
     }
 
-    _createClass( Logger, [
+    (0, _createClass3.default)( Logger, [
         {
             key:   'error',
             value: function error( format ) {
@@ -131,8 +180,8 @@ var Logger = (function( _EventEmitter ) {
             key:   'do_log',
             value: function do_log( level, format, args ) {
                 if( level <= this.level ) {
-                    var message = _util2['default'].format.apply( _util2['default'],
-                        [format].concat( _toConsumableArray( args ) ) );
+                    var message = _util2.default.format.apply( _util2.default,
+                        [format].concat( (0, _toConsumableArray3.default)( args ) ) );
 
                     if( level === LogLevel.LOG_ERROR ) {
                         console.error( message );
@@ -153,14 +202,11 @@ var Logger = (function( _EventEmitter ) {
             set: function set( value ) {
                 value = Math.floor( value );
 
-                (0, _assert2['default'])( !isNaN( value ), 'level must be a number' );
+                (0, _assert2.default)( !isNaN( value ), 'level must be a number' );
 
                 this._level = value;
             }
         }
     ] );
-
     return Logger;
 })( _events.EventEmitter );
-
-exports.Logger = Logger;

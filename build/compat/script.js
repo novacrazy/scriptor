@@ -22,40 +22,64 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/5/2015.
- */
-
 'use strict';
 
-var _get = require( 'babel-runtime/helpers/get' )['default'];
-
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
-var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
-
-var _toConsumableArray = require( 'babel-runtime/helpers/to-consumable-array' )['default'];
-
-var _slicedToArray = require( 'babel-runtime/helpers/sliced-to-array' )['default'];
-
-var _Map = require( 'babel-runtime/core-js/map' )['default'];
-
-var _regeneratorRuntime = require( 'babel-runtime/regenerator' )['default'];
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
 exports.load = load;
 
-var _module2 = require( 'module' );
+var _slicedToArray2 = require( 'babel-runtime/helpers/slicedToArray' );
 
-var _module3 = _interopRequireDefault( _module2 );
+var _slicedToArray3 = _interopRequireDefault( _slicedToArray2 );
+
+var _toConsumableArray2 = require( 'babel-runtime/helpers/toConsumableArray' );
+
+var _toConsumableArray3 = _interopRequireDefault( _toConsumableArray2 );
+
+var _regenerator = require( 'babel-runtime/regenerator' );
+
+var _regenerator2 = _interopRequireDefault( _regenerator );
+
+var _asyncToGenerator2 = require( 'babel-runtime/helpers/asyncToGenerator' );
+
+var _asyncToGenerator3 = _interopRequireDefault( _asyncToGenerator2 );
+
+var _getPrototypeOf = require( 'babel-runtime/core-js/object/get-prototype-of' );
+
+var _getPrototypeOf2 = _interopRequireDefault( _getPrototypeOf );
+
+var _typeof2 = require( 'babel-runtime/helpers/typeof' );
+
+var _typeof3 = _interopRequireDefault( _typeof2 );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _get2 = require( 'babel-runtime/helpers/get' );
+
+var _get3 = _interopRequireDefault( _get2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
+
+var _map = require( 'babel-runtime/core-js/map' );
+
+var _map2 = _interopRequireDefault( _map );
+
+var _module = require( 'module' );
+
+var _module2 = _interopRequireDefault( _module );
 
 var _assert = require( 'assert' );
 
@@ -67,37 +91,45 @@ var _bluebird2 = _interopRequireDefault( _bluebird );
 
 var _lodash = require( 'lodash' );
 
-var _ = _interopRequireWildcard( _lodash );
-
 var _fs = require( 'fs' );
 
 var _url = require( 'url' );
 
 var _path = require( 'path' );
 
-var _errorJs = require( './error.js' );
+var _error = require( './error.js' );
 
-var _extensionsJs = require( './extensions.js' );
+var _extensions = require( './extensions.js' );
 
-var _extensionsJs2 = _interopRequireDefault( _extensionsJs );
+var _extensions2 = _interopRequireDefault( _extensions );
 
-var _eventsJs = require( './events.js' );
+var _events = require( 'events' );
 
-var _defaultsJs = require( './defaults.js' );
+var _event_handling = require( './event_handling.js' );
 
-var _utilsJs = require( './utils.js' );
+var _defaults = require( './defaults.js' );
 
-var _referenceJs = require( './reference.js' );
+var _utils = require( './utils.js' );
 
-var _referenceJs2 = _interopRequireDefault( _referenceJs );
+var _reference = require( './reference.js' );
 
-var promisifyCache = new _Map();
+var _reference2 = _interopRequireDefault( _reference );
 
-var readFileAsync = _bluebird2['default'].promisify( _fs.readFile );
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/5/2015.
+ */
+
+var promisifyCache = new _map2.default();
+
+var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
 
 function load( filename ) {
-    var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
-    var parent = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+    var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
+    var parent = arguments.length <= 2 || arguments[2] === void 0 ? null : arguments[2];
 
     filename = (0, _path.resolve)( filename );
 
@@ -109,51 +141,51 @@ function load( filename ) {
 }
 
 var Script = (function( _EventPropagator ) {
-    _inherits( Script, _EventPropagator );
-
-    _createClass( Script, [
+    (0, _inherits3.default)( Script, _EventPropagator );
+    (0, _createClass3.default)( Script, [
         {
             key:   '_init',
             value: function _init() {
-                var _this = this;
+                var _this2 = this;
 
                 var require = function require() {
-                    return _this._require.apply( _this, arguments );
+                    return _this2._require.apply( _this2, arguments );
                 };
 
                 var define = function define() {
-                    return _this._define.apply( _this, arguments );
+                    return _this2._define.apply( _this2, arguments );
                 };
 
                 require.toUrl = function() {
-                    var filepath = arguments.length <= 0 || arguments[0] === undefined ? _this.filename : arguments[0];
+                    var filepath = arguments.length <= 0 || arguments[0] === void 0 ? _this2.filename : arguments[0];
 
-                    _assert2['default'].strictEqual( typeof filepath, 'string',
+                    _assert2.default.strictEqual(
+                        typeof filepath === 'undefined' ? 'undefined' : (0, _typeof3.default)( filepath ), 'string',
                         'require.toUrl takes a string as filepath' );
 
                     if( filepath.charAt( 0 ) === '.' ) {
                         //Use the url.resolve instead of resolve, even though they usually do the same thing
-                        return (0, _url.resolve)( _this.baseUrl, filepath );
+                        return (0, _url.resolve)( _this2.baseUrl, filepath );
                     } else {
                         return filepath;
                     }
                 };
 
                 require.defined = function( id ) {
-                    return _this._loadCache.has( _path.posix.normalize( id ) );
+                    return _this2._loadCache.has( _path.posix.normalize( id ) );
                 };
 
                 require.specified = function( id ) {
-                    return _this._defineCache.has( _path.posix.normalize( id ) );
+                    return _this2._defineCache.has( _path.posix.normalize( id ) );
                 };
 
                 require.undef = function( id ) {
                     id = _path.posix.normalize( id );
 
-                    _this._loadCache['delete']( id );
-                    _this._defineCache['delete']( id );
+                    _this2._loadCache.delete( id );
+                    _this2._defineCache.delete( id );
 
-                    return _this;
+                    return _this2;
                 };
 
                 //This is not an anonymous so stack traces make a bit more sense
@@ -163,8 +195,8 @@ var Script = (function( _EventPropagator ) {
 
                 //This is almost exactly like the normal require.resolve, but it's relative to this.baseUrl
                 require.resolve = function( id ) {
-                    var relative = (0, _path.resolve)( _this.baseUrl, id );
-                    return _module3['default']._resolveFilename( relative, _this._script );
+                    var relative = (0, _path.resolve)( _this2.baseUrl, id );
+                    return _module2.default._resolveFilename( relative, _this2._script );
                 };
 
                 define.require = require;
@@ -184,50 +216,41 @@ var Script = (function( _EventPropagator ) {
             key:   'hasExtension',
             value: function hasExtension( ext ) {
                 return Script.extensions.hasOwnProperty( ext );
-            }
-        }, {
-            key:        'Scriptor',
-            value:      null,
-            enumerable: true
-        }, {
-            key:        'extensions_enabled',
-            value:      true,
-            enumerable: true
-        }, {
-            key:        'extensions',
-            value:      _extensionsJs2['default'],
-            enumerable: true
+            } //Node default maxListeners
+
         }
     ] );
 
     function Script( filename, parent ) {
-        _classCallCheck( this, Script );
+        (0, _classCallCheck3.default)( this, Script );
 
-        _get( Object.getPrototypeOf( Script.prototype ), 'constructor', this ).call( this );
+        var _this = (0, _possibleConstructorReturn3.default)( this,
+            (0, _getPrototypeOf2.default)( Script ).call( this ) );
 
-        this._script = null;
-        this._source = null;
-        this._factory = null;
-        this._watcher = null;
-        this._willWatch = false;
-        this._watchPersistent = false;
-        this._maxListeners = 10;
-        this._debounceMaxWait = _defaultsJs.default_max_debounceMaxWait;
-        this._textMode = false;
-        this._defineCache = new _Map();
-        this._loadCache = new _Map();
-        this._pending = false;
-        this._loading = false;
-        this._loadingText = false;
-        this._runningFactory = false;
-        this._config = (0, _utilsJs.normalizeConfig)( null );
-        this._dependencies = [];
-        this._unloadOnRename = false;
-        this.require = null;
-        this.define = null;
-        this.imports = {};
+        _this._script = null;
+        _this._source = null;
+        _this._factory = null;
+        _this._watcher = null;
+        _this._willWatch = false;
+        _this._watchPersistent = false;
+        _this._maxListeners = 10;
+        _this._debounceMaxWait = _defaults.default_max_debounceMaxWait;
+        _this._textMode = false;
+        _this._defineCache = new _map2.default();
+        _this._loadCache = new _map2.default();
+        _this._pending = false;
+        _this._loading = false;
+        _this._loadingText = false;
+        _this._runningFactory = false;
+        _this._config = (0, _utils.normalizeConfig)( null );
+        _this._dependencies = [];
+        _this._unloadOnRename = false;
+        _this.require = null;
+        _this.define = null;
+        _this.imports = {};
+
         if( parent === void 0 || parent === null ) {
-            if( filename instanceof _module3['default'].Module ) {
+            if( filename instanceof _module2.default.Module ) {
                 parent = filename;
                 filename = null;
             } else {
@@ -235,33 +258,37 @@ var Script = (function( _EventPropagator ) {
             }
         }
 
-        this._script = new _module3['default']( null, parent );
+        _this._script = new _module2.default( null, parent );
 
         //Explicit comparisons to appease JSHint
         if( filename !== void 0 && filename !== null ) {
-            this.load( filename );
+            _this.load( filename );
         }
 
-        this._init();
+        _this._init();
+        return _this;
     }
 
-    _createClass( Script, [
+    (0, _createClass3.default)( Script, [
         {
             key:   'setMaxListeners',
             value: function setMaxListeners( num ) {
                 num = Math.floor( num );
 
-                (0, _assert2['default'])( !isNaN( num ), 'maxListeners must be set to a number' );
+                (0, _assert2.default)( !isNaN( num ), 'maxListeners must be set to a number' );
 
                 this._maxListeners = num;
 
-                _get( Object.getPrototypeOf( Script.prototype ), 'setMaxListeners', this ).call( this, num );
+                (0, _get3.default)( (0, _getPrototypeOf2.default)( Script.prototype ), 'setMaxListeners', this )
+                    .call( this, num );
             }
         }, {
             key:   'getMaxListeners',
             value: function getMaxListeners() {
-                if( typeof _get( Object.getPrototypeOf( Script.prototype ), 'getMaxListeners', this ) === 'function' ) {
-                    return _get( Object.getPrototypeOf( Script.prototype ), 'getMaxListeners', this ).call( this );
+                if(                typeof (0, _get3.default)( (0, _getPrototypeOf2.default)( Script.prototype ), 'getMaxListeners',
+                        this ) === 'function' ) {
+                    return (0, _get3.default)( (0, _getPrototypeOf2.default)( Script.prototype ), 'getMaxListeners',
+                        this ).call( this );
                 } else {
                     return this._maxListeners;
                 }
@@ -269,13 +296,13 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   'config',
             value: function config( _config ) {
-                var alreadyNormalized = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+                var alreadyNormalized = arguments.length <= 1 || arguments[1] === void 0 ? false : arguments[1];
 
                 if( _config !== void 0 && _config !== null ) {
                     if( alreadyNormalized ) {
                         this._config = _config;
                     } else {
-                        this._config = (0, _utilsJs.normalizeConfig)( _config );
+                        this._config = (0, _utils.normalizeConfig)( _config );
                     }
                 }
             }
@@ -287,25 +314,26 @@ var Script = (function( _EventPropagator ) {
 
             //Based on the RequireJS 'standard' for relative locations
             //For SourceScripts, just set the filename to something relative
+
         }, {
             key:   '_callWrapper',
             value: function _callWrapper( func ) {
-                var _this2 = this;
+                var _this3 = this;
 
-                var context = arguments.length <= 1 || arguments[1] === undefined ? this : arguments[1];
-                var args = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
+                var context = arguments.length <= 1 || arguments[1] === void 0 ? this : arguments[1];
+                var args = arguments.length <= 2 || arguments[2] === void 0 ? [] : arguments[2];
 
-                return new _bluebird2['default']( function( resolve, reject ) {
+                return new _bluebird2.default( function( resolve, reject ) {
                     try {
                         var res = func.apply( context, args );
 
-                        if( (0, _utilsJs.isThenable)( res ) ) {
+                        if( (0, _utils.isThenable)( res ) ) {
                             res.then( resolve, reject );
                         } else {
                             resolve( res );
                         }
                     } catch( err ) {
-                        _this2.unload();
+                        _this3.unload();
 
                         reject( err );
                     }
@@ -314,29 +342,29 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   '_runFactory',
             value: function _runFactory( id, deps, factory ) {
-                var _this3 = this;
+                var _this4 = this;
 
                 if( id !== void 0 && id !== null ) {
                     //clear before running. Will remained cleared in the event of error
-                    this._loadCache['delete']( id );
+                    this._loadCache.delete( id );
                 }
 
                 if( typeof factory === 'function' ) {
                     /*
                      * If this is true, generators are obviously supported.
                      * */
-                    if( (0, _utilsJs.isGeneratorFunction)( factory ) ) {
-                        factory = _bluebird2['default'].coroutine( factory );
+                    if( (0, _utils.isGeneratorFunction)( factory ) ) {
+                        factory = _bluebird2.default.coroutine( factory );
                     }
 
                     return this._require( deps ).then( function( resolvedDeps ) {
-                        return factory.apply( _this3._script.exports, resolvedDeps );
+                        return factory.apply( _this4._script.exports, resolvedDeps );
                     } );
                 } else {
                     //On the off chance the function factory is a promise, run it through again if need be
-                    return (0, _utilsJs.tryPromise)( factory ).then( function( resolvedFactory ) {
+                    return (0, _utils.tryPromise)( factory ).then( function( resolvedFactory ) {
                         if( typeof factory === 'function' ) {
-                            return _this3._runFactory( id, deps, resolvedFactory );
+                            return _this4._runFactory( id, deps, resolvedFactory );
                         } else {
                             return resolvedFactory;
                         }
@@ -346,405 +374,412 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   '_runMainFactory',
             value: function _runMainFactory() {
-                var _this4 = this;
+                var _this5 = this;
 
                 if( !this._runningFactory ) {
                     this._runningFactory = true;
                     this._pending = true;
 
                     return this._runFactory( null, this._dependencies, this._factory ).then( function( result ) {
-                        if( _this4._pending ) {
+                        if( _this5._pending ) {
                             //To match AMDefine, don't export the result unless there is one.
                             //Null is allowed, since it would have to have been returned explicitly.
                             if( result !== void 0 ) {
-                                _this4._script.exports = result;
+                                _this5._script.exports = result;
                             }
 
-                            _this4._pending = false;
-                            _this4._runningFactory = false;
+                            _this5._pending = false;
+                            _this5._runningFactory = false;
 
-                            _this4.emit( 'exports', _this4._script.exports );
+                            _this5.emit( 'exports', _this5._script.exports );
                         } else {
-                            _this4.emit( 'error', new Error( 'The script ' + _this4.filename
+                            _this5.emit( 'error', new Error( 'The script ' + _this5.filename
                                                              + ' was unloaded while performing an asynchronous operation.' ) );
                         }
                     }, function( err ) {
-                        _this4._runningFactory = false;
+                        _this5._runningFactory = false;
 
-                        _this4.emit( 'error', err );
+                        _this5.emit( 'error', err );
                     } );
                 }
             }
         }, {
             key:   '_require',
-            value: function _require( id ) {
-                var normalize, _ret, script, args, config_paths, p, rel, filepath;
-
-                return _regeneratorRuntime.async( function _require$( context$2$0 ) {
-                    var _this5 = this;
-
-                    while( 1 ) {
-                        switch( context$2$0.prev = context$2$0.next ) {
-                            case 0:
-                                normalize = _path.resolve.bind( null, this.baseUrl );
-
-                                if( !Array.isArray( id ) ) {
-                                    context$2$0.next = 5;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', _bluebird2['default'].map( id, function( id ) {
-                                    return _this5._require( id );
-                                } ) );
-
-                            case 5:
-                                _assert2['default'].strictEqual( typeof id, 'string',
-                                    'require id must be a string or array of strings' );
-
-                                //Plugins ARE supported, but they have to work like a normal module
-
-                                if( !(id.indexOf( '!' ) !== -1) ) {
-                                    context$2$0.next = 14;
-                                    break;
-                                }
-
-                                context$2$0.next = 9;
-                                return _regeneratorRuntime.awrap( (function callee$2$0() {
-                                    var parts, plugin, plugin_id;
-                                    return _regeneratorRuntime.async( function callee$2$0$( context$3$0 ) {
-                                        var _this6 = this;
-
-                                        while( 1 ) {
-                                            switch( context$3$0.prev = context$3$0.next ) {
-                                                case 0:
-                                                    parts = id.split( '!', 2 );
-                                                    plugin = undefined, plugin_id = parts[0];
-
-                                                    if( !(plugin_id === 'include') ) {
-                                                        context$3$0.next = 6;
-                                                        break;
-                                                    }
-
-                                                    plugin = {
-                                                        normalize: function normalize( id, defaultNormalize ) {
-                                                            return defaultNormalize( id );
-                                                        },
-                                                        load:      function load( id, require, _onLoad, config ) {
-                                                            try {
-                                                                var script = _this6.include( id );
-
-                                                                script.textMode = false;
-
-                                                                _onLoad( script );
-                                                            } catch( err ) {
-                                                                _onLoad.error( err );
-                                                            }
-                                                        }
-                                                    };
-
-                                                    context$3$0.next = 17;
-                                                    break;
-
-                                                case 6:
-                                                    if( !(plugin_id === 'promisify') ) {
-                                                        context$3$0.next = 10;
-                                                        break;
-                                                    }
-
-                                                    plugin = {
-                                                        load: function load( id, require, _onLoad, config ) {
-                                                            if( promisifyCache.has( id ) ) {
-                                                                _onLoad( promisifyCache.get( id ) );
-                                                            } else {
-                                                                _this6._require( id ).then( function( obj ) {
-                                                                    if( typeof obj === 'function' ) {
-                                                                        return _bluebird2['default'].promisify( obj );
-                                                                    } else if( typeof obj === 'object' ) {
-                                                                        var newObj = _.clone( obj );
-
-                                                                        return _bluebird2['default'].promisifyAll(
-                                                                            newObj );
-                                                                    } else {
-                                                                        return null;
-                                                                    }
-                                                                } ).then( function( obj ) {
-                                                                    promisifyCache.set( id, obj );
-
-                                                                    return obj;
-                                                                } ).then( _onLoad, _onLoad.error );
-                                                            }
-                                                        }
-                                                    };
-
-                                                    context$3$0.next = 17;
-                                                    break;
-
-                                                case 10:
-                                                    if( !(plugin_id === 'text') ) {
-                                                        context$3$0.next = 14;
-                                                        break;
-                                                    }
-
-                                                    plugin = {
-                                                        normalize: function normalize( id, defaultNormalize ) {
-                                                            return defaultNormalize( id );
-                                                        },
-                                                        load:      function load( id, require, _onLoad, config ) {
-                                                            try {
-                                                                var script = _this6.include( id );
-
-                                                                script.textMode = true;
-
-                                                                _onLoad( script );
-                                                            } catch( err ) {
-                                                                _onLoad.error( err );
-                                                            }
-                                                        }
-                                                    };
-
-                                                    context$3$0.next = 17;
-                                                    break;
-
-                                                case 14:
-                                                    context$3$0.next = 16;
-                                                    return _regeneratorRuntime.awrap( this._require( plugin_id ) );
-
-                                                case 16:
-                                                    plugin = context$3$0.sent;
-
-                                                case 17:
-
-                                                    (0, _assert2['default'])( plugin !== void 0 && plugin !== null,
-                                                        'Invalid AMD plugin: ' + plugin_id );
-                                                    _assert2['default'].strictEqual( typeof plugin.load, 'function',
-                                                        '.load function on AMD plugin not found' );
-
-                                                    id = parts[1];
-
-                                                    if( typeof plugin.normalize === 'function' ) {
-                                                        id = plugin.normalize( id, normalize );
-                                                    } else if( id.charAt( 0 ) === '.' ) {
-                                                        id = normalize( id );
-                                                    }
-
-                                                    return context$3$0.abrupt( 'return', {
-                                                        v: new _bluebird2['default']( function( resolve, reject ) {
-                                                            if( _this6._loadCache.has( id ) ) {
-                                                                resolve( _this6._loadCache.get( id ) );
-                                                            } else {
-                                                                (function() {
-                                                                    var onLoad = function onLoad( value ) {
-                                                                        _this6._loadCache.set( id, value );
-
-                                                                        resolve( value );
-                                                                    };
-
-                                                                    onLoad.fromText = function( text ) {
-                                                                        //Exploit Scriptor as much as possible
-                                                                        compile( text ).exports()
-                                                                                       .then( onLoad, onLoad.error );
-                                                                    };
-
-                                                                    onLoad.error = function( err ) {
-                                                                        reject(
-                                                                            (0, _errorJs.normalizeError)( id,
-                                                                                'scripterror',
-                                                                                err ) );
-                                                                    };
-
-                                                                    //Since onload is a closure, it 'this' is implicitly bound with TypeScript
-                                                                    plugin.load( id, _this6.require, onLoad,
-                                                                        _this6._config );
-                                                                })();
-                                                            }
-                                                        } )
-                                                    } );
-
-                                                case 22:
-                                                case 'end':
-                                                    return context$3$0.stop();
-                                            }
-                                        }
-                                    }, null, _this5 );
-                                })() );
-
-                            case 9:
-                                _ret = context$2$0.sent;
-
-                                if( !(typeof _ret === 'object') ) {
-                                    context$2$0.next = 12;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', _ret.v );
-
-                            case 12:
-                                context$2$0.next = 67;
-                                break;
-
-                            case 14:
-                                if( !(0, _utilsJs.isAbsoluteOrRelative)( id ) ) {
-                                    context$2$0.next = 21;
-                                    break;
-                                }
-
-                                id = _module3['default']._resolveFilename( normalize( id ), this.parent );
-
-                                script = undefined;
-
-                                if( this.isManaged() ) {
-                                    script = this.include( id );
-
-                                    script.textMode = false;
-                                } else {
-                                    script = load( id, this.watched, this._script );
-
-                                    script.propagateTo( this, 'change', function() {
-                                        _this5.unload();
-                                        _this5.emit( 'change', _this5.filename );
-                                    } );
-
-                                    script.propagateEvents( this.isPropagatingEvents() );
-                                }
-
-                                return context$2$0.abrupt( 'return', script.exports() );
-
-                            case 21:
-                                if( !(id === 'require') ) {
-                                    context$2$0.next = 25;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', this.require );
-
-                            case 25:
-                                if( !(id === 'exports') ) {
-                                    context$2$0.next = 29;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', this._script.exports );
-
-                            case 29:
-                                if( !(id === 'module') ) {
-                                    context$2$0.next = 33;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', this._script );
-
-                            case 33:
-                                if( !(id === 'imports') ) {
-                                    context$2$0.next = 37;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', this.imports );
-
-                            case 37:
-                                if( !(id === 'Promise') ) {
-                                    context$2$0.next = 41;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', _bluebird2['default'] );
-
-                            case 41:
-                                if( !(id === 'Scriptor') ) {
-                                    context$2$0.next = 45;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', Script.Scriptor );
-
-                            case 45:
-                                if( !this._loadCache.has( id ) ) {
-                                    context$2$0.next = 49;
-                                    break;
-                                }
-
-                                return context$2$0.abrupt( 'return', this._loadCache.get( id ) );
-
-                            case 49:
-                                if( !this._defineCache.has( id ) ) {
-                                    context$2$0.next = 54;
-                                    break;
-                                }
-
-                                args = this._defineCache.get( id );
-                                return context$2$0.abrupt( 'return',
-                                    this._runFactory.apply( this, _toConsumableArray( args ) )
-                                        .then( function( exported ) {
-                                            _this5._loadCache.set( id, exported );
-
-                                            return exported;
-                                        } ) );
-
-                            case 54:
-                                config_paths = this._config.paths;
-                                context$2$0.t0 = _regeneratorRuntime.keys( config_paths );
-
-                            case 56:
-                                if( (context$2$0.t1 = context$2$0.t0()).done ) {
-                                    context$2$0.next = 66;
-                                    break;
-                                }
-
-                                p = context$2$0.t1.value;
-
-                                if( !config_paths.hasOwnProperty( p ) ) {
-                                    context$2$0.next = 64;
-                                    break;
-                                }
-
-                                rel = (0, _path.relative)( p, id );
-
-                                if( !(rel.indexOf( '..' ) === -1) ) {
-                                    context$2$0.next = 64;
-                                    break;
-                                }
-
-                                filepath = config_paths[p];
-
-                                if( (0, _utilsJs.isAbsoluteOrRelative)( filepath ) ) {
-                                    filepath = (0, _path.resolve)( this.baseUrl, filepath, rel );
-                                }
-
-                                return context$2$0.abrupt( 'return', this.require( filepath ) );
-
-                            case 64:
-                                context$2$0.next = 56;
-                                break;
-
-                            case 66:
-                                return context$2$0.abrupt( 'return',
-                                    new _bluebird2['default']( function( resolve, reject ) {
-                                        try {
-                                            //Normal module loading akin to the real 'require' function
-                                            resolve( _this5._script.require( id ) );
-                                        } catch( err ) {
-                                            reject( (0, _errorJs.normalizeError)( id, 'nodefine', err ) );
-                                        }
+            value: (function() {
+                var ref = (0, _asyncToGenerator3.default)( _regenerator2.default.mark( function _callee2( id ) {
+                    var _this6 = this;
+
+                    var normalize, _ret, script, args, config_paths, p, rel, filepath;
+
+                    return _regenerator2.default.wrap( function _callee2$( _context2 ) {
+                        while( 1 ) {
+                            switch( _context2.prev = _context2.next ) {
+                                case 0:
+                                    normalize = _path.resolve.bind( null, this.baseUrl );
+
+                                    if( !Array.isArray( id ) ) {
+                                        _context2.next = 5;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', _bluebird2.default.map( id, function( id ) {
+                                        return _this6._require( id );
                                     } ) );
 
-                            case 67:
-                            case 'end':
-                                return context$2$0.stop();
+                                case 5:
+                                    _assert2.default.strictEqual(
+                                        typeof id === 'undefined' ? 'undefined' : (0, _typeof3.default)( id ), 'string',
+                                        'require id must be a string or array of strings' );
+
+                                    //Plugins ARE supported, but they have to work like a normal module
+
+                                    if( !(id.indexOf( '!' ) !== -1) ) {
+                                        _context2.next = 13;
+                                        break;
+                                    }
+
+                                    return _context2.delegateYield( _regenerator2.default.mark( function _callee() {
+                                        var parts, plugin, plugin_id;
+                                        return _regenerator2.default.wrap( function _callee$( _context ) {
+                                            while( 1 ) {
+                                                switch( _context.prev = _context.next ) {
+                                                    case 0:
+                                                        parts = id.split( '!', 2 );
+                                                        plugin = void 0, plugin_id = parts[0];
+
+                                                        if( !(plugin_id === 'include') ) {
+                                                            _context.next = 6;
+                                                            break;
+                                                        }
+
+                                                        plugin = {
+                                                            normalize: function normalize( id, defaultNormalize ) {
+                                                                return defaultNormalize( id );
+                                                            },
+                                                            load:      function load( id, require, _onLoad, config ) {
+                                                                try {
+                                                                    var script = _this6.include( id );
+
+                                                                    script.textMode = false;
+
+                                                                    _onLoad( script );
+                                                                } catch( err ) {
+                                                                    _onLoad.error( err );
+                                                                }
+                                                            }
+                                                        };
+
+                                                        _context.next = 17;
+                                                        break;
+
+                                                    case 6:
+                                                        if( !(plugin_id === 'promisify') ) {
+                                                            _context.next = 10;
+                                                            break;
+                                                        }
+
+                                                        plugin = {
+                                                            load: function load( id, require, _onLoad, config ) {
+                                                                if( promisifyCache.has( id ) ) {
+                                                                    _onLoad( promisifyCache.get( id ) );
+                                                                } else {
+                                                                    _this6._require( id ).then( function( obj ) {
+                                                                        if( typeof obj === 'function' ) {
+                                                                            return _bluebird2.default.promisify( obj );
+                                                                        } else if( (typeof obj === 'undefined' ?
+                                                                                    'undefined' :
+                                                                                    (0, _typeof3.default)( obj ))
+                                                                                   === 'object' ) {
+                                                                            var newObj = (0, _lodash.clone)( obj );
+
+                                                                            return _bluebird2.default.promisifyAll(
+                                                                                newObj );
+                                                                        } else {
+                                                                            return null;
+                                                                        }
+                                                                    } ).then( function( obj ) {
+                                                                        promisifyCache.set( id, obj );
+
+                                                                        return obj;
+                                                                    } ).then( _onLoad, _onLoad.error );
+                                                                }
+                                                            }
+                                                        };
+
+                                                        _context.next = 17;
+                                                        break;
+
+                                                    case 10:
+                                                        if( !(plugin_id === 'text') ) {
+                                                            _context.next = 14;
+                                                            break;
+                                                        }
+
+                                                        plugin = {
+                                                            normalize: function normalize( id, defaultNormalize ) {
+                                                                return defaultNormalize( id );
+                                                            },
+                                                            load:      function load( id, require, _onLoad, config ) {
+                                                                try {
+                                                                    var script = _this6.include( id );
+
+                                                                    script.textMode = true;
+
+                                                                    _onLoad( script );
+                                                                } catch( err ) {
+                                                                    _onLoad.error( err );
+                                                                }
+                                                            }
+                                                        };
+
+                                                        _context.next = 17;
+                                                        break;
+
+                                                    case 14:
+                                                        _context.next = 16;
+                                                        return _this6._require( plugin_id );
+
+                                                    case 16:
+                                                        plugin = _context.sent;
+
+                                                    case 17:
+
+                                                        (0, _assert2.default)( plugin !== void 0 && plugin !== null,
+                                                            'Invalid AMD plugin: ' + plugin_id );
+                                                        _assert2.default.strictEqual(
+                                                            (0, _typeof3.default)( plugin.load ), 'function',
+                                                            '.load function on AMD plugin not found' );
+
+                                                        id = parts[1];
+
+                                                        if( typeof plugin.normalize === 'function' ) {
+                                                            id = plugin.normalize( id, normalize );
+                                                        } else if( id.charAt( 0 ) === '.' ) {
+                                                            id = normalize( id );
+                                                        }
+
+                                                        return _context.abrupt( 'return', {
+                                                            v: new _bluebird2.default( function( resolve, reject ) {
+                                                                if( _this6._loadCache.has( id ) ) {
+                                                                    resolve( _this6._loadCache.get( id ) );
+                                                                } else {
+                                                                    (function() {
+                                                                        var onLoad = function onLoad( value ) {
+                                                                            _this6._loadCache.set( id, value );
+
+                                                                            resolve( value );
+                                                                        };
+
+                                                                        onLoad.fromText = function( text ) {
+                                                                            //Exploit Scriptor as much as possible
+                                                                            compile( text )
+                                                                                .exports()
+                                                                                .then( onLoad, onLoad.error );
+                                                                        };
+
+                                                                        onLoad.error = function( err ) {
+                                                                            reject( (0, _error.normalizeError)( id,
+                                                                                'scripterror', err ) );
+                                                                        };
+
+                                                                        //Since onload is a closure, it 'this' is implicitly bound with TypeScript
+                                                                        plugin.load( id, _this6.require, onLoad,
+                                                                            _this6._config );
+                                                                    })();
+                                                                }
+                                                            } )
+                                                        } );
+
+                                                    case 22:
+                                                    case 'end':
+                                                        return _context.stop();
+                                                }
+                                            }
+                                        }, _callee, _this6 );
+                                    } )(), 't0', 8 );
+
+                                case 8:
+                                    _ret = _context2.t0;
+
+                                    if( !((typeof _ret === 'undefined' ? 'undefined' : (0, _typeof3.default)( _ret ))
+                                          === "object") ) {
+                                        _context2.next = 11;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', _ret.v );
+
+                                case 11:
+                                    _context2.next = 66;
+                                    break;
+
+                                case 13:
+                                    if( !(0, _utils.isAbsoluteOrRelative)( id ) ) {
+                                        _context2.next = 20;
+                                        break;
+                                    }
+
+                                    id = _module2.default._resolveFilename( normalize( id ), this.parent );
+
+                                    script = void 0;
+
+                                    if( this.isManaged() ) {
+                                        script = this.include( id );
+
+                                        script.textMode = false;
+                                    } else {
+                                        script = load( id, this.watched, this._script );
+
+                                        script.propagateTo( this, 'change', function() {
+                                            _this6.unload();
+                                            _this6.emit( 'change', _this6.filename );
+                                        } );
+
+                                        script.propagateEvents( this.isPropagatingEvents() );
+                                    }
+
+                                    return _context2.abrupt( 'return', script.exports() );
+
+                                case 20:
+                                    if( !(id === 'require') ) {
+                                        _context2.next = 24;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', this.require );
+
+                                case 24:
+                                    if( !(id === 'exports') ) {
+                                        _context2.next = 28;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', this._script.exports );
+
+                                case 28:
+                                    if( !(id === 'module') ) {
+                                        _context2.next = 32;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', this._script );
+
+                                case 32:
+                                    if( !(id === 'imports') ) {
+                                        _context2.next = 36;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', this.imports );
+
+                                case 36:
+                                    if( !(id === 'Promise') ) {
+                                        _context2.next = 40;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', _bluebird2.default );
+
+                                case 40:
+                                    if( !(id === 'Scriptor') ) {
+                                        _context2.next = 44;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', Script.Scriptor );
+
+                                case 44:
+                                    if( !this._loadCache.has( id ) ) {
+                                        _context2.next = 48;
+                                        break;
+                                    }
+
+                                    return _context2.abrupt( 'return', this._loadCache.get( id ) );
+
+                                case 48:
+                                    if( !this._defineCache.has( id ) ) {
+                                        _context2.next = 53;
+                                        break;
+                                    }
+
+                                    args = this._defineCache.get( id );
+                                    return _context2.abrupt( 'return',
+                                        this._runFactory.apply( this, (0, _toConsumableArray3.default)( args ) )
+                                            .then( function( exported ) {
+                                                _this6._loadCache.set( id, exported );
+
+                                                return exported;
+                                            } ) );
+
+                                case 53:
+                                    config_paths = this._config.paths;
+                                    _context2.t1 = _regenerator2.default.keys( config_paths );
+
+                                case 55:
+                                    if( (_context2.t2 = _context2.t1()).done ) {
+                                        _context2.next = 65;
+                                        break;
+                                    }
+
+                                    p = _context2.t2.value;
+
+                                    if( !config_paths.hasOwnProperty( p ) ) {
+                                        _context2.next = 63;
+                                        break;
+                                    }
+
+                                    rel = (0, _path.relative)( p, id );
+
+                                    if( !(rel.indexOf( '..' ) === -1) ) {
+                                        _context2.next = 63;
+                                        break;
+                                    }
+
+                                    filepath = config_paths[p];
+
+                                    if( (0, _utils.isAbsoluteOrRelative)( filepath ) ) {
+                                        filepath = (0, _path.resolve)( this.baseUrl, filepath, rel );
+                                    }
+
+                                    return _context2.abrupt( 'return', this.require( filepath ) );
+
+                                case 63:
+                                    _context2.next = 55;
+                                    break;
+
+                                case 65:
+                                    return _context2.abrupt( 'return',
+                                        new _bluebird2.default( function( resolve, reject ) {
+                                            try {
+                                                //Normal module loading akin to the real 'require' function
+                                                resolve( _this6._script.require( id ) );
+                                            } catch( err ) {
+                                                reject( (0, _error.normalizeError)( id, 'nodefine', err ) );
+                                            }
+                                        } ) );
+
+                                case 66:
+                                case 'end':
+                                    return _context2.stop();
+                            }
                         }
-                    }
-                }, null, this );
-            }
+                    }, _callee2, this );
+                } ) );
+                return function _require( _x7 ) {
+                    return ref.apply( this, arguments );
+                };
+            })()
         }, {
             key:   '_define',
             value: function _define() {
-                var define_args = _utilsJs.parseDefine.apply( undefined, arguments );
+                var define_args = _utils.parseDefine.apply( void 0, arguments );
 
-                var _define_args = _slicedToArray( define_args, 1 );
+                var _define_args = (0, _slicedToArray3.default)( define_args, 1 );
 
                 var id = _define_args[0];
 
                 if( id !== void 0 ) {
-                    _assert2['default'].notStrictEqual( id.charAt( 0 ), '.',
+                    _assert2.default.notStrictEqual( id.charAt( 0 ), '.',
                         'module identifiers cannot be relative paths' );
 
                     this._defineCache.set( id, define_args );
@@ -762,14 +797,14 @@ var Script = (function( _EventPropagator ) {
 
                 this._script.imports = this.imports;
 
-                this._script.define = (0, _utilsJs.bind)( this.define, this );
+                this._script.define = (0, _utils.bind)( this.define, this );
 
                 this._script.include = function() {
                     return _this7.include.apply( _this7, arguments );
                 };
 
                 this._script.on = this._script.addListener = this._script.once = function( event, cb ) {
-                    _assert2['default'].equal( event, 'unload', 'modules can only listen for the unload event' );
+                    _assert2.default.equal( event, 'unload', 'modules can only listen for the unload event' );
 
                     return _this7.once( event, cb );
                 };
@@ -779,7 +814,7 @@ var Script = (function( _EventPropagator ) {
             value: function _do_load() {
                 var _this8 = this;
 
-                _assert2['default'].notEqual( this.filename, null, 'Cannot load a script without a filename' );
+                _assert2.default.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
                 if( !this.loading || this._loadingText && !this.textMode ) {
                     this.unload();
@@ -793,7 +828,7 @@ var Script = (function( _EventPropagator ) {
 
                         //Use custom extension if available
                         if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
-                            this._script.paths = _module3['default']._nodeModulePaths(
+                            this._script.paths = _module2.default._nodeModulePaths(
                                 (0, _path.dirname)( this.filename ) );
 
                             this._loading = true;
@@ -803,7 +838,7 @@ var Script = (function( _EventPropagator ) {
                                     this._do_watch( this._watchPersistent );
                                 }
 
-                                return (0, _utilsJs.tryPromise)( Script.extensions[ext]( this._script, this.filename ) )
+                                return (0, _utils.tryPromise)( Script.extensions[ext]( this._script, this.filename ) )
                                     .then( function( src ) {
                                         if( _this8._loading ) {
                                             _this8._source = src;
@@ -814,7 +849,7 @@ var Script = (function( _EventPropagator ) {
                                             _this8.emit( 'loaded', _this8._script.exports );
                                         } else {
                                             _this8.emit( 'error', new Error( 'The script ' + _this8.filename
-                                                                             + ' was unloaded while performing an asynchronous operation.' ) );
+                                                                             +               ' was unloaded while performing an asynchronous operation.' ) );
                                         }
                                     }, function( err ) {
                                         _this8._loading = false;
@@ -831,7 +866,7 @@ var Script = (function( _EventPropagator ) {
                              * This is the synchronous path. If custom extension handlers are used, this should never run
                              * */
 
-                            if( !_module3['default']._extensions.hasOwnProperty( ext ) ) {
+                            if( !_module2.default._extensions.hasOwnProperty( ext ) ) {
                                 this.emit( 'warning', 'The extension handler for ' + this.filename
                                                       + ' does not exist, defaulting to .js handler' );
                             }
@@ -900,23 +935,23 @@ var Script = (function( _EventPropagator ) {
                 var _this9 = this;
 
                 if( !this.watched ) {
-                    var watcher = undefined;
+                    var watcher = void 0;
 
                     try {
                         watcher = this._watcher = (0, _fs.watch)( this.filename, {
                             persistent: persistent
                         } );
                     } catch( err ) {
-                        throw (0, _errorJs.normalizeError)( this.filename, 'nodefine', err );
+                        throw (0, _error.normalizeError)( this.filename, 'nodefine', err );
                     }
 
                     //These are separated out so rename and change events can be debounced separately.
-                    var onChange = _.debounce( function( event, filename ) {
+                    var onChange = (0, _lodash.debounce)( function( event, filename ) {
                         _this9.unload();
                         _this9.emit( 'change', event, filename );
                     }, this.debounceMaxWait );
 
-                    var onRename = _.debounce( function( event, filename ) {
+                    var onRename = (0, _lodash.debounce)( function( event, filename ) {
                         if( _this9._unloadOnRename ) {
                             _this9.unload();
 
@@ -972,19 +1007,20 @@ var Script = (function( _EventPropagator ) {
             value: function source() {
                 var _this10 = this;
 
-                var encoding = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                var encoding = arguments.length <= 0 || arguments[0] === void 0 ? null : arguments[0];
 
                 if( this.loaded ) {
                     if( encoding !== null && encoding !== void 0 ) {
-                        return _bluebird2['default'].resolve( this._source.toString( encoding ) );
+                        return _bluebird2.default.resolve( this._source.toString( encoding ) );
                     } else {
-                        return _bluebird2['default'].resolve( this._source );
+                        return _bluebird2.default.resolve( this._source );
                     }
                 } else {
                     /*
                      * This is a special one were it doesn't matter which event triggers first.
                      * */
-                    var waiting = (0, _eventsJs.makeMultiEventPromise)( this, ['loaded', 'loaded_src'], ['error'] );
+                    var waiting = (0, _event_handling.makeMultiEventPromise)( this, ['loaded', 'loaded_src'],
+                        ['error'] );
 
                     this._callWrapper( this._do_load );
 
@@ -1001,13 +1037,13 @@ var Script = (function( _EventPropagator ) {
                 if( this.loaded ) {
                     if( this.pending ) {
                         //Add the event listeners first
-                        var waiting = (0, _eventsJs.makeEventPromise)( this, 'exports', 'error' );
+                        var waiting = (0, _event_handling.makeEventPromise)( this, 'exports', 'error' );
 
                         this._runMainFactory();
 
                         return waiting;
                     } else {
-                        return _bluebird2['default'].resolve( this._script.exports );
+                        return _bluebird2.default.resolve( this._script.exports );
                     }
                 } else if( this.textMode ) {
                     return this.source().then( function() {
@@ -1015,7 +1051,7 @@ var Script = (function( _EventPropagator ) {
                     } );
                 } else {
                     //Add the event listeners first
-                    var waiting = (0, _eventsJs.makeEventPromise)( this, 'loaded', 'error' );
+                    var waiting = (0, _event_handling.makeEventPromise)( this, 'loaded', 'error' );
 
                     this._callWrapper( this._do_load );
 
@@ -1047,8 +1083,8 @@ var Script = (function( _EventPropagator ) {
                             }
 
                             if( typeof main === 'function' ) {
-                                if( (0, _utilsJs.isGeneratorFunction)( main ) ) {
-                                    main = _bluebird2['default'].coroutine( main );
+                                if( (0, _utils.isGeneratorFunction)( main ) ) {
+                                    main = _bluebird2.default.coroutine( main );
                                 }
 
                                 return _this12._callWrapper( main, null, args );
@@ -1058,13 +1094,13 @@ var Script = (function( _EventPropagator ) {
                         return main;
                     } );
                 } else {
-                    return this.source.apply( this, _toConsumableArray( args ) );
+                    return this.source.apply( this, (0, _toConsumableArray3.default)( args ) );
                 }
             }
         }, {
             key:   'load',
             value: function load( filename ) {
-                var watch = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+                var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
                 filename = (0, _path.resolve)( filename );
 
@@ -1114,7 +1150,7 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   'watch',
             value: function watch() {
-                var persistent = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+                var persistent = arguments.length <= 0 || arguments[0] === void 0 ? false : arguments[0];
 
                 if( !this.watched ) {
                     this._willWatch = true;
@@ -1149,9 +1185,9 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   'reference_apply',
             value: function reference_apply( args ) {
-                (0, _assert2['default'])( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
+                (0, _assert2.default)( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
 
-                return new _referenceJs2['default']( this, args );
+                return new _reference2.default( this, args );
             }
         }, {
             key:   'reopen',
@@ -1168,7 +1204,7 @@ var Script = (function( _EventPropagator ) {
         }, {
             key:   'close',
             value: function close() {
-                var permanent = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+                var permanent = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];
 
                 this.unload();
                 this.unwatch();
@@ -1176,15 +1212,15 @@ var Script = (function( _EventPropagator ) {
                 this.emit( 'close', permanent );
 
                 if( permanent ) {
-                    var _parent = this._script.parent;
+                    var parent = this._script.parent;
 
                     //Remove _script from parent
-                    if( _parent !== void 0 && _parent !== null ) {
-                        for( var it in _parent.children ) {
+                    if( parent !== void 0 && parent !== null ) {
+                        for( var it in parent.children ) {
                             //Find which child is this._script, delete it and remove the (now undefined) reference
-                            if( _parent.children.hasOwnProperty( it ) && _parent.children[it] === this._script ) {
-                                delete _parent.children[it];
-                                _parent.children.splice( it, 1 );
+                            if( parent.children.hasOwnProperty( it ) && parent.children[it] === this._script ) {
+                                delete parent.children[it];
+                                parent.children.splice( it, 1 );
                                 break;
                             }
                         }
@@ -1204,7 +1240,7 @@ var Script = (function( _EventPropagator ) {
         }, {
             key: 'watched',
             get: function get() {
-                return this._watcher instanceof _eventsJs.EventEmitter;
+                return this._watcher instanceof _events.EventEmitter;
             }
         }, {
             key: 'willWatch',
@@ -1251,6 +1287,7 @@ var Script = (function( _EventPropagator ) {
             }
 
             //Only allow getting the filename, setting should be done through .load
+
         }, {
             key: 'filename',
             get: function get() {
@@ -1271,7 +1308,7 @@ var Script = (function( _EventPropagator ) {
             set: function set( time ) {
                 time = Math.floor( time );
 
-                (0, _assert2['default'])( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+                (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
                 this._debounceMaxWait = time;
             },
@@ -1296,9 +1333,10 @@ var Script = (function( _EventPropagator ) {
             }
         }
     ] );
-
     return Script;
-})( _eventsJs.EventPropagator );
+})( _event_handling.EventPropagator );
 
-exports['default'] = Script;
-//Node default maxListeners
+Script.Scriptor = null;
+Script.extensions_enabled = true;
+Script.extensions = _extensions2.default;
+exports.default = Script;

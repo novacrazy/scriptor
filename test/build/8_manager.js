@@ -1,18 +1,14 @@
-/**
- * Created by Aaron on 7/7/2015.
- */
-
 'use strict';
 
-var _Map = require( 'babel-runtime/core-js/map' ).default;
+var _map = require( 'babel-runtime/core-js/map' );
 
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
+var _map2 = _interopRequireDefault( _map );
 
-var _runnerJs = require( './runner.js' );
+var _runner = require( './runner.js' );
 
-var _module2 = require( 'module' );
+var _module = require( 'module' );
 
-var _module3 = _interopRequireDefault( _module2 );
+var _module2 = _interopRequireDefault( _module );
 
 var _path = require( 'path' );
 
@@ -20,20 +16,28 @@ var _assert = require( 'assert' );
 
 var _assert2 = _interopRequireDefault( _assert );
 
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/7/2015.
+ */
+
 var tests = function tests( Scriptor, build ) {
     describe( 'Managers (' + build + ' build)', function() {
         var Manager = Scriptor.Manager;
         var Script = Scriptor.Script;
 
-        var manager = undefined;
+        var manager = void 0;
 
         describe( 'Creating a manager', function() {
             manager = new Manager( module );
 
             it( 'should result in an empty manager with a parent module', function() {
-                (0, _assert2.default)( manager.parent instanceof _module3.default );
+                (0, _assert2.default)( manager.parent instanceof _module2.default );
                 _assert2.default.strictEqual( manager.parent.parent, module );
-                (0, _assert2.default)( manager.scripts instanceof _Map );
+                (0, _assert2.default)( manager.scripts instanceof _map2.default );
                 _assert2.default.strictEqual( manager.scripts.size, 0 );
             } );
 
@@ -60,5 +64,5 @@ var tests = function tests( Scriptor, build ) {
     } );
 };
 
-(0, _runnerJs.runTests)( 'compat', tests );
-(0, _runnerJs.runTests)( 'modern', tests );
+(0, _runner.runTests)( 'compat', tests );
+(0, _runner.runTests)( 'modern', tests );

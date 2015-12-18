@@ -22,18 +22,16 @@
  * SOFTWARE.
  *
  ****/
+'use strict';
+
+exports.__esModule = true;
 /**
  * Created by Aaron on 7/4/2015.
  */
 
-'use strict';
+var default_max_debounceMaxWait = exports.default_max_debounceMaxWait = 50;
 
-exports.__esModule = true;
-var default_max_debounceMaxWait = 50;
+var AMD_Header = exports.AMD_Header
+    = "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}";
 
-exports.default_max_debounceMaxWait = default_max_debounceMaxWait;
-var AMD_Header = 'if(typeof define !== \'function\' && typeof module.define === \'function\') {var define = module.define;}';
-
-exports.AMD_Header = AMD_Header;
-var default_dependencies = ['require', 'exports', 'module', 'imports'];
-exports.default_dependencies = default_dependencies;
+var default_dependencies = exports.default_dependencies = ['require', 'exports', 'module', 'imports'];

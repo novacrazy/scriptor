@@ -22,26 +22,35 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/5/2015.
- */
-
 'use strict';
 
-var _inherits = require( 'babel-runtime/helpers/inherits' ).default;
-
-var _createClass = require( 'babel-runtime/helpers/create-class' ).default;
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' ).default;
-
-var _Object$freeze = require( 'babel-runtime/core-js/object/freeze' ).default;
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' ).default;
-
-var _interopRequireWildcard = require( 'babel-runtime/helpers/interop-require-wildcard' ).default;
-
 exports.__esModule = true;
+exports.ReferenceBase = void 0;
 exports.identity = identity;
+
+var _freeze = require( 'babel-runtime/core-js/object/freeze' );
+
+var _freeze2 = _interopRequireDefault( _freeze );
+
+var _typeof2 = require( 'babel-runtime/helpers/typeof' );
+
+var _typeof3 = _interopRequireDefault( _typeof2 );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
 
 var _assert = require( 'assert' );
 
@@ -55,31 +64,60 @@ var _lodash = require( 'lodash' );
 
 var _ = _interopRequireWildcard( _lodash );
 
-var _eventsJs = require( './events.js' );
+var _events = require( 'events' );
 
-var _utilsJs = require( './utils.js' );
+var _event_handling = require( './event_handling.js' );
+
+var _utils = require( './utils.js' );
+
+function _interopRequireWildcard( obj ) {
+    if( obj && obj.__esModule ) {
+        return obj;
+    } else {
+        var newObj = {};
+        if( obj != null ) {
+            for( var key in obj ) {
+                if( Object.prototype.hasOwnProperty.call( obj, key ) ) {
+                    newObj[key] = obj[key];
+                }
+            }
+        }
+        newObj.default = obj;
+        return newObj;
+    }
+}
+
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
+
+/**
+ * Created by Aaron on 7/5/2015.
+ */
 
 function identity( left, right ) {
-    _assert2.default( left instanceof ReferenceBase, 'Cannot pass non-Reference to reference identity function.' );
+    (0, _assert2.default)( left instanceof ReferenceBase, 'Cannot pass non-Reference to reference identity function.' );
 
     return left.value();
 }
 
 var ReferenceBase = (function( _EventEmitter ) {
-    _inherits( ReferenceBase, _EventEmitter );
+    (0, _inherits3.default)( ReferenceBase, _EventEmitter );
 
     function ReferenceBase() {
-        _classCallCheck( this, ReferenceBase );
+        var _temp, _this, _ret;
 
-        _EventEmitter.apply( this, arguments );
+        (0, _classCallCheck3.default)( this, ReferenceBase );
 
-        this._onChange = null;
-        this._value = void 0;
-        this._ran = false;
-        this._running = false;
-        this._closed = false;
-        this._left = void 0;
-        this._right = void 0;
+        for( var _len = arguments.length, args = Array( _len ), _key = 0; _key < _len; _key++ ) {
+            args[_key] = arguments[_key];
+        }
+
+        return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)( this,
+            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._onChange
+            = null, _this._value = void 0, _this._ran = false, _this._running = false, _this._closed
+            = false, _this._left = void 0, _this._right = void 0, _temp), (0, _possibleConstructorReturn3.default)(
+            _this, _ret );
     }
 
     ReferenceBase.prototype._run = function _run() {
@@ -90,7 +128,7 @@ var ReferenceBase = (function( _EventEmitter ) {
         if( this._ran ) {
             return _bluebird2.default.resolve( this._value );
         } else if( !this._closed ) {
-            var waiting = _eventsJs.makeEventPromise( this, 'value', 'error' );
+            var waiting = (0, _event_handling.makeEventPromise)( this, 'value', 'error' );
 
             this._run();
 
@@ -131,7 +169,7 @@ var ReferenceBase = (function( _EventEmitter ) {
         this._closed = true;
     };
 
-    _createClass( ReferenceBase, [
+    (0, _createClass3.default)( ReferenceBase, [
         {
             key: 'ran',
             get: function get() {
@@ -149,66 +187,65 @@ var ReferenceBase = (function( _EventEmitter ) {
             }
         }
     ] );
-
     return ReferenceBase;
-})( _eventsJs.EventEmitter );
+})( _events.EventEmitter );
 
 exports.ReferenceBase = ReferenceBase;
 
 var Reference = (function( _ReferenceBase ) {
-    _inherits( Reference, _ReferenceBase );
+    (0, _inherits3.default)( Reference, _ReferenceBase );
 
     function Reference( script, args ) {
-        var _this = this;
+        (0, _classCallCheck3.default)( this, Reference );
 
-        _classCallCheck( this, Reference );
+        var _this2 = (0, _possibleConstructorReturn3.default)( this, _ReferenceBase.call( this ) );
 
-        _ReferenceBase.call( this );
+        _this2._args = [];
 
-        this._args = [];
-        this._script = script;
-        this._args = args;
+        _this2._script = script;
+        _this2._args = args;
 
         //Just mark this reference as not ran when a change occurs
         //other things are free to reference this script and evaluate it,
         //but this reference would still not be run
-        this._onChange = function( event, filename ) {
-            _this.emit( 'change', event, filename );
+        _this2._onChange = function( event, filename ) {
+            _this2.emit( 'change', event, filename );
 
-            _this._ran = false;
+            _this2._ran = false;
         };
 
-        script.addListener( 'change', this._onChange );
+        script.addListener( 'change', _this2._onChange );
+        return _this2;
     }
 
     Reference.prototype._run = function _run() {
-        var _this2 = this;
+        var _this3 = this;
 
         if( !this._running ) {
             this._running = true;
 
             this._script.apply( this._args ).then( function( value ) {
-                if( _this2._running ) {
-                    if( typeof value === 'object' ) {
-                        _this2._value = _.clone( value );
+                if( _this3._running ) {
+                    if( (typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)( value )) === 'object' ) {
+                        _this3._value = _.clone( value );
 
-                        _Object$freeze( _this2._value );
+                        (0, _freeze2.default)( _this3._value );
                     } else {
-                        _this2._value = value;
+                        _this3._value = value;
                     }
 
-                    _this2._ran = true;
-                    _this2._running = false;
+                    _this3._ran = true;
+                    _this3._running = false;
 
-                    _this2.emit( 'value', _this2._value );
+                    _this3.emit( 'value', _this3._value );
                 } else {
-                    _this2.emit( 'error',
+                    _this3.emit( 'error',
                         new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
-                _this2._running = false;
+                _this3._running = false;
 
-                _this2.emit( 'error', err );
+                _this3.emit( 'error', err );
             } );
         }
     };
@@ -239,7 +276,7 @@ var Reference = (function( _ReferenceBase ) {
     //Creates a binary tree (essentially) of joins from an array of References using a single transform
 
     Reference.join_all = function join_all( refs, transform ) {
-        _assert2.default( Array.isArray( refs ), 'join_all can only join arrays of References' );
+        (0, _assert2.default)( Array.isArray( refs ), 'join_all can only join arrays of References' );
 
         if( refs.length === 0 ) {
             return null;
@@ -267,73 +304,74 @@ var Reference = (function( _ReferenceBase ) {
 exports.default = Reference;
 
 var TransformReference = (function( _ReferenceBase2 ) {
-    _inherits( TransformReference, _ReferenceBase2 );
+    (0, _inherits3.default)( TransformReference, _ReferenceBase2 );
 
     function TransformReference( ref ) {
-        var _this3 = this;
+        var transform = arguments.length <= 1 || arguments[1] === void 0 ? identity : arguments[1];
+        (0, _classCallCheck3.default)( this, TransformReference );
 
-        var transform = arguments.length <= 1 || arguments[1] === undefined ? identity : arguments[1];
+        var _this4 = (0, _possibleConstructorReturn3.default)( this, _ReferenceBase2.call( this ) );
 
-        _classCallCheck( this, TransformReference );
+        _this4._ref = null;
+        _this4._transform = null;
 
-        _ReferenceBase2.call( this );
+        (0, _assert2.default)( ref instanceof ReferenceBase, 'transform will only work on References' );
+        _assert2.default.strictEqual(
+            typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
+            'transform function must be a function' );
 
-        this._ref = null;
-        this._transform = null;
-        _assert2.default( ref instanceof ReferenceBase, 'transform will only work on References' );
-        _assert2.default.strictEqual( typeof transform, 'function', 'transform function must be a function' );
+        _this4._left = _this4._ref = ref;
 
-        this._left = this._ref = ref;
-
-        if( _utilsJs.isGeneratorFunction( transform ) ) {
-            this._transform = _bluebird2.default.coroutine( transform );
+        if( (0, _utils.isGeneratorFunction)( transform ) ) {
+            _this4._transform = _bluebird2.default.coroutine( transform );
         } else {
-            this._transform = transform;
+            _this4._transform = transform;
         }
 
-        this._onChange = function( event, filename ) {
-            _this3.emit( 'change', event, filename );
+        _this4._onChange = function( event, filename ) {
+            _this4.emit( 'change', event, filename );
 
-            _this3._ran = false;
+            _this4._ran = false;
         };
 
-        ref.addListener( 'change', this._onChange );
+        ref.addListener( 'change', _this4._onChange );
+        return _this4;
     }
 
     TransformReference.prototype._run = function _run() {
-        var _this4 = this;
+        var _this5 = this;
 
         if( !this._running ) {
             this._running = true;
 
-            _utilsJs.tryReject( this._transform, null, this._ref, null ).then( function( value ) {
-                if( _this4._running ) {
-                    if( typeof value === 'object' ) {
-                        _this4._value = _.clone( value );
+            (0, _utils.tryReject)( this._transform, null, this._ref, null ).then( function( value ) {
+                if( _this5._running ) {
+                    if( (typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)( value )) === 'object' ) {
+                        _this5._value = _.clone( value );
 
-                        _Object$freeze( _this4._value );
+                        (0, _freeze2.default)( _this5._value );
                     } else {
-                        _this4._value = value;
+                        _this5._value = value;
                     }
 
-                    _this4._ran = true;
-                    _this4._running = false;
+                    _this5._ran = true;
+                    _this5._running = false;
 
-                    _this4.emit( 'value', _this4._value );
+                    _this5.emit( 'value', _this5._value );
                 } else {
-                    _this4.emit( 'error',
+                    _this5.emit( 'error',
                         new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
-                _this4._running = false;
+                _this5._running = false;
 
-                _this4.emit( 'error', err );
+                _this5.emit( 'error', err );
             } );
         }
     };
 
     TransformReference.prototype.close = function close() {
-        var recursive = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+        var recursive = arguments.length <= 0 || arguments[0] === void 0 ? false : arguments[0];
 
         if( !this._closed ) {
             this._ref.removeListener( 'change', this._onChange );
@@ -352,75 +390,75 @@ var TransformReference = (function( _ReferenceBase2 ) {
 })( ReferenceBase );
 
 var JoinedTransformReference = (function( _ReferenceBase3 ) {
-    _inherits( JoinedTransformReference, _ReferenceBase3 );
+    (0, _inherits3.default)( JoinedTransformReference, _ReferenceBase3 );
 
     function JoinedTransformReference( left, right ) {
-        var _this5 = this;
+        var transform = arguments.length <= 2 || arguments[2] === void 0 ? identity : arguments[2];
+        (0, _classCallCheck3.default)( this, JoinedTransformReference );
 
-        var transform = arguments.length <= 2 || arguments[2] === undefined ? identity : arguments[2];
+        var _this6 = (0, _possibleConstructorReturn3.default)( this, _ReferenceBase3.call( this ) );
 
-        _classCallCheck( this, JoinedTransformReference );
-
-        _ReferenceBase3.call( this );
-
-        _assert2.default( left instanceof ReferenceBase && right instanceof ReferenceBase,
+        (0, _assert2.default)( left instanceof ReferenceBase && right instanceof ReferenceBase,
             'join will only work on References' );
         _assert2.default.notEqual( left, right, 'Cannot join to self' );
-        _assert2.default.strictEqual( typeof transform, 'function', 'transform function must be a function' );
+        _assert2.default.strictEqual(
+            typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
+            'transform function must be a function' );
 
-        this._left = left;
-        this._right = right;
+        _this6._left = left;
+        _this6._right = right;
 
-        if( _utilsJs.isGeneratorFunction( transform ) ) {
-            this._transform = _bluebird2.default.coroutine( transform );
+        if( (0, _utils.isGeneratorFunction)( transform ) ) {
+            _this6._transform = _bluebird2.default.coroutine( transform );
         } else {
-            this._transform = transform;
+            _this6._transform = transform;
         }
 
-        this._onChange = function( event, filename ) {
-            _this5.emit( 'change', event, filename );
+        _this6._onChange = function( event, filename ) {
+            _this6.emit( 'change', event, filename );
 
-            _this5._ran = false;
+            _this6._ran = false;
         };
 
-        left.addListener( 'change', this._onChange );
-        right.addListener( 'change', this._onChange );
+        left.addListener( 'change', _this6._onChange );
+        right.addListener( 'change', _this6._onChange );
+        return _this6;
     }
 
     JoinedTransformReference.prototype._run = function _run() {
-        var _this6 = this;
+        var _this7 = this;
 
         if( !this._running ) {
             this._running = true;
 
-            _utilsJs.tryReject( this._transform, null, this._left, this._right ).then( function( value ) {
-                if( _this6._running ) {
-                    if( typeof value === 'object' ) {
-                        _this6._value = _.clone( value );
+            (0, _utils.tryReject)( this._transform, null, this._left, this._right ).then( function( value ) {
+                if( _this7._running ) {
+                    if( (typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)( value )) === 'object' ) {
+                        _this7._value = _.clone( value );
 
-                        _Object$freeze( _this6._value );
+                        (0, _freeze2.default)( _this7._value );
                     } else {
-                        _this6._value = value;
+                        _this7._value = value;
                     }
 
-                    _this6._ran = true;
-                    _this6._running = false;
+                    _this7._ran = true;
+                    _this7._running = false;
 
-                    _this6.emit( 'value', _this6._value );
+                    _this7.emit( 'value', _this7._value );
                 } else {
-                    _this6.emit( 'error',
+                    _this7.emit( 'error',
                         new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
-                _this6._running = false;
+                _this7._running = false;
 
-                _this6.emit( 'error', err );
+                _this7.emit( 'error', err );
             } );
         }
     };
 
     JoinedTransformReference.prototype.close = function close() {
-        var recursive = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+        var recursive = arguments.length <= 0 || arguments[0] === void 0 ? false : arguments[0];
 
         if( !this._closed ) {
             this._left.removeListener( 'change', this._onChange );
@@ -439,44 +477,45 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
 })( ReferenceBase );
 
 var ResolvedReference = (function( _ReferenceBase4 ) {
-    _inherits( ResolvedReference, _ReferenceBase4 );
+    (0, _inherits3.default)( ResolvedReference, _ReferenceBase4 );
 
     function ResolvedReference( value ) {
-        _classCallCheck( this, ResolvedReference );
+        (0, _classCallCheck3.default)( this, ResolvedReference );
 
-        _ReferenceBase4.call( this );
+        var _this8 = (0, _possibleConstructorReturn3.default)( this, _ReferenceBase4.call( this ) );
 
-        this._value = value;
+        _this8._value = value;
 
-        this._run();
+        _this8._run();
+        return _this8;
     }
 
     ResolvedReference.prototype._run = function _run() {
-        var _this7 = this;
+        var _this9 = this;
 
         if( !this._running ) {
             this._running = true;
 
-            _utilsJs.tryPromise( this._value ).then( function( result ) {
-                if( _this7._running ) {
-                    if( typeof result === 'object' ) {
-                        _this7._value = _Object$freeze( result );
+            (0, _utils.tryPromise)( this._value ).then( function( result ) {
+                if( _this9._running ) {
+                    if( (typeof result === 'undefined' ? 'undefined' : (0, _typeof3.default)( result )) === 'object' ) {
+                        _this9._value = (0, _freeze2.default)( result );
                     } else {
-                        _this7._value = result;
+                        _this9._value = result;
                     }
 
-                    _this7._ran = true;
-                    _this7._running = false;
+                    _this9._ran = true;
+                    _this9._running = false;
 
-                    _this7.emit( 'value', _this7._value );
+                    _this9.emit( 'value', _this9._value );
                 } else {
-                    _this7.emit( 'error',
+                    _this9.emit( 'error',
                         new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
-                _this7._running = false;
+                _this9._running = false;
 
-                _this7.emit( 'error', err );
+                _this9.emit( 'error', err );
             } );
         }
     };

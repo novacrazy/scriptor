@@ -22,33 +22,38 @@
  * SOFTWARE.
  *
  ****/
-/**
- * Created by Aaron on 7/4/2015.
- */
-
 'use strict';
 
-var _get = require( 'babel-runtime/helpers/get' )['default'];
-
-var _inherits = require( 'babel-runtime/helpers/inherits' )['default'];
-
-var _createClass = require( 'babel-runtime/helpers/create-class' )['default'];
-
-var _classCallCheck = require( 'babel-runtime/helpers/class-call-check' )['default'];
-
-var _getIterator = require( 'babel-runtime/core-js/get-iterator' )['default'];
-
-var _interopRequireDefault = require( 'babel-runtime/helpers/interop-require-default' )['default'];
-
-var _defaults = require( 'babel-runtime/helpers/defaults' )['default'];
-
-var _interopExportWildcard = require( 'babel-runtime/helpers/interop-export-wildcard' )['default'];
-
-Object.defineProperty( exports, '__esModule', {
+Object.defineProperty( exports, "__esModule", {
     value: true
 } );
+exports.EventPropagator = void 0;
 exports.makeEventPromise = makeEventPromise;
 exports.makeMultiEventPromise = makeMultiEventPromise;
+
+var _getIterator2 = require( 'babel-runtime/core-js/get-iterator' );
+
+var _getIterator3 = _interopRequireDefault( _getIterator2 );
+
+var _getPrototypeOf = require( 'babel-runtime/core-js/object/get-prototype-of' );
+
+var _getPrototypeOf2 = _interopRequireDefault( _getPrototypeOf );
+
+var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+
+var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
+
+var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+
+var _createClass3 = _interopRequireDefault( _createClass2 );
+
+var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+
+var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
+
+var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+
+var _inherits3 = _interopRequireDefault( _inherits2 );
 
 var _bluebird = require( 'bluebird' );
 
@@ -58,24 +63,35 @@ var _events = require( 'events' );
 
 var _lodash = require( 'lodash' );
 
-_defaults( exports, _interopExportWildcard( _events, _defaults ) );
+function _interopRequireDefault( obj ) {
+    return obj && obj.__esModule ? obj : {default: obj};
+}
 
-var EventPropagator = (function( _EventEmitter ) {
-    _inherits( EventPropagator, _EventEmitter );
+var EventPropagator = exports.EventPropagator = (function( _EventEmitter ) {
+    (0, _inherits3.default)( EventPropagator, _EventEmitter );
 
     function EventPropagator() {
-        _classCallCheck( this, EventPropagator );
+        var _Object$getPrototypeO;
 
-        _get( Object.getPrototypeOf( EventPropagator.prototype ), 'constructor', this ).apply( this, arguments );
+        var _temp, _this, _ret;
 
-        this._propagateEvents = false;
+        (0, _classCallCheck3.default)( this, EventPropagator );
+
+        for( var _len = arguments.length, args = Array( _len ), _key = 0; _key < _len; _key++ ) {
+            args[_key] = arguments[_key];
+        }
+
+        return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)( this,
+            (_Object$getPrototypeO = (0, _getPrototypeOf2.default)( EventPropagator )).call.apply(
+                _Object$getPrototypeO, [this].concat( args ) ) ), _this), _this._propagateEvents
+            = false, _temp), (0, _possibleConstructorReturn3.default)( _this, _ret );
     }
 
-    _createClass( EventPropagator, [
+    (0, _createClass3.default)( EventPropagator, [
         {
             key:   'propagateEvents',
             value: function propagateEvents() {
-                var enable = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+                var enable = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];
 
                 this._propagateEvents = enable;
             }
@@ -90,7 +106,7 @@ var EventPropagator = (function( _EventEmitter ) {
                 var _iteratorError = void 0;
 
                 try {
-                    for( var _iterator = _getIterator( listeners ), _step;
+                    for( var _iterator = (0, _getIterator3.default)( listeners ), _step;
                          !(_iteratorNormalCompletion = (_step = _iterator.next()).done);
                          _iteratorNormalCompletion = true ) {
                         var listener = _step.value;
@@ -104,8 +120,8 @@ var EventPropagator = (function( _EventEmitter ) {
                     _iteratorError = err;
                 } finally {
                     try {
-                        if( !_iteratorNormalCompletion && _iterator['return'] ) {
-                            _iterator['return']();
+                        if( !_iteratorNormalCompletion && _iterator.return ) {
+                            _iterator.return();
                         }
                     } finally {
                         if( _didIteratorError ) {
@@ -124,13 +140,13 @@ var EventPropagator = (function( _EventEmitter ) {
         }, {
             key:   'propagateFrom',
             value: function propagateFrom( emitter, event, handler ) {
-                var _this = this;
+                var _this2 = this;
 
                 if( this._propagateEvents && !this.isPropagatingFrom( emitter, event ) ) {
 
                     var propagate = (0, _lodash.once)( function() {
-                        if( !propagate._hasPropagated && _this._propagateEvents ) {
-                            handler.call( _this );
+                        if( !propagate._hasPropagated && _this2._propagateEvents ) {
+                            handler.call( _this2 );
                             propagate._hasPropagated = true;
                         }
 
@@ -156,26 +172,26 @@ var EventPropagator = (function( _EventEmitter ) {
             }
         }
     ] );
-
     return EventPropagator;
 })( _events.EventEmitter );
-
-exports.EventPropagator = EventPropagator;
+/**
+ * Created by Aaron on 7/4/2015.
+ */
 
 function makeEventPromise( emitter, resolve_event, reject_event ) {
-    return new _bluebird2['default']( function( resolve, reject ) {
+    return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
             emitter.removeListener( reject_event, reject_handler );
             emitter.removeListener( resolve_event, resolve_handler );
 
-            resolve.apply( undefined, arguments );
+            resolve.apply( void 0, arguments );
         }
 
         function reject_handler() {
             emitter.removeListener( resolve_event, resolve_handler );
             emitter.removeListener( reject_event, reject_handler );
 
-            reject.apply( undefined, arguments );
+            reject.apply( void 0, arguments );
         }
 
         emitter.addListener( resolve_event, resolve_handler );
@@ -186,9 +202,8 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
 /*
  * This is a more generic version of the above, but also costs more to run.
  * */
-
 function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
-    return new _bluebird2['default']( function( resolve, reject ) {
+    return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
             var _iteratorNormalCompletion2 = true;
             var _didIteratorError2 = false;
@@ -196,20 +211,20 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
             var _iteratorError2 = void 0;
 
             try {
-                for( var _iterator2 = _getIterator( reject_events ), _step2;
+                for( var _iterator2 = (0, _getIterator3.default)( reject_events ), _step2;
                      !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done);
                      _iteratorNormalCompletion2 = true ) {
-                    var _event = _step2.value;
+                    var event = _step2.value;
 
-                    emitter.removeListener( _event, reject_handler );
+                    emitter.removeListener( event, reject_handler );
                 }
             } catch( err ) {
                 _didIteratorError2 = true;
                 _iteratorError2 = err;
             } finally {
                 try {
-                    if( !_iteratorNormalCompletion2 && _iterator2['return'] ) {
-                        _iterator2['return']();
+                    if( !_iteratorNormalCompletion2 && _iterator2.return ) {
+                        _iterator2.return();
                     }
                 } finally {
                     if( _didIteratorError2 ) {
@@ -224,20 +239,20 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
             var _iteratorError3 = void 0;
 
             try {
-                for( var _iterator3 = _getIterator( resolve_events ), _step3;
+                for( var _iterator3 = (0, _getIterator3.default)( resolve_events ), _step3;
                      !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done);
                      _iteratorNormalCompletion3 = true ) {
-                    var _event2 = _step3.value;
+                    var event = _step3.value;
 
-                    emitter.removeListener( _event2, resolve_handler );
+                    emitter.removeListener( event, resolve_handler );
                 }
             } catch( err ) {
                 _didIteratorError3 = true;
                 _iteratorError3 = err;
             } finally {
                 try {
-                    if( !_iteratorNormalCompletion3 && _iterator3['return'] ) {
-                        _iterator3['return']();
+                    if( !_iteratorNormalCompletion3 && _iterator3.return ) {
+                        _iterator3.return();
                     }
                 } finally {
                     if( _didIteratorError3 ) {
@@ -246,7 +261,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 }
             }
 
-            resolve.apply( undefined, arguments );
+            resolve.apply( void 0, arguments );
         }
 
         function reject_handler() {
@@ -256,20 +271,20 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
             var _iteratorError4 = void 0;
 
             try {
-                for( var _iterator4 = _getIterator( reject_events ), _step4;
+                for( var _iterator4 = (0, _getIterator3.default)( reject_events ), _step4;
                      !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done);
                      _iteratorNormalCompletion4 = true ) {
-                    var _event3 = _step4.value;
+                    var event = _step4.value;
 
-                    emitter.removeListener( _event3, reject_handler );
+                    emitter.removeListener( event, reject_handler );
                 }
             } catch( err ) {
                 _didIteratorError4 = true;
                 _iteratorError4 = err;
             } finally {
                 try {
-                    if( !_iteratorNormalCompletion4 && _iterator4['return'] ) {
-                        _iterator4['return']();
+                    if( !_iteratorNormalCompletion4 && _iterator4.return ) {
+                        _iterator4.return();
                     }
                 } finally {
                     if( _didIteratorError4 ) {
@@ -284,20 +299,20 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
             var _iteratorError5 = void 0;
 
             try {
-                for( var _iterator5 = _getIterator( resolve_events ), _step5;
+                for( var _iterator5 = (0, _getIterator3.default)( resolve_events ), _step5;
                      !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done);
                      _iteratorNormalCompletion5 = true ) {
-                    var _event4 = _step5.value;
+                    var event = _step5.value;
 
-                    emitter.removeListener( _event4, resolve_handler );
+                    emitter.removeListener( event, resolve_handler );
                 }
             } catch( err ) {
                 _didIteratorError5 = true;
                 _iteratorError5 = err;
             } finally {
                 try {
-                    if( !_iteratorNormalCompletion5 && _iterator5['return'] ) {
-                        _iterator5['return']();
+                    if( !_iteratorNormalCompletion5 && _iterator5.return ) {
+                        _iterator5.return();
                     }
                 } finally {
                     if( _didIteratorError5 ) {
@@ -306,7 +321,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 }
             }
 
-            reject.apply( undefined, arguments );
+            reject.apply( void 0, arguments );
         }
 
         var _iteratorNormalCompletion6 = true;
@@ -315,20 +330,20 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
         var _iteratorError6 = void 0;
 
         try {
-            for( var _iterator6 = _getIterator( resolve_events ), _step6;
+            for( var _iterator6 = (0, _getIterator3.default)( resolve_events ), _step6;
                  !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done);
                  _iteratorNormalCompletion6 = true ) {
-                var _event5 = _step6.value;
+                var event = _step6.value;
 
-                emitter.addListener( _event5, resolve_handler );
+                emitter.addListener( event, resolve_handler );
             }
         } catch( err ) {
             _didIteratorError6 = true;
             _iteratorError6 = err;
         } finally {
             try {
-                if( !_iteratorNormalCompletion6 && _iterator6['return'] ) {
-                    _iterator6['return']();
+                if( !_iteratorNormalCompletion6 && _iterator6.return ) {
+                    _iterator6.return();
                 }
             } finally {
                 if( _didIteratorError6 ) {
@@ -343,20 +358,20 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
         var _iteratorError7 = void 0;
 
         try {
-            for( var _iterator7 = _getIterator( reject_events ), _step7;
+            for( var _iterator7 = (0, _getIterator3.default)( reject_events ), _step7;
                  !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done);
                  _iteratorNormalCompletion7 = true ) {
-                var _event6 = _step7.value;
+                var event = _step7.value;
 
-                emitter.addListener( _event6, reject_handler );
+                emitter.addListener( event, reject_handler );
             }
         } catch( err ) {
             _didIteratorError7 = true;
             _iteratorError7 = err;
         } finally {
             try {
-                if( !_iteratorNormalCompletion7 && _iterator7['return'] ) {
-                    _iterator7['return']();
+                if( !_iteratorNormalCompletion7 && _iterator7.return ) {
+                    _iterator7.return();
                 }
             } finally {
                 if( _didIteratorError7 ) {
