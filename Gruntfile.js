@@ -15,12 +15,12 @@ module.exports = function( grunt ) {
 
     grunt.initConfig( {
         babel:     {
-            options:      {
+            options: {
                 ast:        false,
                 sourceMaps: false,
                 compact:    false
             },
-            build_modern: {
+            build:   {
                 options: {
                     plugins: [
                         [
@@ -69,24 +69,6 @@ module.exports = function( grunt ) {
                         cwd:    './test/src/',
                         src:    './**/*.js',
                         dest:   './test/build/'
-                    }
-                ]
-            },
-            build_compat: {
-                options: {
-                    presets: ["es2015", "stage-0"],
-                    plugins: [
-                        "transform-undefined-to-void",
-                        "transform-runtime",
-                        "transform-es5-property-mutators"
-                    ]
-                },
-                files:   [
-                    {
-                        expand: true,
-                        cwd:    './src/',
-                        src:    './**/*.js',
-                        dest:   './build/compat/'
                     },
                     {
                         expand: true,
@@ -123,8 +105,7 @@ module.exports = function( grunt ) {
     grunt.registerTask( 'build', [
         'clean:tests',
         'clean:build',
-        'babel:build_modern',
-        'babel:build_compat',
+        'babel:build',
         'usebanner:license'
     ] );
 
