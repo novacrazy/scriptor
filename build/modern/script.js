@@ -25,7 +25,6 @@
 'use strict';
 
 exports.__esModule = true;
-exports.load = load;
 
 var _bluebird = require( 'bluebird' );
 
@@ -54,6 +53,8 @@ var _inherits3 = _interopRequireDefault( _inherits2 );
 var _map = require( 'babel-runtime/core-js/map' );
 
 var _map2 = _interopRequireDefault( _map );
+
+exports.load = load;
 
 var _module = require( 'module' );
 
@@ -102,7 +103,7 @@ var promisifyCache = new _map2.default();
 var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
 
 function load( filename ) {
-    var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
+    var watch  = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
     var parent = arguments.length <= 2 || arguments[2] === void 0 ? null : arguments[2];
 
     filename = (0, _path.resolve)( filename );
@@ -114,7 +115,7 @@ function load( filename ) {
     return script;
 }
 
-var Script = (function( _EventPropagator ) {
+var Script = function( _EventPropagator ) {
     (0, _inherits3.default)( Script, _EventPropagator );
 
     Script.hasExtension = function hasExtension( ext ) {
@@ -184,7 +185,7 @@ var Script = (function( _EventPropagator ) {
         require.define = define;
 
         this.require = require;
-        this.define = define;
+        this.define  = define;
     };
 
     function Script( filename, parent ) {
@@ -192,31 +193,31 @@ var Script = (function( _EventPropagator ) {
 
         var _this = (0, _possibleConstructorReturn3.default)( this, _EventPropagator.call( this ) );
 
-        _this._script = null;
-        _this._source = null;
-        _this._factory = null;
-        _this._watcher = null;
-        _this._willWatch = false;
+        _this._script          = null;
+        _this._source          = null;
+        _this._factory         = null;
+        _this._watcher         = null;
+        _this._willWatch       = false;
         _this._watchPersistent = false;
-        _this._maxListeners = 10;
+        _this._maxListeners    = 10;
         _this._debounceMaxWait = _defaults.default_max_debounceMaxWait;
-        _this._textMode = false;
-        _this._defineCache = new _map2.default();
-        _this._loadCache = new _map2.default();
-        _this._pending = false;
-        _this._loading = false;
-        _this._loadingText = false;
-        _this._runningFactory = false;
-        _this._config = (0, _utils.normalizeConfig)( null );
-        _this._dependencies = [];
-        _this._unloadOnRename = false;
-        _this.require = null;
-        _this.define = null;
-        _this.imports = {};
+        _this._textMode        = false;
+        _this._defineCache     = new _map2.default();
+        _this._loadCache       = new _map2.default();
+        _this._pending         = false;
+        _this._loading         = false;
+        _this._loadingText     = false;
+        _this._runningFactory  = false;
+        _this._config          = (0, _utils.normalizeConfig)( null );
+        _this._dependencies    = [];
+        _this._unloadOnRename  = false;
+        _this.require          = null;
+        _this.define           = null;
+        _this.imports          = {};
 
         if( parent === void 0 || parent === null ) {
             if( filename instanceof _module2.default.Module ) {
-                parent = filename;
+                parent   = filename;
                 filename = null;
             } else {
                 parent = module;
@@ -275,7 +276,7 @@ var Script = (function( _EventPropagator ) {
         var _this3 = this;
 
         var context = arguments.length <= 1 || arguments[1] === void 0 ? this : arguments[1];
-        var args = arguments.length <= 2 || arguments[2] === void 0 ? [] : arguments[2];
+        var args    = arguments.length <= 2 || arguments[2] === void 0 ? [] : arguments[2];
 
         return new _bluebird2.default( function( resolve, reject ) {
             try {
@@ -330,7 +331,7 @@ var Script = (function( _EventPropagator ) {
 
         if( !this._runningFactory ) {
             this._runningFactory = true;
-            this._pending = true;
+            this._pending        = true;
 
             return this._runFactory( null, this._dependencies, this._factory ).then( function( result ) {
                 if( _this5._pending ) {
@@ -340,13 +341,13 @@ var Script = (function( _EventPropagator ) {
                         _this5._script.exports = result;
                     }
 
-                    _this5._pending = false;
+                    _this5._pending        = false;
                     _this5._runningFactory = false;
 
                     _this5.emit( 'exports', _this5._script.exports );
                 } else {
-                    _this5.emit( 'error', new Error( 'The script ' + _this5.filename
-                                                     + ' was unloaded while performing an asynchronous operation.' ) );
+                    _this5.emit( 'error', new Error( 'The script ' + _this5.filename +
+                                                     ' was unloaded while performing an asynchronous operation.' ) );
                 }
             }, function( err ) {
                 _this5._runningFactory = false;
@@ -356,8 +357,8 @@ var Script = (function( _EventPropagator ) {
         }
     };
 
-    Script.prototype._require = (function() {
-        var ref = (0, _bluebird.coroutine)( function* ( id ) {
+    Script.prototype._require = function() {
+        var ref = (0, _bluebird.coroutine)( function*( id ) {
             var _this6 = this;
 
             var normalize = _path.resolve.bind( null, this.baseUrl );
@@ -372,7 +373,7 @@ var Script = (function( _EventPropagator ) {
 
                 //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
-                    var _ret = yield* (function* () {
+                    var _ret = yield* function*() {
                         var parts = id.split( '!', 2 );
 
                         var plugin    = void 0,
@@ -481,10 +482,10 @@ var Script = (function( _EventPropagator ) {
                                 }
                             } )
                         };
-                    })();
+                    }();
 
-                    if( (typeof _ret === 'undefined' ? 'undefined' : (0, _typeof3.default)( _ret ))
-                        === "object" ) {
+                    if( (typeof _ret === 'undefined' ? 'undefined' : (0, _typeof3.default)( _ret )) ===
+                        "object" ) {
                         return _ret.v;
                     }
                 } else if( (0, _utils.isAbsoluteOrRelative)( id ) ) {
@@ -565,7 +566,7 @@ var Script = (function( _EventPropagator ) {
         return function _require( _x7 ) {
             return ref.apply( this, arguments );
         };
-    })();
+    }();
 
     Script.prototype._define = function _define() {
         var define_args = _utils.parseDefine.apply( void 0, arguments );
@@ -578,7 +579,7 @@ var Script = (function( _EventPropagator ) {
             this._defineCache.set( id, define_args );
         } else {
             this._dependencies = define_args[1];
-            this._factory = define_args[2];
+            this._factory      = define_args[2];
 
             this._runMainFactory();
         }
@@ -631,15 +632,15 @@ var Script = (function( _EventPropagator ) {
                         return (0, _utils.tryPromise)( Script.extensions[ext]( this._script, this.filename ) )
                             .then( function( src ) {
                                 if( _this8._loading ) {
-                                    _this8._source = src;
+                                    _this8._source        = src;
                                     _this8._script.loaded = true;
 
                                     _this8._loading = false;
 
                                     _this8.emit( 'loaded', _this8._script.exports );
                                 } else {
-                                    _this8.emit( 'error', new Error( 'The script ' + _this8.filename
-                                                                     +               ' was unloaded while performing an asynchronous operation.' ) );
+                                    _this8.emit( 'error', new Error( 'The script ' + _this8.filename +
+                                                                     ' was unloaded while performing an asynchronous operation.' ) );
                                 }
                             }, function( err ) {
                                 _this8._loading = false;
@@ -657,8 +658,8 @@ var Script = (function( _EventPropagator ) {
                      * */
 
                     if( !_module2.default._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning', 'The extension handler for ' + this.filename
-                                              + ' does not exist, defaulting to .js handler' );
+                        this.emit( 'warning', 'The extension handler for ' + this.filename +
+                                              ' does not exist, defaulting to .js handler' );
                     }
 
                     this._loading = true;
@@ -673,8 +674,8 @@ var Script = (function( _EventPropagator ) {
                         if( this._loading ) {
                             this.emit( 'loaded', this.loaded );
                         } else {
-                            this.emit( 'error', new Error( 'The script ' + this.filename
-                                                           + ' was unloaded while performing an asynchronous operation.' ) );
+                            this.emit( 'error', new Error( 'The script ' + this.filename +
+                                                           ' was unloaded while performing an asynchronous operation.' ) );
                         }
                     } catch( err ) {
                         this.emit( 'error', err );
@@ -683,14 +684,14 @@ var Script = (function( _EventPropagator ) {
                     }
                 }
             } else {
-                this._loading = true;
+                this._loading     = true;
                 this._loadingText = true;
 
                 if( this._willWatch ) {
                     try {
                         this._do_watch( this._watchPersistent );
                     } catch( err ) {
-                        this._loading = false;
+                        this._loading     = false;
                         this._loadingText = false;
 
                         this.emit( 'error', err );
@@ -699,19 +700,19 @@ var Script = (function( _EventPropagator ) {
 
                 return readFileAsync( this.filename ).then( function( src ) {
                     if( _this8._loading && _this8._loadingText ) {
-                        _this8._source = src;
+                        _this8._source        = src;
                         _this8._script.loaded = true;
 
-                        _this8._loading = false;
+                        _this8._loading     = false;
                         _this8._loadingText = false;
 
                         _this8.emit( 'loaded_src', _this8.loaded );
                     } else if( !_this8._loading ) {
-                        _this8.emit( 'error', new Error( 'The script ' + _this8.filename
-                                                         + ' was unloaded while performing an asynchronous operation.' ) );
+                        _this8.emit( 'error', new Error( 'The script ' + _this8.filename +
+                                                         ' was unloaded while performing an asynchronous operation.' ) );
                     }
                 }, function( err ) {
-                    _this8._loading = false;
+                    _this8._loading     = false;
                     _this8._loadingText = false;
 
                     _this8.emit( 'error', err );
@@ -905,17 +906,17 @@ var Script = (function( _EventPropagator ) {
     Script.prototype.unload = function unload() {
         this.emit( 'unload' );
 
-        this._script.loaded = false;
+        this._script.loaded  = false;
         this._script.exports = {};
 
         //unload also clears defines and requires
         this._defineCache.clear();
         this._loadCache.clear();
 
-        this._pending = false;
+        this._pending        = false;
         this._runningFactory = false;
-        this._loading = false;
-        this._loadingText = false;
+        this._loading        = false;
+        this._loadingText    = false;
     };
 
     Script.prototype.reload = function reload() {
@@ -933,7 +934,7 @@ var Script = (function( _EventPropagator ) {
         var persistent = arguments.length <= 0 || arguments[0] === void 0 ? false : arguments[0];
 
         if( !this.watched ) {
-            this._willWatch = true;
+            this._willWatch       = true;
             this._watchPersistent = persistent;
         } else if( this._willWatch ) {
             this._watchPersistent = persistent;
@@ -1012,107 +1013,105 @@ var Script = (function( _EventPropagator ) {
         throw new Error( 'Cannot include script "' + filename + '" from an unmanaged script' );
     };
 
-    (0, _createClass3.default)( Script, [
-        {
-            key: 'watched',
-            get: function get() {
-                return this._watcher instanceof _events.EventEmitter;
-            }
-        }, {
-            key: 'willWatch',
-            get: function get() {
-                return !this.watched && this._willWatch;
-            }
-        }, {
-            key: 'id',
-            get: function get() {
-                return this._script.id;
-            },
-            set: function set( value ) {
-                this._script.id = value;
-            }
-        }, {
-            key: 'children',
-            get: function get() {
-                return this._script.children;
-            }
-        }, {
-            key: 'parent',
-            get: function get() {
-                return this._script.parent;
-            }
-        }, {
-            key: 'loaded',
-            get: function get() {
-                return this._script.loaded;
-            }
-        }, {
-            key: 'pending',
-            get: function get() {
-                return this._pending;
-            }
-        }, {
-            key: 'loading',
-            get: function get() {
-                return this._loading;
-            }
-        }, {
-            key: 'dependencies',
-            get: function get() {
-                return this._dependencies;
-            }
-
-            //Only allow getting the filename, setting should be done through .load
-
-        }, {
-            key: 'filename',
-            get: function get() {
-                return this._script.filename;
-            }
-        }, {
-            key: 'manager',
-            get: function get() {
-                return null;
-            }
-        }, {
-            key: 'baseUrl',
-            get: function get() {
-                return _path.posix.dirname( this.filename );
-            }
-        }, {
-            key: 'debounceMaxWait',
-            set: function set( time ) {
-                time = Math.floor( time );
-
-                (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
-
-                this._debounceMaxWait = time;
-            },
-            get: function get() {
-                return this._debounceMaxWait;
-            }
-        }, {
-            key: 'textMode',
-            get: function get() {
-                return this._textMode;
-            },
-            set: function set( value ) {
-                this._textMode = !!value;
-            }
-        }, {
-            key: 'unloadOnRename',
-            set: function set( value ) {
-                this._unloadOnRename = !!value;
-            },
-            get: function get() {
-                return this._unloadOnRename;
-            }
+    (0, _createClass3.default)( Script, [{
+        key: 'watched',
+        get: function get() {
+            return this._watcher instanceof _events.EventEmitter;
         }
-    ] );
-    return Script;
-})( _event_handling.EventPropagator );
+    }, {
+        key: 'willWatch',
+        get: function get() {
+            return !this.watched && this._willWatch;
+        }
+    }, {
+        key: 'id',
+        get: function get() {
+            return this._script.id;
+        },
+        set: function set( value ) {
+            this._script.id = value;
+        }
+    }, {
+        key: 'children',
+        get: function get() {
+            return this._script.children;
+        }
+    }, {
+        key: 'parent',
+        get: function get() {
+            return this._script.parent;
+        }
+    }, {
+        key: 'loaded',
+        get: function get() {
+            return this._script.loaded;
+        }
+    }, {
+        key: 'pending',
+        get: function get() {
+            return this._pending;
+        }
+    }, {
+        key: 'loading',
+        get: function get() {
+            return this._loading;
+        }
+    }, {
+        key: 'dependencies',
+        get: function get() {
+            return this._dependencies;
+        }
 
-Script.Scriptor = null;
+        //Only allow getting the filename, setting should be done through .load
+
+    }, {
+        key: 'filename',
+        get: function get() {
+            return this._script.filename;
+        }
+    }, {
+        key: 'manager',
+        get: function get() {
+            return null;
+        }
+    }, {
+        key: 'baseUrl',
+        get: function get() {
+            return _path.posix.dirname( this.filename );
+        }
+    }, {
+        key: 'debounceMaxWait',
+        set: function set( time ) {
+            time = Math.floor( time );
+
+            (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+
+            this._debounceMaxWait = time;
+        },
+        get: function get() {
+            return this._debounceMaxWait;
+        }
+    }, {
+        key: 'textMode',
+        get: function get() {
+            return this._textMode;
+        },
+        set: function set( value ) {
+            this._textMode = !!value;
+        }
+    }, {
+        key: 'unloadOnRename',
+        set: function set( value ) {
+            this._unloadOnRename = !!value;
+        },
+        get: function get() {
+            return this._unloadOnRename;
+        }
+    }] );
+    return Script;
+}( _event_handling.EventPropagator );
+
+Script.Scriptor           = null;
 Script.extensions_enabled = true;
-Script.extensions = _extensions2.default;
-exports.default = Script;
+Script.extensions         = _extensions2.default;
+exports.default           = Script;

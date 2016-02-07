@@ -24,9 +24,8 @@
  ****/
 'use strict';
 
-exports.__esModule = true;
+exports.__esModule    = true;
 exports.ReferenceBase = void 0;
-exports.identity = identity;
 
 var _freeze = require( 'babel-runtime/core-js/object/freeze' );
 
@@ -51,6 +50,8 @@ var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorRe
 var _inherits2 = require( 'babel-runtime/helpers/inherits' );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
+
+exports.identity = identity;
 
 var _assert = require( 'assert' );
 
@@ -101,7 +102,7 @@ function identity( left, right ) {
     return left.value();
 }
 
-var ReferenceBase = (function( _EventEmitter ) {
+var ReferenceBase = function( _EventEmitter ) {
     (0, _inherits3.default)( ReferenceBase, _EventEmitter );
 
     function ReferenceBase() {
@@ -114,10 +115,10 @@ var ReferenceBase = (function( _EventEmitter ) {
         }
 
         return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)( this,
-            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._onChange
-            = null, _this._value = void 0, _this._ran = false, _this._running = false, _this._closed
-            = false, _this._left = void 0, _this._right = void 0, _temp), (0, _possibleConstructorReturn3.default)(
-            _this, _ret );
+            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._onChange =
+            null, _this._value = void 0, _this._ran = false, _this._running = false, _this._closed =
+            false, _this._left = void 0, _this._right = void 0, _temp), (0, _possibleConstructorReturn3.default)( _this,
+            _ret );
     }
 
     ReferenceBase.prototype._run = function _run() {
@@ -160,7 +161,7 @@ var ReferenceBase = (function( _EventEmitter ) {
         }
 
         this._running = false;
-        this._ran = false;
+        this._ran     = false;
 
         delete this['_left'];
         delete this['_right'];
@@ -169,30 +170,28 @@ var ReferenceBase = (function( _EventEmitter ) {
         this._closed = true;
     };
 
-    (0, _createClass3.default)( ReferenceBase, [
-        {
-            key: 'ran',
-            get: function get() {
-                return this._ran;
-            }
-        }, {
-            key: 'running',
-            get: function get() {
-                return this._running;
-            }
-        }, {
-            key: 'closed',
-            get: function get() {
-                return this._closed;
-            }
+    (0, _createClass3.default)( ReferenceBase, [{
+        key: 'ran',
+        get: function get() {
+            return this._ran;
         }
-    ] );
+    }, {
+        key: 'running',
+        get: function get() {
+            return this._running;
+        }
+    }, {
+        key: 'closed',
+        get: function get() {
+            return this._closed;
+        }
+    }] );
     return ReferenceBase;
-})( _events.EventEmitter );
+}( _events.EventEmitter );
 
 exports.ReferenceBase = ReferenceBase;
 
-var Reference = (function( _ReferenceBase ) {
+var Reference = function( _ReferenceBase ) {
     (0, _inherits3.default)( Reference, _ReferenceBase );
 
     function Reference( script, args ) {
@@ -203,7 +202,7 @@ var Reference = (function( _ReferenceBase ) {
         _this2._args = [];
 
         _this2._script = script;
-        _this2._args = args;
+        _this2._args   = args;
 
         //Just mark this reference as not ran when a change occurs
         //other things are free to reference this script and evaluate it,
@@ -234,7 +233,7 @@ var Reference = (function( _ReferenceBase ) {
                         _this3._value = value;
                     }
 
-                    _this3._ran = true;
+                    _this3._ran     = true;
                     _this3._running = false;
 
                     _this3.emit( 'value', _this3._value );
@@ -287,7 +286,7 @@ var Reference = (function( _ReferenceBase ) {
         } else {
             var mid = Math.floor( refs.length / 2 );
 
-            var left = Reference.join_all( refs.slice( 0, mid ), transform );
+            var left  = Reference.join_all( refs.slice( 0, mid ), transform );
             var right = Reference.join_all( refs.slice( mid ), transform );
 
             return Reference.join( left, right, transform );
@@ -299,11 +298,11 @@ var Reference = (function( _ReferenceBase ) {
     };
 
     return Reference;
-})( ReferenceBase );
+}( ReferenceBase );
 
 exports.default = Reference;
 
-var TransformReference = (function( _ReferenceBase2 ) {
+var TransformReference = function( _ReferenceBase2 ) {
     (0, _inherits3.default)( TransformReference, _ReferenceBase2 );
 
     function TransformReference( ref ) {
@@ -312,7 +311,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
 
         var _this4 = (0, _possibleConstructorReturn3.default)( this, _ReferenceBase2.call( this ) );
 
-        _this4._ref = null;
+        _this4._ref       = null;
         _this4._transform = null;
 
         (0, _assert2.default)( ref instanceof ReferenceBase, 'transform will only work on References' );
@@ -354,7 +353,7 @@ var TransformReference = (function( _ReferenceBase2 ) {
                         _this5._value = value;
                     }
 
-                    _this5._ran = true;
+                    _this5._ran     = true;
                     _this5._running = false;
 
                     _this5.emit( 'value', _this5._value );
@@ -387,9 +386,9 @@ var TransformReference = (function( _ReferenceBase2 ) {
     };
 
     return TransformReference;
-})( ReferenceBase );
+}( ReferenceBase );
 
-var JoinedTransformReference = (function( _ReferenceBase3 ) {
+var JoinedTransformReference = function( _ReferenceBase3 ) {
     (0, _inherits3.default)( JoinedTransformReference, _ReferenceBase3 );
 
     function JoinedTransformReference( left, right ) {
@@ -405,7 +404,7 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
             typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
             'transform function must be a function' );
 
-        _this6._left = left;
+        _this6._left  = left;
         _this6._right = right;
 
         if( (0, _utils.isGeneratorFunction)( transform ) ) {
@@ -441,7 +440,7 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
                         _this7._value = value;
                     }
 
-                    _this7._ran = true;
+                    _this7._ran     = true;
                     _this7._running = false;
 
                     _this7.emit( 'value', _this7._value );
@@ -474,9 +473,9 @@ var JoinedTransformReference = (function( _ReferenceBase3 ) {
     };
 
     return JoinedTransformReference;
-})( ReferenceBase );
+}( ReferenceBase );
 
-var ResolvedReference = (function( _ReferenceBase4 ) {
+var ResolvedReference = function( _ReferenceBase4 ) {
     (0, _inherits3.default)( ResolvedReference, _ReferenceBase4 );
 
     function ResolvedReference( value ) {
@@ -504,7 +503,7 @@ var ResolvedReference = (function( _ReferenceBase4 ) {
                         _this9._value = result;
                     }
 
-                    _this9._ran = true;
+                    _this9._ran     = true;
                     _this9._running = false;
 
                     _this9.emit( 'value', _this9._value );
@@ -521,4 +520,4 @@ var ResolvedReference = (function( _ReferenceBase4 ) {
     };
 
     return ResolvedReference;
-})( ReferenceBase );
+}( ReferenceBase );

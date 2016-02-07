@@ -66,7 +66,7 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
-var ScriptAdapter = (function( _Script ) {
+var ScriptAdapter = function( _Script ) {
     (0, _inherits3.default)( ScriptAdapter, _Script );
 
     function ScriptAdapter( manager, filename, parent ) {
@@ -125,31 +125,29 @@ var ScriptAdapter = (function( _Script ) {
         return _Script.prototype.close.call( this, permanent );
     };
 
-    (0, _createClass3.default)( ScriptAdapter, [
-        {
-            key: 'manager',
-            get: function get() {
-                return this._manager;
-            }
+    (0, _createClass3.default)( ScriptAdapter, [{
+        key: 'manager',
+        get: function get() {
+            return this._manager;
         }
-    ] );
+    }] );
     return ScriptAdapter;
-})( _script2.default );
+}( _script2.default );
 /**
  * Created by Aaron on 7/5/2015.
  */
 
-var Manager = (function() {
+var Manager       = function() {
     function Manager( grandParent ) {
         (0, _classCallCheck3.default)( this, Manager );
         this._debounceMaxWait = null;
-        this._maxListeners = null;
-        this._config = null;
-        this._cwd = process.cwd();
-        this._scripts = new _map2.default();
-        this._parent = null;
+        this._maxListeners    = null;
+        this._config          = null;
+        this._cwd             = process.cwd();
+        this._scripts         = new _map2.default();
+        this._parent          = null;
         this._propagateEvents = false;
-        this._unloadOnRename = null;
+        this._unloadOnRename  = null;
 
         this._parent = new _module2.default( 'ScriptManager', grandParent );
     }
@@ -349,44 +347,42 @@ var Manager = (function() {
         this._scripts.clear();
     };
 
-    (0, _createClass3.default)( Manager, [
-        {
-            key: 'parent',
-            get: function get() {
-                return this._parent;
-            }
-        }, {
-            key: 'scripts',
-            get: function get() {
-                return this._scripts;
-            }
-        }, {
-            key: 'debounceMaxWait',
-            get: function get() {
-                return this._debounceMaxWait;
-            },
-            set: function set( time ) {
-                if( time !== null && time !== void 0 ) {
-                    time = Math.floor( time );
+    (0, _createClass3.default)( Manager, [{
+        key: 'parent',
+        get: function get() {
+            return this._parent;
+        }
+    }, {
+        key: 'scripts',
+        get: function get() {
+            return this._scripts;
+        }
+    }, {
+        key: 'debounceMaxWait',
+        get: function get() {
+            return this._debounceMaxWait;
+        },
+        set: function set( time ) {
+            if( time !== null && time !== void 0 ) {
+                time = Math.floor( time );
 
-                    (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
+                (0, _assert2.default)( !isNaN( time ), 'debounceMaxWait must be set to a number' );
 
-                    this._debounceMaxWait = time;
-                } else {
-                    this._debounceMaxWait = null;
-                }
-            }
-        }, {
-            key: 'unloadOnRename',
-            set: function set( value ) {
-                this._unloadOnRename = !!value;
-            },
-            get: function get() {
-                return this._unloadOnRename;
+                this._debounceMaxWait = time;
+            } else {
+                this._debounceMaxWait = null;
             }
         }
-    ] );
+    }, {
+        key: 'unloadOnRename',
+        set: function set( value ) {
+            this._unloadOnRename = !!value;
+        },
+        get: function get() {
+            return this._unloadOnRename;
+        }
+    }] );
     return Manager;
-})();
+}();
 
 exports.default = Manager;

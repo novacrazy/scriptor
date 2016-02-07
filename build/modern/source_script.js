@@ -25,7 +25,6 @@
 'use strict';
 
 exports.__esModule = true;
-exports.compile = compile;
 
 var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
 
@@ -42,6 +41,8 @@ var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorRe
 var _inherits2 = require( 'babel-runtime/helpers/inherits' );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
+
+exports.compile = compile;
 
 var _bluebird = require( 'bluebird' );
 
@@ -87,7 +88,7 @@ function _interopRequireDefault( obj ) {
  */
 
 function compile( src ) {
-    var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
+    var watch  = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
     var parent = arguments.length <= 2 || arguments[2] === void 0 ? null : arguments[2];
 
     var script = new SourceScript( src, parent );
@@ -99,7 +100,7 @@ function compile( src ) {
     return script;
 }
 
-var SourceScript = (function( _Script ) {
+var SourceScript = function( _Script ) {
     (0, _inherits3.default)( SourceScript, _Script );
 
     function SourceScript( src ) {
@@ -125,7 +126,7 @@ var SourceScript = (function( _Script ) {
             if( !this.textMode ) {
                 this._do_setup();
 
-                this._loading = true;
+                this._loading     = true;
                 this._loadingText = false;
 
                 if( this._willWatch ) {
@@ -152,14 +153,14 @@ var SourceScript = (function( _Script ) {
                     _this2.emit( 'loading_error', err );
                 } );
             } else {
-                this._loading = true;
+                this._loading     = true;
                 this._loadingText = true;
 
                 if( this._willWatch ) {
                     try {
                         this._do_watch( this._watchPersistent );
                     } catch( err ) {
-                        this._loading = false;
+                        this._loading     = false;
                         this._loadingText = false;
 
                         this.emit( 'loading_src_error', err );
@@ -169,12 +170,12 @@ var SourceScript = (function( _Script ) {
                 this.source( 'utf-8' ).then( function( src ) {
                     _this2._script.loaded = true;
 
-                    _this2._loading = false;
+                    _this2._loading     = false;
                     _this2._loadingText = false;
 
                     _this2.emit( 'loaded', _this2.loaded );
                 }, function( err ) {
-                    _this2._loading = false;
+                    _this2._loading     = false;
                     _this2._loadingText = false;
 
                     _this2.emit( 'loading_error', err );
@@ -256,33 +257,31 @@ var SourceScript = (function( _Script ) {
         _Script.prototype.unwatch.call( this );
     };
 
-    (0, _createClass3.default)( SourceScript, [
-        {
-            key: 'filename',
-            get: function get() {
-                return this._script.filename;
-            },
-            set: function set( value ) {
-                this._script.filename = value;
-            }
-        }, {
-            key: 'baseUrl',
-            get: function get() {
-                return (0, _path.dirname)( this.filename );
-            },
-            set: function set( value ) {
-                value = (0, _path.dirname)( value );
-
-                this.filename = value + (0, _path.basename)( this.filename );
-            }
-        }, {
-            key: 'watched',
-            get: function get() {
-                return typeof this._onChange === 'function';
-            }
+    (0, _createClass3.default)( SourceScript, [{
+        key: 'filename',
+        get: function get() {
+            return this._script.filename;
+        },
+        set: function set( value ) {
+            this._script.filename = value;
         }
-    ] );
+    }, {
+        key: 'baseUrl',
+        get: function get() {
+            return (0, _path.dirname)( this.filename );
+        },
+        set: function set( value ) {
+            value = (0, _path.dirname)( value );
+
+            this.filename = value + (0, _path.basename)( this.filename );
+        }
+    }, {
+        key: 'watched',
+        get: function get() {
+            return typeof this._onChange === 'function';
+        }
+    }] );
     return SourceScript;
-})( _script2.default );
+}( _script2.default );
 
 exports.default = SourceScript;

@@ -1,6 +1,8 @@
 'use strict';
 
-var _runner = require( './runner.js' );
+var _ = require( '../../' );
+
+var _2 = _interopRequireDefault( _ );
 
 var _assert = require( 'assert' );
 
@@ -14,31 +16,26 @@ function _interopRequireDefault( obj ) {
  * Created by Aaron on 7/6/2015.
  */
 
-var tests = function tests( Scriptor, build ) {
-    describe( 'AMD Scripts (' + build + ' build)', function() {
-        var Script = Scriptor.Script;
+describe( 'AMD Scripts', function() {
+    var Script = _2.default.Script;
 
-        describe( 'simple script that requires a build-in module', function() {
-            var script = new Script( './test/fixtures/amd/simple.js', module );
+    describe( 'simple script that requires a build-in module', function() {
+        var script = new Script( './test/fixtures/amd/simple.js', module );
 
-            it( 'should load without any issues', function( done ) {
-                script.exports().then( function() {
-                    (0, _assert2.default)( script.loaded );
-                } ).then( done );
-            } );
-        } );
-
-        describe( 'using built-in plugins', function() {
-            var script = new Script( './test/fixtures/amd/builtin_plugins.js', module );
-
-            it( 'should load without any issues', function( done ) {
-                script.exports().then( function() {
-                    (0, _assert2.default)( script.loaded );
-                } ).then( done );
-            } );
+        it( 'should load without any issues', function( done ) {
+            script.exports().then( function() {
+                (0, _assert2.default)( script.loaded );
+            } ).then( done );
         } );
     } );
-};
 
-(0, _runner.runTests)( 'compat', tests );
-(0, _runner.runTests)( 'modern', tests );
+    describe( 'using built-in plugins', function() {
+        var script = new Script( './test/fixtures/amd/builtin_plugins.js', module );
+
+        it( 'should load without any issues', function( done ) {
+            script.exports().then( function() {
+                (0, _assert2.default)( script.loaded );
+            } ).then( done );
+        } );
+    } );
+} );

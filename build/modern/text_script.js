@@ -50,7 +50,7 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
-var TextScript = (function( _Script ) {
+var TextScript = function( _Script ) {
     (0, _inherits3.default)( TextScript, _Script );
 
     function TextScript() {
@@ -58,16 +58,14 @@ var TextScript = (function( _Script ) {
         return (0, _possibleConstructorReturn3.default)( this, _Script.apply( this, arguments ) );
     }
 
-    (0, _createClass3.default)( TextScript, [
-        {
-            key: 'textMode',
-            get: function get() {
-                return true;
-            }
+    (0, _createClass3.default)( TextScript, [{
+        key: 'textMode',
+        get: function get() {
+            return true;
         }
-    ] );
+    }] );
     return TextScript;
-})( _script2.default );
+}( _script2.default );
 /**
  * Created by Aaron on 7/7/2015.
  */

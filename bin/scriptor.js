@@ -24,9 +24,15 @@
  ****/
 'use strict';
 
-Object.defineProperty( exports, "__esModule", {
-    value: true
-} );
+exports.__esModule = true;
+
+var _getIterator2 = require( 'babel-runtime/core-js/get-iterator' );
+
+var _getIterator3 = _interopRequireDefault( _getIterator2 );
+
+var _freeze = require( 'babel-runtime/core-js/object/freeze' );
+
+var _freeze2 = _interopRequireDefault( _freeze );
 
 exports.default = function( argv ) {
     process.options = _commander2.default.parse( argv );
@@ -77,34 +83,29 @@ exports.default = function( argv ) {
     if( !_commander2.default.no_glob ) {
         scripts = [];
 
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
+        for( var _iterator = _commander2.default.args, _isArray = Array.isArray(
+            _iterator ), _i                                     = 0, _iterator                      = _isArray ? _iterator : (0, _getIterator3.default)( _iterator ); ; ) {
+            var _ref;
 
-        var _iteratorError = void 0;
-
-        try {
-            for( var _iterator = (0, _getIterator3.default)( _commander2.default.args ), _step;
-                 !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true ) {
-                var arg = _step.value;
-
-                if( _glob2.default.hasMagic( arg ) ) {
-                    scripts = scripts.concat( _glob2.default.sync( arg ) );
-                } else {
-                    scripts.push( arg );
+            if( _isArray ) {
+                if( _i >= _iterator.length ) {
+                    break;
                 }
+                _ref = _iterator[_i++];
+            } else {
+                _i = _iterator.next();
+                if( _i.done ) {
+                    break;
+                }
+                _ref = _i.value;
             }
-        } catch( err ) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally {
-            try {
-                if( !_iteratorNormalCompletion && _iterator.return ) {
-                    _iterator.return();
-                }
-            } finally {
-                if( _didIteratorError ) {
-                    throw _iteratorError;
-                }
+
+            var arg = _ref;
+
+            if( _glob2.default.hasMagic( arg ) ) {
+                scripts = scripts.concat( _glob2.default.sync( arg ) );
+            } else {
+                scripts.push( arg );
             }
         }
     } else {
@@ -216,39 +217,33 @@ exports.default = function( argv ) {
 
                     var onClose = function onClose( signal ) {
                         if( !closed ) {
-                            var _iteratorNormalCompletion2 = true;
-                            var _didIteratorError2 = false;
 
-                            var _iteratorError2 = void 0;
+                            for( var _iterator2 = instances, _isArray2 = Array.isArray(
+                                _iterator2 ), _i2                      = 0, _iterator2 = _isArray2 ? _iterator2 :
+                                                                    (0, _getIterator3.default)( _iterator2 ); ; ) {
+                                var _ref2;
 
-                            try {
-
-                                for( var _iterator2 = (0, _getIterator3.default)( instances ), _step2;
-                                     !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done);
-                                     _iteratorNormalCompletion2 = true ) {
-                                    var instance = _step2.value;
-
-                                    instance.unload();
+                                if( _isArray2 ) {
+                                    if( _i2 >= _iterator2.length ) {
+                                        break;
+                                    }
+                                    _ref2 = _iterator2[_i2++];
+                                } else {
+                                    _i2 = _iterator2.next();
+                                    if( _i2.done ) {
+                                        break;
+                                    }
+                                    _ref2 = _i2.value;
                                 }
 
-                                //Close on the next tick so close events can propagate.
-                                //Exit code for Ctrl-C signals is 128 + sig according to
-                                // http://www.tldp.org/LDP/abs/html/exitcodes.html
-                            } catch( err ) {
-                                _didIteratorError2 = true;
-                                _iteratorError2 = err;
-                            } finally {
-                                try {
-                                    if( !_iteratorNormalCompletion2 && _iterator2.return ) {
-                                        _iterator2.return();
-                                    }
-                                } finally {
-                                    if( _didIteratorError2 ) {
-                                        throw _iteratorError2;
-                                    }
-                                }
+                                var instance = _ref2;
+
+                                instance.unload();
                             }
 
+                            //Close on the next tick so close events can propagate.
+                            //Exit code for Ctrl-C signals is 128 + sig according to
+                            // http://www.tldp.org/LDP/abs/html/exitcodes.html
                             process.nextTick( process.exit.bind( null, 128 + signal ) );
 
                             closed = true;
@@ -260,7 +255,7 @@ exports.default = function( argv ) {
                 })();
             }
 
-            run_script = function( instance, script, num ) {
+            run_script = function run_script( instance, script, num ) {
                 var start = process.hrtime();
 
                 if( log_level === _cli.LogLevel.LOG_SILENT || _commander2.default.cork ) {
@@ -315,18 +310,6 @@ exports.default = function( argv ) {
     }
 };
 
-var _getIterator2 = require( 'babel-runtime/core-js/get-iterator' );
-
-var _getIterator3 = _interopRequireDefault( _getIterator2 );
-
-var _freeze = require( 'babel-runtime/core-js/object/freeze' );
-
-var _freeze2 = _interopRequireDefault( _freeze );
-
-var _slicedToArray2 = require( 'babel-runtime/helpers/slicedToArray' );
-
-var _slicedToArray3 = _interopRequireDefault( _slicedToArray2 );
-
 var _commander = require( 'commander' );
 
 var _commander2 = _interopRequireDefault( _commander );
@@ -372,10 +355,8 @@ var constants = process.binding( 'constants' );
 function diff_ms( start ) {
     var _process$hrtime = process.hrtime( start );
 
-    var _process$hrtime2 = (0, _slicedToArray3.default)( _process$hrtime, 2 );
-
-    var seconds = _process$hrtime2[0];
-    var nanoseconds = _process$hrtime2[1];
+    var seconds     = _process$hrtime[0];
+    var nanoseconds = _process$hrtime[1];
 
     var milliseconds = seconds * 1e3 + nanoseconds * 1e-6;
 
@@ -433,24 +414,20 @@ function parseIntOrInfinity( value ) {
 var EXIT_SUCCESS = 0,
     EXIT_FAILURE = 1;
 
-_commander2.default.version( _package2.default.version )
-           .usage( '[options] files...' )
-           .option( '-d, --dir <path>', 'Directory to run Scriptor in' )
-           .option( '-c, --concurrency <n>', 'Limit asynchronous script concurrency to n (default: 10)' )
-           .option( '-q, --close', 'End the process when all scripts finish' )
-           .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
-           .option( '-p, --propagate', 'Propagate changes upwards when watching scripts' )
-           .option( '-l, --long_stack_traces', 'Display long stack trace for errors' )
-           .option( '-r, --repeat <n>', 'Run script n times (in parallel if possible)' )
-           .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
-           .option( '--debounce <n>',
-               'Wait n milliseconds for debounce on file watching events (default: ' + _defaults.default_debounceMaxWait
-               +                                                                       'ms)' )
-           .option( '--use_strict', 'Enforce strict mode' )
-           .option( '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' )
-           .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
-           .option( '--cork', 'Cork stdout before calling scripts' )
-           .option( '-s, --silent', 'Do not echo anything' )
-           .option( '--no_signal', 'Do not intercept process signals' )
-           .option( '--no_glob', 'Do not match glob patterns' )
-           .option( '--no_title', 'Do not set process title' );
+_commander2.default.version( _package2.default.version ).usage( '[options] files...' )
+    .option( '-d, --dir <path>', 'Directory to run Scriptor in' )
+    .option( '-c, --concurrency <n>', 'Limit asynchronous script concurrency to n (default: 10)' )
+    .option( '-q, --close', 'End the process when all scripts finish' )
+    .option( '-w, --watch', 'Watch scripts for changes and re-run them when changed' )
+    .option( '-p, --propagate', 'Propagate changes upwards when watching scripts' )
+    .option( '-l, --long_stack_traces', 'Display long stack trace for errors' )
+    .option( '-r, --repeat <n>', 'Run script n times (in parallel if possible)' )
+    .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
+    .option( '--debounce <n>',
+        'Wait n milliseconds for debounce on file watching events (default: ' + _defaults.default_debounceMaxWait +
+        'ms)' ).option( '--use_strict', 'Enforce strict mode' )
+    .option( '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' )
+    .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
+    .option( '--cork', 'Cork stdout before calling scripts' ).option( '-s, --silent', 'Do not echo anything' )
+    .option( '--no_signal', 'Do not intercept process signals' ).option( '--no_glob', 'Do not match glob patterns' )
+    .option( '--no_title', 'Do not set process title' );

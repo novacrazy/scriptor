@@ -24,21 +24,21 @@
  ****/
 'use strict';
 
-exports.__esModule = true;
-exports.isAbsolutePath = isAbsolutePath;
+exports.__esModule           = true;
+exports.isAbsolutePath       = isAbsolutePath;
 exports.isAbsoluteOrRelative = isAbsoluteOrRelative;
-exports.bind = bind;
-exports.stripBOM = stripBOM;
-exports.injectAMD = injectAMD;
+exports.bind                 = bind;
+exports.stripBOM             = stripBOM;
+exports.injectAMD            = injectAMD;
 exports.injectAMDAndStripBOM = injectAMDAndStripBOM;
-exports.parseDefine = parseDefine;
-exports.isThenable = isThenable;
-exports.tryPromise = tryPromise;
-exports.tryReject = tryReject;
-exports.isGenerator = isGenerator;
-exports.isGeneratorFunction = isGeneratorFunction;
-exports.parseDeps = parseDeps;
-exports.normalizeConfig = normalizeConfig;
+exports.parseDefine          = parseDefine;
+exports.isThenable           = isThenable;
+exports.tryPromise           = tryPromise;
+exports.tryReject            = tryReject;
+exports.isGenerator          = isGenerator;
+exports.isGeneratorFunction  = isGeneratorFunction;
+exports.parseDeps            = parseDeps;
+exports.normalizeConfig      = normalizeConfig;
 
 var _bluebird = require( 'bluebird' );
 
@@ -140,16 +140,16 @@ function parseDefine( id, deps, factory ) {
     //This argument parsing code is taken from amdefine
     if( Array.isArray( id ) ) {
         factory = deps;
-        deps = id;
-        id = void 0;
+        deps    = id;
+        id      = void 0;
     } else if( typeof id !== 'string' ) {
         factory = id;
-        id = deps = void 0;
+        id      = deps = void 0;
     }
 
     if( deps !== void 0 && !Array.isArray( deps ) ) {
         factory = deps;
-        deps = void 0;
+        deps    = void 0;
     }
 
     if( deps === void 0 ) {

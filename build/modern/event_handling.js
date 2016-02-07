@@ -24,10 +24,8 @@
  ****/
 'use strict';
 
-exports.__esModule = true;
+exports.__esModule      = true;
 exports.EventPropagator = void 0;
-exports.makeEventPromise = makeEventPromise;
-exports.makeMultiEventPromise = makeMultiEventPromise;
 
 var _getIterator2 = require( 'babel-runtime/core-js/get-iterator' );
 
@@ -45,6 +43,9 @@ var _inherits2 = require( 'babel-runtime/helpers/inherits' );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
 
+exports.makeEventPromise      = makeEventPromise;
+exports.makeMultiEventPromise = makeMultiEventPromise;
+
 var _bluebird = require( 'bluebird' );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
@@ -57,7 +58,7 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
-var EventPropagator = exports.EventPropagator = (function( _EventEmitter ) {
+var EventPropagator = exports.EventPropagator = function( _EventEmitter ) {
     (0, _inherits3.default)( EventPropagator, _EventEmitter );
 
     function EventPropagator() {
@@ -70,8 +71,8 @@ var EventPropagator = exports.EventPropagator = (function( _EventEmitter ) {
         }
 
         return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)( this,
-            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._propagateEvents
-            = false, _temp), (0, _possibleConstructorReturn3.default)( _this, _ret );
+            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._propagateEvents =
+            false, _temp), (0, _possibleConstructorReturn3.default)( _this, _ret );
     }
 
     EventPropagator.prototype.propagateEvents = function propagateEvents() {
@@ -147,7 +148,7 @@ var EventPropagator = exports.EventPropagator = (function( _EventEmitter ) {
     };
 
     return EventPropagator;
-})( _events.EventEmitter );
+}( _events.EventEmitter );
 /**
  * Created by Aaron on 7/4/2015.
  */

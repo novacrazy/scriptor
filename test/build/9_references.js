@@ -1,6 +1,8 @@
 'use strict';
 
-var _runner = require( './runner.js' );
+var _ = require( '../../' );
+
+var _2 = _interopRequireDefault( _ );
 
 var _assert = require( 'assert' );
 
@@ -14,12 +16,7 @@ function _interopRequireDefault( obj ) {
  * Created by Aaron on 7/7/2015.
  */
 
-var tests = function tests( Scriptor, build ) {
-    describe( 'References (' + build + ' build)', function() {
-        var Reference = Scriptor.Reference;
-        var Script = Scriptor.Script;
-    } );
-};
-
-(0, _runner.runTests)( 'compat', tests );
-(0, _runner.runTests)( 'modern', tests );
+describe( 'References', function() {
+    var Reference = _2.default.Reference;
+    var Script    = _2.default.Script;
+} );
