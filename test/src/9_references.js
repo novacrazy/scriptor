@@ -3,16 +3,9 @@
  */
 
 
-import {runTests} from './runner.js';
+import Scriptor from "../../";
 
-import assert from 'assert';
+describe( `References`, function() {
+    let {Reference, Script} = Scriptor;
 
-let tests = ( Scriptor, build ) => {
-    describe( `References (${build} build)`, function() {
-        let {Reference, Script} = Scriptor;
-
-    } );
-};
-
-runTests( 'compat', tests );
-runTests( 'modern', tests );
+} );
