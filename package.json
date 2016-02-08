@@ -31,7 +31,7 @@
     "url": "https://github.com/novacrazy/scriptor/issues"
   },
   "devDependencies": {
-    "babel":                                                "^6.5.0",
+    "babel":                                                "^6.5.1",
     "babel-plugin-check-es2015-constants":                  "^6.5.0",
     "babel-plugin-transform-async-to-module-method":        "^6.5.0",
     "babel-plugin-transform-class-constructor-call":        "^6.5.0",
