@@ -1,7 +1,7 @@
 /****
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Aaron Trent
+ * Copyright (c) 2015-2016 Aaron Trent
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,54 +22,54 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule    = true;
 exports.ReferenceBase = void 0;
 
-var _freeze = require( 'babel-runtime/core-js/object/freeze' );
+var _freeze = require( "babel-runtime/core-js/object/freeze" );
 
 var _freeze2 = _interopRequireDefault( _freeze );
 
-var _typeof2 = require( 'babel-runtime/helpers/typeof' );
+var _typeof2 = require( "babel-runtime/helpers/typeof" );
 
 var _typeof3 = _interopRequireDefault( _typeof2 );
 
-var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+var _classCallCheck2 = require( "babel-runtime/helpers/classCallCheck" );
 
 var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
 
-var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+var _createClass2 = require( "babel-runtime/helpers/createClass" );
 
 var _createClass3 = _interopRequireDefault( _createClass2 );
 
-var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+var _possibleConstructorReturn2 = require( "babel-runtime/helpers/possibleConstructorReturn" );
 
 var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
 
-var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+var _inherits2 = require( "babel-runtime/helpers/inherits" );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
 
 exports.identity = identity;
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _lodash = require( 'lodash' );
+var _lodash = require( "lodash" );
 
 var _ = _interopRequireWildcard( _lodash );
 
-var _events = require( 'events' );
+var _events = require( "events" );
 
-var _event_handling = require( './event_handling.js' );
+var _event_handling = require( "./event_handling.js" );
 
-var _utils = require( './utils.js' );
+var _utils = require( "./utils.js" );
 
 function _interopRequireWildcard( obj ) {
     if( obj && obj.__esModule ) {
@@ -183,17 +183,17 @@ var ReferenceBase = function( _EventEmitter ) {
     };
 
     (0, _createClass3.default)( ReferenceBase, [{
-        key: 'ran',
+        key: "ran",
         get: function get() {
             return this._ran;
         }
     }, {
-        key: 'running',
+        key: "running",
         get: function get() {
             return this._running;
         }
     }, {
-        key: 'closed',
+        key: "closed",
         get: function get() {
             return this._closed;
         }
@@ -238,7 +238,7 @@ var Reference = function( _ReferenceBase ) {
 
             this._script.apply( this._args ).then( function( value ) {
                 if( _this3._running ) {
-                    if( (typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)( value )) === 'object' ) {
+                    if( (typeof value === "undefined" ? "undefined" : (0, _typeof3.default)( value )) === 'object' ) {
                         _this3._value = _.clone( value );
 
                         (0, _freeze2.default)( _this3._value );
@@ -251,7 +251,7 @@ var Reference = function( _ReferenceBase ) {
 
                     _this3.emit( 'value', _this3._value );
                 } else {
-                    _this3.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this3.emit( 'error', new Error( "Reference was reset while performing an asynchronous operation." ) );
                 }
             } ).catch( function( err ) {
                 _this3._running = false;
@@ -329,7 +329,7 @@ var TransformReference = function( _ReferenceBase2 ) {
 
 
         (0, _assert2.default)( ref instanceof ReferenceBase, 'transform will only work on References' );
-        _assert2.default.strictEqual( typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
+        _assert2.default.strictEqual( typeof transform === "undefined" ? "undefined" : (0, _typeof3.default)( transform ), 'function',
             'transform function must be a function' );
 
         _this4._left = _this4._ref = ref;
@@ -358,7 +358,7 @@ var TransformReference = function( _ReferenceBase2 ) {
 
             (0, _utils.tryReject)( this._transform, null, this._ref, null ).then( function( value ) {
                 if( _this5._running ) {
-                    if( (typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)( value )) === 'object' ) {
+                    if( (typeof value === "undefined" ? "undefined" : (0, _typeof3.default)( value )) === 'object' ) {
                         _this5._value = _.clone( value );
 
                         (0, _freeze2.default)( _this5._value );
@@ -371,7 +371,7 @@ var TransformReference = function( _ReferenceBase2 ) {
 
                     _this5.emit( 'value', _this5._value );
                 } else {
-                    _this5.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this5.emit( 'error', new Error( "Reference was reset while performing an asynchronous operation." ) );
                 }
             } ).catch( function( err ) {
                 _this5._running = false;
@@ -411,7 +411,7 @@ var JoinedTransformReference = function( _ReferenceBase3 ) {
 
         (0, _assert2.default)( left instanceof ReferenceBase && right instanceof ReferenceBase, 'join will only work on References' );
         _assert2.default.notEqual( left, right, 'Cannot join to self' );
-        _assert2.default.strictEqual( typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
+        _assert2.default.strictEqual( typeof transform === "undefined" ? "undefined" : (0, _typeof3.default)( transform ), 'function',
             'transform function must be a function' );
 
         _this6._left  = left;
@@ -442,7 +442,7 @@ var JoinedTransformReference = function( _ReferenceBase3 ) {
 
             (0, _utils.tryReject)( this._transform, null, this._left, this._right ).then( function( value ) {
                 if( _this7._running ) {
-                    if( (typeof value === 'undefined' ? 'undefined' : (0, _typeof3.default)( value )) === 'object' ) {
+                    if( (typeof value === "undefined" ? "undefined" : (0, _typeof3.default)( value )) === 'object' ) {
                         _this7._value = _.clone( value );
 
                         (0, _freeze2.default)( _this7._value );
@@ -455,7 +455,7 @@ var JoinedTransformReference = function( _ReferenceBase3 ) {
 
                     _this7.emit( 'value', _this7._value );
                 } else {
-                    _this7.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this7.emit( 'error', new Error( "Reference was reset while performing an asynchronous operation." ) );
                 }
             } ).catch( function( err ) {
                 _this7._running = false;
@@ -506,7 +506,7 @@ var ResolvedReference = function( _ReferenceBase4 ) {
 
             (0, _utils.tryPromise)( this._value ).then( function( result ) {
                 if( _this9._running ) {
-                    if( (typeof result === 'undefined' ? 'undefined' : (0, _typeof3.default)( result )) === 'object' ) {
+                    if( (typeof result === "undefined" ? "undefined" : (0, _typeof3.default)( result )) === 'object' ) {
                         _this9._value = (0, _freeze2.default)( result );
                     } else {
                         _this9._value = result;
@@ -517,7 +517,7 @@ var ResolvedReference = function( _ReferenceBase4 ) {
 
                     _this9.emit( 'value', _this9._value );
                 } else {
-                    _this9.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this9.emit( 'error', new Error( "Reference was reset while performing an asynchronous operation." ) );
                 }
             } ).catch( function( err ) {
                 _this9._running = false;

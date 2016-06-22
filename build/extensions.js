@@ -1,7 +1,7 @@
 /****
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Aaron Trent
+ * Copyright (c) 2015-2016 Aaron Trent
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,17 +22,17 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule = true;
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _fs = require( 'fs' );
+var _fs = require( "fs" );
 
-var _utils = require( './utils.js' );
+var _utils = require( "./utils.js" );
 
 function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};

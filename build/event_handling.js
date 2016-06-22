@@ -1,7 +1,7 @@
 /****
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Aaron Trent
+ * Copyright (c) 2015-2016 Aaron Trent
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,37 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule      = true;
 exports.EventPropagator = void 0;
 
-var _getIterator2 = require( 'babel-runtime/core-js/get-iterator' );
+var _getIterator2 = require( "babel-runtime/core-js/get-iterator" );
 
 var _getIterator3 = _interopRequireDefault( _getIterator2 );
 
-var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+var _classCallCheck2 = require( "babel-runtime/helpers/classCallCheck" );
 
 var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
 
-var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+var _possibleConstructorReturn2 = require( "babel-runtime/helpers/possibleConstructorReturn" );
 
 var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
 
-var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+var _inherits2 = require( "babel-runtime/helpers/inherits" );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
 
 exports.makeEventPromise      = makeEventPromise;
 exports.makeMultiEventPromise = makeMultiEventPromise;
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _events = require( 'events' );
+var _events = require( "events" );
 
-var _lodash = require( 'lodash' );
+var _lodash = require( "lodash" );
 
 function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};

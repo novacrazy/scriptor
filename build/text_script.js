@@ -1,7 +1,7 @@
 /****
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Aaron Trent
+ * Copyright (c) 2015-2016 Aaron Trent
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,27 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule = true;
 
-var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+var _classCallCheck2 = require( "babel-runtime/helpers/classCallCheck" );
 
 var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
 
-var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+var _createClass2 = require( "babel-runtime/helpers/createClass" );
 
 var _createClass3 = _interopRequireDefault( _createClass2 );
 
-var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+var _possibleConstructorReturn2 = require( "babel-runtime/helpers/possibleConstructorReturn" );
 
 var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
 
-var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+var _inherits2 = require( "babel-runtime/helpers/inherits" );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
 
-var _script = require( './script.js' );
+var _script = require( "./script.js" );
 
 var _script2 = _interopRequireDefault( _script );
 
@@ -63,7 +63,7 @@ var TextScript = function( _Script ) {
     }
 
     (0, _createClass3.default)( TextScript, [{
-        key: 'textMode',
+        key: "textMode",
         get: function get() {
             return true;
         }
