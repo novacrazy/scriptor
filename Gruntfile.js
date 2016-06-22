@@ -31,6 +31,7 @@ module.exports = function( grunt ) {
                         ["transform-class-properties", loose],
                         ["transform-decorators", loose],
                         ["transform-do-expressions", loose],
+                        ["transform-strict-mode", loose],
                         ["transform-es2015-arrow-functions", loose],
                         ["transform-es2015-block-scoped-functions", loose],
                         ["transform-es2015-block-scoping", loose],
@@ -62,7 +63,7 @@ module.exports = function( grunt ) {
                         expand: true,
                         cwd:    './src/',
                         src:    './**/*.js',
-                        dest:   './build/modern/'
+                        dest:   './build/'
                     },
                     {
                         expand: true,
