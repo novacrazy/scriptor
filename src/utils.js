@@ -31,10 +31,12 @@ export function bind( func, ...args ) {
     return bound;
 }
 
+/*
+ * Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
+ * because the buffer-to-string conversion in `fs.readFileSync()`
+ * translates it to FEFF, the UTF-16 BOM.
+ * */
 export function stripBOM( content ) {
-    // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
-    // because the buffer-to-string conversion in `fs.readFileSync()`
-    // translates it to FEFF, the UTF-16 BOM.
     if( Buffer.isBuffer( content ) && content.length >= 2 && (content[0] === 0xFE && content[1] === 0xFF) ) {
         content = content.slice( 2 );
 
@@ -88,10 +90,16 @@ export function parseDefine( id, deps, factory ) {
     return [id, deps, factory];
 }
 
+/*
+ * Simple test to see if an object is a Promise instance
+ * */
 export function isThenable( obj ) {
     return obj !== void 0 && obj !== null && (obj instanceof Promise || typeof obj.then === 'function');
 }
 
+/*
+ * "coerces" a value into a Promise.
+ * */
 export function tryPromise( value ) {
     if( isThenable( value ) ) {
         return value;
@@ -101,6 +109,9 @@ export function tryPromise( value ) {
     }
 }
 
+/*
+ * Executes a function synchronously and returns a rejected Promise if it throws
+ * */
 export function tryReject( func, context, ...args ) {
     try {
         return tryPromise( func.apply( context, args ) );
@@ -110,11 +121,14 @@ export function tryReject( func, context, ...args ) {
     }
 }
 
-//Taken from tj/co
+/*
+ * The next few do exactly what they say on the tin.
+ * */
+
 export function isGenerator( obj ) {
     return 'function' === typeof obj.next && 'function' === typeof obj.throw;
 }
-//Taken from tj/co
+
 export function isGeneratorFunction( obj ) {
     if( !obj.constructor ) {
         return false;
@@ -156,6 +170,11 @@ export function parseDeps( deps, paths ) {
     }
 }
 
+/*
+ * This is pretty complicated.
+ *
+ * TODO: Explain this.
+ * */
 export function normalizeConfig( config ) {
     var isObject = _.isObject( config ) && !Array.isArray( config );
 

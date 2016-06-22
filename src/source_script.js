@@ -2,16 +2,18 @@
  * Created by Aaron on 7/5/2015.
  */
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
+import * as _ from "lodash";
+import {basename, dirname} from "path";
+import {stripBOM, injectAMD} from "./utils.js";
+import Script from "./script.js";
+import {ReferenceBase} from "./reference.js";
 
-import * as _ from 'lodash';
-
-import {basename, dirname} from 'path';
-import {stripBOM, injectAMD} from './utils.js';
-
-import Script from './script.js';
-
-import {ReferenceBase} from './reference.js';
+/*
+ * The SourceScript variation is a Script that allows loading from in-memory strings. These are always assumed to be normal JavaScript.
+ *
+ * References can also be passed as a source, in case you want to do anything neat with that.
+ * */
 
 export function compile( src, watch = true, parent = null ) {
     var script = new SourceScript( src, parent );
@@ -63,7 +65,7 @@ export default class SourceScript extends Script {
             if( !this.textMode ) {
                 this._do_setup();
 
-                this._loading = true;
+                this._loading     = true;
                 this._loadingText = false;
 
                 if( this._willWatch ) {
@@ -93,7 +95,7 @@ export default class SourceScript extends Script {
                 } );
 
             } else {
-                this._loading = true;
+                this._loading     = true;
                 this._loadingText = true;
 
                 if( this._willWatch ) {
@@ -101,7 +103,7 @@ export default class SourceScript extends Script {
                         this._do_watch( this._watchPersistent );
 
                     } catch( err ) {
-                        this._loading = false;
+                        this._loading     = false;
                         this._loadingText = false;
 
                         this.emit( 'loading_src_error', err );
@@ -111,13 +113,13 @@ export default class SourceScript extends Script {
                 this.source( 'utf-8' ).then( src => {
                     this._script.loaded = true;
 
-                    this._loading = false;
+                    this._loading     = false;
                     this._loadingText = false;
 
                     this.emit( 'loaded', this.loaded );
 
                 }, err => {
-                    this._loading = false;
+                    this._loading     = false;
                     this._loadingText = false;
 
                     this.emit( 'loading_error', err );

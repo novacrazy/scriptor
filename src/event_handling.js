@@ -2,12 +2,18 @@
  * Created by Aaron on 7/4/2015.
  */
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
+import {EventEmitter} from "events";
+import {once} from "lodash";
 
-import {EventEmitter} from 'events';
-
-import {once} from 'lodash';
-
+/*
+ * This is a modification of the EventEmitter class that allows it to automatically propagate certain events to
+ * other specified event emitters/listeners. This is used to "bubble up" events from scripts.
+ *
+ * For example, if a depended upon script content changes on disk, then that script will be unloaded
+ * and the 'change' event emitted, but because there are other scripts that depend on the changed script, that 'change'
+ * event will propagate upwards into them and unload them as well. That way all scripts stay up to date.
+ * */
 export class EventPropagator extends EventEmitter {
     _propagateEvents = false;
 
@@ -51,6 +57,7 @@ export class EventPropagator extends EventEmitter {
         }
     }
 
+    //Reverse logic to make it easier to understand.
     propagateTo( emitter, event, handler ) {
         emitter.propagateFrom( this, event, handler );
     }
@@ -60,6 +67,13 @@ export class EventPropagator extends EventEmitter {
     }
 }
 
+/*
+ * For a single pair of events, this will create a Promise that will resolve or reject when the associated event occurs.
+ *
+ * A good example is the 'end' event for resolving it, and the 'error' event for rejecting the Promise.
+ *
+ * This also cleans up after itself by removing the listeners once they have been triggered.
+ * */
 export function makeEventPromise( emitter, resolve_event, reject_event ) {
     return new Promise( ( resolve, reject ) => {
         function resolve_handler( ...args ) {
@@ -82,7 +96,8 @@ export function makeEventPromise( emitter, resolve_event, reject_event ) {
 }
 
 /*
- * This is a more generic version of the above, but also costs more to run.
+ * This is a more generic version of the above,
+ * but also costs more to run because it has to loop through all the provided events.
  * */
 export function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
     return new Promise( ( resolve, reject ) => {

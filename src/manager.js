@@ -8,6 +8,12 @@ import {resolve} from "path";
 import {normalizeConfig} from "./utils.js";
 import Script from "./script.js";
 
+/*
+ * This is a modification of Script which allows it to be spawned and managed by a Manager instance.
+ *
+ * It provides extra handling for including other scripts, which are also loaded into the owning manager.
+ * */
+
 class ManagedScript extends Script {
     _manager = null;
 
@@ -64,6 +70,11 @@ class ManagedScript extends Script {
         return super.close( permanent );
     }
 }
+
+/*
+ * This Manager class really just takes care of a Map instance of ManagedScripts and allows configuring them all at once
+ * and automatically.
+ * */
 
 export default class Manager {
     _debounceMaxWait = null;
@@ -197,10 +208,12 @@ export default class Manager {
         return script;
     }
 
-    //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
-    //but this functions as a way to add and/or get a script in one fell swoop.
-    //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
-    //from watching a file.
+    /*
+     * this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
+     * but this functions as a way to add and/or get a script in one fell swoop.
+     * Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
+     * from watching a file.
+     * */
     add( filename, watch = true ) {
         filename = resolve( this.cwd(), filename );
 
@@ -225,9 +238,11 @@ export default class Manager {
         return script;
     }
 
-    //Removes a script from the manager. But closing it permenantly is optional,
-    //as it may sometimes make sense to move it out of a manager and use it independently.
-    //However, that is quite rare so close defaults to true
+    /*
+     * Removes a script from the manager. But closing it permenantly is optional,
+     * as it may sometimes make sense to move it out of a manager and use it independently.
+     * However, that is quite rare so close defaults to true
+     * */
     remove( filename, close = true ) {
         filename = resolve( this.cwd(), filename );
 
@@ -270,6 +285,7 @@ export default class Manager {
     reference_apply( filename, args ) {
         let ref = this.add( filename, false ).reference( args );
 
+        //Because reference listens to events from the script, this is a good place to update the maxListener value
         if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
             ref.setMaxListeners( this._maxListeners );
         }

@@ -2,17 +2,25 @@
  * Created by Aaron on 7/5/2015.
  */
 
-import assert from 'assert';
+import assert from "assert";
+import Promise from "bluebird";
+import * as _ from "lodash";
+import {EventEmitter} from "events";
+import {makeEventPromise} from "./event_handling.js";
+import {isGeneratorFunction, tryPromise, tryReject} from "./utils.js";
 
-import Promise from 'bluebird';
-
-import * as _ from 'lodash';
-
-import {EventEmitter} from 'events';
-
-import {makeEventPromise} from './event_handling.js';
-
-import {isGeneratorFunction, tryPromise, tryReject} from './utils.js';
+/*
+ * So References are an idea I came up with to solve some issues with including a TextScript's contents somewhere else,
+ * and needing to have it updated whenever it was needed.
+ * 
+ * Basically this is a small object that listens to 'change' events from a Script and marks that it needs to reacquire 
+ * the value the script initially provided. It does this lazily, and caches the result afterwards.
+ * 
+ * Additionally, because why not, I've provided a couple different adapters for References, like being able to Transform,
+ * Join and create a static value Reference instance. These can be combined in different ways to do whatever.
+ * 
+ * At some point I'd like to extract this into it's own library, but I'm not sure what I'd name it.
+ * */
 
 export function identity( left, right ) {
     assert( left instanceof ReferenceBase, 'Cannot pass non-Reference to reference identity function.' );
@@ -22,12 +30,12 @@ export function identity( left, right ) {
 
 export class ReferenceBase extends EventEmitter {
     _onChange = null;
-    _value = void 0;
-    _ran = false;
-    _running = false;
-    _closed = false;
+    _value    = void 0;
+    _ran      = false;
+    _running  = false;
+    _closed   = false;
 
-    _left = void 0;
+    _left  = void 0;
     _right = void 0;
 
     _run() {
@@ -84,7 +92,7 @@ export class ReferenceBase extends EventEmitter {
         }
 
         this._running = false;
-        this._ran = false;
+        this._ran     = false;
 
         delete this['_left'];
         delete this['_right'];
@@ -101,7 +109,7 @@ export default class Reference extends ReferenceBase {
         super();
 
         this._script = script;
-        this._args = args;
+        this._args   = args;
 
         //Just mark this reference as not ran when a change occurs
         //other things are free to reference this script and evaluate it,
@@ -130,7 +138,7 @@ export default class Reference extends ReferenceBase {
                         this._value = value;
                     }
 
-                    this._ran = true;
+                    this._ran     = true;
                     this._running = false;
 
                     this.emit( 'value', this._value );
@@ -188,7 +196,7 @@ export default class Reference extends ReferenceBase {
         } else {
             var mid = Math.floor( refs.length / 2 );
 
-            var left = Reference.join_all( refs.slice( 0, mid ), transform );
+            var left  = Reference.join_all( refs.slice( 0, mid ), transform );
             var right = Reference.join_all( refs.slice( mid ), transform );
 
             return Reference.join( left, right, transform );
@@ -201,7 +209,7 @@ export default class Reference extends ReferenceBase {
 }
 
 class TransformReference extends ReferenceBase {
-    _ref = null;
+    _ref       = null;
     _transform = null;
 
     constructor( ref, transform = identity ) {
@@ -243,7 +251,7 @@ class TransformReference extends ReferenceBase {
                         this._value = value;
                     }
 
-                    this._ran = true;
+                    this._ran     = true;
                     this._running = false;
 
                     this.emit( 'value', this._value );
@@ -284,7 +292,7 @@ class JoinedTransformReference extends ReferenceBase {
         assert.notEqual( left, right, 'Cannot join to self' );
         assert.strictEqual( typeof transform, 'function', 'transform function must be a function' );
 
-        this._left = left;
+        this._left  = left;
         this._right = right;
 
         if( isGeneratorFunction( transform ) ) {
@@ -319,7 +327,7 @@ class JoinedTransformReference extends ReferenceBase {
                         this._value = value;
                     }
 
-                    this._ran = true;
+                    this._ran     = true;
                     this._running = false;
 
                     this.emit( 'value', this._value );
@@ -374,7 +382,7 @@ class ResolvedReference extends ReferenceBase {
                         this._value = result;
                     }
 
-                    this._ran = true;
+                    this._ran     = true;
                     this._running = false;
 
                     this.emit( 'value', this._value );

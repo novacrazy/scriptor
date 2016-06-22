@@ -3,7 +3,7 @@
  */
 
 /*
- * This file uses ES7 export extensions
+ * NOTE: This file uses ES7 export extensions
  * */
 
 import Promise from "bluebird";
@@ -14,7 +14,7 @@ import Manager from "./manager.js";
 import Reference from "./reference.js";
 import * as utils from "./utils.js";
 
-let Scriptor = {
+const Scriptor = {
     Promise,
     Script,
     SourceScript,
@@ -26,6 +26,7 @@ let Scriptor = {
     utils
 };
 
+//Provide a circular reference to Scriptor from Script
 Script.Scriptor = Scriptor;
 
 export default Scriptor;

@@ -14,15 +14,7 @@ import defaultExtensions from "./extensions.js";
 import {EventEmitter} from "events";
 import {EventPropagator, makeEventPromise, makeMultiEventPromise} from "./event_handling.js";
 import {default_max_debounceMaxWait} from "./defaults.js";
-import {
-    tryPromise,
-    isThenable,
-    isGeneratorFunction,
-    isAbsoluteOrRelative,
-    bind,
-    normalizeConfig,
-    parseDefine
-} from "./utils.js";
+import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative, normalizeConfig, parseDefine} from "./utils.js";
 import Reference from "./reference.js";
 
 let promisifyCache = new Map();
@@ -83,6 +75,9 @@ export default class Script extends EventPropagator {
         return Script.extensions.hasOwnProperty( ext );
     }
 
+    /*
+     * Because of the dynamic nature of JavaScript and AMD, these functions need to be set up at runtime.
+     * */
     _init() {
         let require = ( ...args ) => {
             return this._require( ...args );
@@ -92,6 +87,7 @@ export default class Script extends EventPropagator {
             return this._define( ...args );
         };
 
+        //This is supposed to return a URL to where the file is, but since we're server side I dont' really know what it's supposed to do.
         require.toUrl = ( filepath = this.filename ) => {
             assert.strictEqual( typeof filepath, 'string', 'require.toUrl takes a string as filepath' );
 
@@ -159,7 +155,6 @@ export default class Script extends EventPropagator {
 
         this._script = new Module( null, parent );
 
-        //Explicit comparisons to appease JSHint
         if( filename !== void 0 && filename !== null ) {
             this.load( filename );
         }
@@ -250,8 +245,10 @@ export default class Script extends EventPropagator {
         return this.manager !== null && this.manager !== void 0;
     }
 
-    //Based on the RequireJS 'standard' for relative locations
-    //For SourceScripts, just set the filename to something relative
+    /*
+     * Based on the RequireJS 'standard' for relative locations
+     * For SourceScripts, just set the filename to something relative
+     * */
     get baseUrl() {
         return path.dirname( this.filename );
     }
@@ -284,6 +281,10 @@ export default class Script extends EventPropagator {
         return this._unloadOnRename;
     }
 
+    /*
+     * This is a little function that wraps the execution of another (possibly asynchronous) function
+     * in a try-catch statement and a Promise, containing any weirdness that could occur.
+     * */
     _callWrapper( func, context = this, args = [] ) {
         return new Promise( ( resolve, reject ) => {
             try {
@@ -304,6 +305,10 @@ export default class Script extends EventPropagator {
         } );
     }
 
+    /*
+     * Anything defined with "define" has a factory function, which this function executes. It supports caching factory results and even
+     * asynchronous factories with coroutines.
+     * */
     _runFactory( id, deps, factory ) {
         if( id !== void 0 && id !== null ) {
             //clear before running. Will remained cleared in the event of error
@@ -335,6 +340,9 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * The "main" factory is the one defined without an ID, and there can only be one per module.
+     * */
     _runMainFactory() {
         if( !this._runningFactory ) {
             this._runningFactory = true;
@@ -366,6 +374,11 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * This behemoth of a function does all the dependency loading for scripts, as asynchronously as possible.
+     * 
+     * Any dependency given with 'define' is passed through this function. 
+     */
     async _require( id ) {
         let normalize = resolve.bind( null, this.baseUrl );
 
@@ -382,6 +395,11 @@ export default class Script extends EventPropagator {
                 let plugin, plugin_id = parts[0];
 
                 if( plugin_id === 'include' ) {
+                    /*
+                     * This is a built-in plugin that uses the ManagedScript 'include' function to load up another script.
+                     * 
+                     * NOTE: This can only be used with ManagedScripts
+                     * */
                     plugin = {
                         normalize: ( id, defaultNormalize ) => {
                             return defaultNormalize( id );
@@ -401,6 +419,11 @@ export default class Script extends EventPropagator {
                     };
 
                 } else if( plugin_id === 'promisify' ) {
+                    /*
+                     * This is a built-in plugin that uses Bluebird's Promisify function to automatically promisify loaded modules.
+                     * 
+                     * e.g.: _require('promisify!fs') will load the same as var fs = Bluebird.PromisifyAll(require('fs'));
+                     * */
                     plugin = {
                         load: ( id, require, _onLoad, config ) => {
                             if( promisifyCache.has( id ) ) {
@@ -430,6 +453,10 @@ export default class Script extends EventPropagator {
                     };
 
                 } else if( plugin_id === 'text' ) {
+                    /*
+                     * This is a built-in plugin that loads the script in textMode. It's not a TextScript, though, and can later be changed
+                     * to normal mode
+                     * */
                     plugin = {
                         normalize: ( id, defaultNormalize ) => {
                             return defaultNormalize( id );
@@ -449,6 +476,7 @@ export default class Script extends EventPropagator {
                     };
 
                 } else {
+                    //For all other plugins attempt to load it from file 
                     plugin = await this._require( plugin_id );
                 }
 
@@ -490,16 +518,24 @@ export default class Script extends EventPropagator {
                 } );
 
             } else if( isAbsoluteOrRelative( id ) ) {
+                //Load as another script
+
                 id = Module._resolveFilename( normalize( id ), this.parent );
 
                 let script;
 
+                /*
+                 * If the current script is managed, attempt to load in any other dependent scripts using the include function.
+                 * */
                 if( this.isManaged() ) {
                     script = this.include( id );
 
                     script.textMode = false;
 
                 } else {
+                    /*
+                     * Otherwise, load it up with it's own Script and so forth
+                     * */
                     script = load( id, this.watched, this._script );
 
                     script.propagateTo( this, 'change', () => {
@@ -513,6 +549,9 @@ export default class Script extends EventPropagator {
                 return script.exports();
 
             } else {
+                /*
+                 * Handle any of the built-in modules
+                 * */
                 if( id === 'require' ) {
                     return this.require;
 
@@ -535,6 +574,9 @@ export default class Script extends EventPropagator {
                     return this._loadCache.get( id );
 
                 } else if( this._defineCache.has( id ) ) {
+                    /*
+                     * Load any named module created using 'define'
+                     * */
                     let args = this._defineCache.get( id );
 
                     return this._runFactory( ...args ).then( exported => {
@@ -544,6 +586,9 @@ export default class Script extends EventPropagator {
                     } );
 
                 } else {
+                    /*
+                     * Load normal modules, accounting for _config.paths for in-place replacements
+                     * */
                     const config_paths = this._config.paths;
 
                     for( let p in config_paths ) {
@@ -576,10 +621,15 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * This is a short implementation of AMD's define function, which is called from within the script.
+     *
+     * This should NEVER be called outside of the loaded script.
+     * */
     _define( ...args ) {
         let define_args = parseDefine( ...args );
 
-        let [id] = define_args;
+        const [id] = define_args;
 
         if( id !== void 0 ) {
             assert.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
@@ -594,10 +644,21 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * This injects values into the script-level 'module' variable to be used within the loaded script.
+     *
+     * For example, the 'define' function used to allow AMD scripts.
+     * */
     _do_setup() {
         this._script.imports = this.imports;
 
-        this._script.define = bind( this.define, this );
+        /*
+         * //This custom bind function copies other values along with the bound function
+         * this._script.define = bind( this.define, this );
+         * */
+
+        //this.define is already just a closure and doesn't need to be bound. It wouldn't affect it anyway.
+        this._script.define = this.define;
 
         this._script.include = ( ...args ) => {
             return this.include( ...args );
@@ -610,9 +671,16 @@ export default class Script extends EventPropagator {
         };
     }
 
+    /*
+     * This internal function does the actual file loading and compilation/evaluation.
+     * */
     _do_load() {
         assert.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
+        /*
+         * If the script was loading in text mode already, but we changed it and are now loading in normal mode,
+         * it should abandon the text loading. The source code will still be available eventually.
+         * */
         if( !this.loading || (this._loadingText && !this.textMode) ) {
             this.unload();
 
@@ -621,15 +689,27 @@ export default class Script extends EventPropagator {
 
                 this._loadingText = false;
 
-                var ext = extname( this.filename ) || '.js';
+                /*
+                 * default to .js if the file has no extension. It'll probably fail anyway,
+                 * but since this IS node.js, JavaScript is assumed
+                 * */
+                let ext = extname( this.filename ) || '.js';
 
                 //Use custom extension if available
                 if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
+                    /*
+                     * Unfortunately for now, we have to rely on the built-in Module loading code,
+                     * which is quite complex, and also synchronous.
+                     * */
                     this._script.paths = Module._nodeModulePaths( dirname( this.filename ) );
 
                     this._loading = true;
 
                     try {
+                        /*
+                         * Watching here is a good choice, because if the file changes AS we are loading it, it's invalid anyway,
+                         * and it won't progress beyond the if( this._loading ) below.
+                         * */
                         if( this._willWatch ) {
                             this._do_watch( this._watchPersistent );
                         }
@@ -662,7 +742,8 @@ export default class Script extends EventPropagator {
 
                 } else {
                     /*
-                     * This is the synchronous path. If custom extension handlers are used, this should never run
+                     * This is the synchronous path. If custom extension handlers are used, this should never run. While there is nothing
+                     * particularly wrong with this path, it's still synchronous.
                      * */
 
                     if( !Module._extensions.hasOwnProperty( ext ) ) {
@@ -736,6 +817,9 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * This internal function sets up the file watcher, with individual debounces for change and rename events.
+     * */
     _do_watch( persistent ) {
         if( !this.watched ) {
             let watcher;
@@ -824,7 +908,7 @@ export default class Script extends EventPropagator {
 
         } else {
             /*
-             * This is a special one were it doesn't matter which event triggers first.
+             * This is a special one were it doesn't matter which event triggers first. The source code will be the same.
              * */
             let waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'], ['error'] );
 
@@ -836,6 +920,10 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * This forces loading, compilation and evaluation of a script, and returns a Promise that should resolve to whatever
+     * module.exports was assigned when the script was run. For Text mode scripts, it returns the source code.
+     * */
     exports() {
         if( this.loaded ) {
             if( this.pending ) {
@@ -897,6 +985,9 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * Loading is actually done lazily, so this doesn't do anything more than set up values needed when it does eventually load.
+     * */
     load( filename, watch = true ) {
         filename = resolve( filename );
 
@@ -915,6 +1006,9 @@ export default class Script extends EventPropagator {
         return this;
     }
 
+    /*
+     * Basically this just cleans up everything. Clearing values and so forth.
+     * */
     unload() {
         this.emit( 'unload' );
 
@@ -931,8 +1025,10 @@ export default class Script extends EventPropagator {
         this._loadingText    = false;
     }
 
+    /*
+     * Force the script to reload and recompile.
+     * */
     reload() {
-        //Force it to reload and recompile the script.
         this._callWrapper( this._do_load ).then( () => {
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
@@ -940,6 +1036,9 @@ export default class Script extends EventPropagator {
         } );
     }
 
+    /*
+     * Watching is done lazily so we don't generate any more events that needed until the script is loaded and compiled.
+     * */
     watch( persistent = false ) {
         if( !this.watched ) {
             this._willWatch       = true;
@@ -950,6 +1049,9 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * Unwatching is done synchronously, however, since it's simple and should be done ASAP anyway to prevent any new events.
+     * */
     unwatch() {
         if( this.watched ) {
             //close the watched and null it to allow the GC to collect it
@@ -974,6 +1076,9 @@ export default class Script extends EventPropagator {
         return new Reference( this, args );
     }
 
+    /*
+     * This is a simple "cheat" to allow a script to re-evaluate itself and re-watch itself if needed
+     * */
     reopen() {
         this.unload();
 
@@ -994,7 +1099,7 @@ export default class Script extends EventPropagator {
         if( permanent ) {
             let parent = this._script.parent;
 
-            //Remove _script from parent
+            //Remove _script from parent, if the parent exists
             if( parent !== void 0 && parent !== null ) {
                 for( let it in parent.children ) {
                     //Find which child is this._script, delete it and remove the (now undefined) reference
@@ -1014,6 +1119,9 @@ export default class Script extends EventPropagator {
         }
     }
 
+    /*
+     * See manager.js for include's for ManagedScripts.
+     * */
     include( filename ) {
         throw new Error( `Cannot include script "${filename}" from an unmanaged script` );
     }
