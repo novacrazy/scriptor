@@ -76,6 +76,7 @@ var ScriptAdapter = function( _Script ) {
 
         _this._manager = null;
 
+
         _this._manager = manager;
 
         //When a script is renamed, it should be reassigned in the manager
@@ -240,6 +241,7 @@ var Manager       = function() {
     //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
     //from watching a file.
 
+
     Manager.prototype.add = function add( filename ) {
         var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
@@ -269,6 +271,7 @@ var Manager       = function() {
     //Removes a script from the manager. But closing it permenantly is optional,
     //as it may sometimes make sense to move it out of a manager and use it independently.
     //However, that is quite rare so close defaults to true
+
 
     Manager.prototype.remove = function remove( filename ) {
         var close = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
@@ -334,6 +337,7 @@ var Manager       = function() {
     };
 
     //Make closing optional for the same reason as .remove
+
 
     Manager.prototype.clear = function clear() {
         var close = arguments.length <= 0 || arguments[0] === void 0 ? true : arguments[0];

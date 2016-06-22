@@ -1,18 +1,18 @@
-'use strict';
+"use strict";
 
-var _typeof2 = require( 'babel-runtime/helpers/typeof' );
+var _typeof2 = require( "babel-runtime/helpers/typeof" );
 
 var _typeof3 = _interopRequireDefault( _typeof2 );
 
-var _ = require( '../../' );
+var _ = require( "../../" );
 
 var _2 = _interopRequireDefault( _ );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
@@ -20,7 +20,7 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
-describe( 'exports', function() {
+describe( "exports", function() {
     it( 'should have exported a Script class', function() {
         _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Script ), 'function',
             'No Script class exported' );

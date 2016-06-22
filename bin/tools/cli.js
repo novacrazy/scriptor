@@ -110,6 +110,7 @@ var Logger = exports.Logger = function( _EventEmitter ) {
 
         _this._level = null;
 
+
         _this.level = level;
         return _this;
     }

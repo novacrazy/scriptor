@@ -221,9 +221,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                     _ref3 = _i3.value;
                 }
 
-                var event = _ref3;
+                var _event = _ref3;
 
-                emitter.removeListener( event, resolve_handler );
+                emitter.removeListener( _event, resolve_handler );
             }
 
             resolve.apply( void 0, arguments );
@@ -231,7 +231,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
 
         function reject_handler() {
             for( var _iterator4 = reject_events, _isArray4 = Array.isArray(
-                _iterator4 ), _i4                          = 0, _iterator4          = _isArray4 ? _iterator4 :
+                _iterator4 ), _i4                          = 0, _iterator4 = _isArray4 ? _iterator4 :
                                                     (0, _getIterator3.default)( _iterator4 ); ; ) {
                 var _ref4;
 
@@ -271,9 +271,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                     _ref5 = _i5.value;
                 }
 
-                var event = _ref5;
+                var _event2 = _ref5;
 
-                emitter.removeListener( event, resolve_handler );
+                emitter.removeListener( _event2, resolve_handler );
             }
 
             reject.apply( void 0, arguments );
@@ -322,9 +322,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 _ref7 = _i7.value;
             }
 
-            var event = _ref7;
+            var _event3 = _ref7;
 
-            emitter.addListener( event, reject_handler );
+            emitter.addListener( _event3, reject_handler );
         }
     } );
 }

@@ -106,6 +106,7 @@ function load( filename ) {
     var watch  = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
     var parent = arguments.length <= 2 || arguments[2] === void 0 ? null : arguments[2];
 
+
     filename = (0, _path.resolve)( filename );
 
     var script = new Script( null, parent );
@@ -215,6 +216,7 @@ var Script = function( _EventPropagator ) {
         _this.define           = null;
         _this.imports          = {};
 
+
         if( parent === void 0 || parent === null ) {
             if( filename instanceof _module2.default.Module ) {
                 parent   = filename;
@@ -271,6 +273,7 @@ var Script = function( _EventPropagator ) {
 
     //Based on the RequireJS 'standard' for relative locations
     //For SourceScripts, just set the filename to something relative
+
 
     Script.prototype._callWrapper = function _callWrapper( func ) {
         var _this3 = this;
@@ -563,15 +566,19 @@ var Script = function( _EventPropagator ) {
                 }
             }
         } );
-        return function _require( _x7 ) {
+
+        function _require( _x7 ) {
             return ref.apply( this, arguments );
-        };
+        }
+
+        return _require;
     }();
 
     Script.prototype._define = function _define() {
         var define_args = _utils.parseDefine.apply( void 0, arguments );
 
         var id = define_args[0];
+
 
         if( id !== void 0 ) {
             _assert2.default.notStrictEqual( id.charAt( 0 ), '.', 'module identifiers cannot be relative paths' );
@@ -838,11 +845,11 @@ var Script = function( _EventPropagator ) {
             } );
         } else {
             //Add the event listeners first
-            var waiting = (0, _event_handling.makeEventPromise)( this, 'loaded', 'error' );
+            var _waiting = (0, _event_handling.makeEventPromise)( this, 'loaded', 'error' );
 
             this._callWrapper( this._do_load );
 
-            return waiting.then( function() {
+            return _waiting.then( function() {
                 return _this11.exports();
             } );
         }

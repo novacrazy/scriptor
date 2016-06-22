@@ -358,6 +358,7 @@ function diff_ms( start ) {
     var seconds     = _process$hrtime[0];
     var nanoseconds = _process$hrtime[1];
 
+
     var milliseconds = seconds * 1e3 + nanoseconds * 1e-6;
 
     return milliseconds.toFixed( 3 ) + 'ms';

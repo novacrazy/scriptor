@@ -1,20 +1,20 @@
-'use strict';
+"use strict";
 
-var _map = require( 'babel-runtime/core-js/map' );
+var _map = require( "babel-runtime/core-js/map" );
 
 var _map2 = _interopRequireDefault( _map );
 
-var _ = require( '../../' );
+var _ = require( "../../" );
 
 var _2 = _interopRequireDefault( _ );
 
-var _module = require( 'module' );
+var _module = require( "module" );
 
 var _module2 = _interopRequireDefault( _module );
 
-var _path = require( 'path' );
+var _path = require( "path" );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
@@ -26,9 +26,10 @@ function _interopRequireDefault( obj ) {
  * Created by Aaron on 7/7/2015.
  */
 
-describe( 'Managers', function() {
+describe( "Managers", function() {
     var Manager = _2.default.Manager;
     var Script  = _2.default.Script;
+
 
     var manager = void 0;
 

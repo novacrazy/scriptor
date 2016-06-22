@@ -201,6 +201,7 @@ var Reference = function( _ReferenceBase ) {
 
         _this2._args = [];
 
+
         _this2._script = script;
         _this2._args   = args;
 
@@ -274,6 +275,7 @@ var Reference = function( _ReferenceBase ) {
 
     //Creates a binary tree (essentially) of joins from an array of References using a single transform
 
+
     Reference.join_all = function join_all( refs, transform ) {
         (0, _assert2.default)( Array.isArray( refs ), 'join_all can only join arrays of References' );
 
@@ -313,6 +315,7 @@ var TransformReference = function( _ReferenceBase2 ) {
 
         _this4._ref       = null;
         _this4._transform = null;
+
 
         (0, _assert2.default)( ref instanceof ReferenceBase, 'transform will only work on References' );
         _assert2.default.strictEqual(

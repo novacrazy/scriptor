@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-var _ = require( '../../' );
+var _ = require( "../../" );
 
 var _2 = _interopRequireDefault( _ );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
@@ -19,7 +19,7 @@ function _interopRequireDefault( obj ) {
 var fs    = require( 'fs' );
 var touch = require( 'touch' );
 
-describe( 'Script watching', function() {
+describe( "Script watching", function() {
     var Script = _2.default.Script;
 
     describe( 'simple script', function() {

@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-var _ = require( '../../' );
+var _ = require( "../../" );
 
 var _2 = _interopRequireDefault( _ );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
@@ -18,7 +18,7 @@ function _interopRequireDefault( obj ) {
 
 var Module = require( 'module' );
 
-describe( 'Script calling', function() {
+describe( "Script calling", function() {
     var Script = _2.default.Script;
 
     describe( 'empty file', function() {

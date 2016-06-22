@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-var _ = require( '../../' );
+var _ = require( "../../" );
 
 var _2 = _interopRequireDefault( _ );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
@@ -16,7 +16,7 @@ function _interopRequireDefault( obj ) {
  * Created by Aaron on 7/7/2015.
  */
 
-describe( 'TextScripts', function() {
+describe( "TextScripts", function() {
     var TextScript = _2.default.TextScript;
 
     describe( 'simple file with hello world', function() {

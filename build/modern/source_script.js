@@ -111,6 +111,7 @@ var SourceScript = function( _Script ) {
 
         _this._onChange = null;
 
+
         if( src !== void 0 && src !== null ) {
             _this.load( src );
         }
