@@ -2,16 +2,13 @@
  * Created by Aaron on 7/5/2015.
  */
 
-import Module from 'module';
+import Module from "module";
+import assert from "assert";
+import {resolve} from "path";
+import {normalizeConfig} from "./utils.js";
+import Script from "./script.js";
 
-import assert from 'assert';
-
-import {resolve} from 'path';
-import {normalizeConfig} from './utils.js';
-
-import Script from './script.js';
-
-class ScriptAdapter extends Script {
+class ManagedScript extends Script {
     _manager = null;
 
     constructor( manager, filename, parent ) {
@@ -22,8 +19,10 @@ class ScriptAdapter extends Script {
         //When a script is renamed, it should be reassigned in the manager
         //Otherwise, when it's accessed at the new location, the manager just creates a new script
         this.on( 'rename', ( event, oldname, newname ) => {
-            this._manager._scripts.set( newname, this._manager._scripts.get( oldname ) );
-            this._manager._scripts.delete( oldname );
+            let {scripts} = this._manager;
+
+            scripts.set( newname, scripts.get( oldname ) );
+            scripts.delete( oldname );
         } );
     }
 
@@ -68,13 +67,13 @@ class ScriptAdapter extends Script {
 
 export default class Manager {
     _debounceMaxWait = null;
-    _maxListeners = null;
+    _maxListeners    = null;
 
     _config = null;
-    _cwd = process.cwd();
+    _cwd    = process.cwd();
 
     _scripts = new Map();
-    _parent = null;
+    _parent  = null;
 
     _propagateEvents = false;
 
@@ -208,7 +207,7 @@ export default class Manager {
         var script = this._scripts.get( filename );
 
         if( script === void 0 ) {
-            script = new ScriptAdapter( this, null, this._parent );
+            script = new ManagedScript( this, null, this._parent );
 
             script.load( filename, watch );
 
@@ -250,6 +249,8 @@ export default class Manager {
     }
 
     apply( filename, args ) {
+        assert( Array.isArray( args ) );
+
         var script = this.add( filename, false );
 
         try {

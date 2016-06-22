@@ -2,27 +2,28 @@
  * Created by Aaron on 7/5/2015.
  */
 
-import Module from 'module';
-import assert from 'assert';
-import Promise from 'bluebird';
-
-import {clone, debounce} from 'lodash';
-
-import {readFile, watch as watchFile} from 'fs';
-import {resolve as resolveURL} from 'url';
-import {extname, dirname, basename, resolve, relative, posix as path} from 'path';
-
-import {normalizeError} from './error.js';
-import defaultExtensions from './extensions.js';
-
-import {EventEmitter} from 'events';
-
-import {EventPropagator, makeEventPromise, makeMultiEventPromise} from './event_handling.js';
-import {default_max_debounceMaxWait} from './defaults.js';
-
-import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative, bind, normalizeConfig, parseDefine} from './utils.js';
-
-import Reference from './reference.js';
+import Module from "module";
+import assert from "assert";
+import Promise from "bluebird";
+import {clone, debounce} from "lodash";
+import {readFile, watch as watchFile} from "fs";
+import {resolve as resolveURL} from "url";
+import {extname, dirname, basename, resolve, relative, posix as path} from "path";
+import {normalizeError} from "./error.js";
+import defaultExtensions from "./extensions.js";
+import {EventEmitter} from "events";
+import {EventPropagator, makeEventPromise, makeMultiEventPromise} from "./event_handling.js";
+import {default_max_debounceMaxWait} from "./defaults.js";
+import {
+    tryPromise,
+    isThenable,
+    isGeneratorFunction,
+    isAbsoluteOrRelative,
+    bind,
+    normalizeConfig,
+    parseDefine
+} from "./utils.js";
+import Reference from "./reference.js";
 
 let promisifyCache = new Map();
 
@@ -40,12 +41,12 @@ export function load( filename, watch = true, parent = null ) {
 }
 
 export default class Script extends EventPropagator {
-    _script = null;
-    _source = null;
+    _script  = null;
+    _source  = null;
     _factory = null;
     _watcher = null;
 
-    _willWatch = false;
+    _willWatch       = false;
     _watchPersistent = false;
 
     _maxListeners = 10; //Node default maxListeners
@@ -55,11 +56,11 @@ export default class Script extends EventPropagator {
     _textMode = false;
 
     _defineCache = new Map();
-    _loadCache = new Map();
+    _loadCache   = new Map();
 
-    _pending = false;
-    _loading = false;
-    _loadingText = false;
+    _pending        = false;
+    _loading        = false;
+    _loadingText    = false;
     _runningFactory = false;
 
     _config = normalizeConfig( null );
@@ -69,14 +70,14 @@ export default class Script extends EventPropagator {
     _unloadOnRename = false;
 
     require = null;
-    define = null;
+    define  = null;
 
     imports = {};
 
     static Scriptor = null;
 
     static extensions_enabled = true;
-    static extensions = defaultExtensions;
+    static extensions         = defaultExtensions;
 
     static hasExtension( ext ) {
         return Script.extensions.hasOwnProperty( ext );
@@ -140,7 +141,7 @@ export default class Script extends EventPropagator {
         require.define = define;
 
         this.require = require;
-        this.define = define;
+        this.define  = define;
     }
 
     constructor( filename, parent ) {
@@ -148,7 +149,7 @@ export default class Script extends EventPropagator {
 
         if( parent === void 0 || parent === null ) {
             if( filename instanceof Module.Module ) {
-                parent = filename;
+                parent   = filename;
                 filename = null;
 
             } else {
@@ -337,7 +338,7 @@ export default class Script extends EventPropagator {
     _runMainFactory() {
         if( !this._runningFactory ) {
             this._runningFactory = true;
-            this._pending = true;
+            this._pending        = true;
 
             return this._runFactory( null, this._dependencies, this._factory ).then( result => {
                 if( this._pending ) {
@@ -347,7 +348,7 @@ export default class Script extends EventPropagator {
                         this._script.exports = result;
                     }
 
-                    this._pending = false;
+                    this._pending        = false;
                     this._runningFactory = false;
 
                     this.emit( 'exports', this._script.exports );
@@ -587,7 +588,7 @@ export default class Script extends EventPropagator {
 
         } else {
             this._dependencies = define_args[1];
-            this._factory = define_args[2];
+            this._factory      = define_args[2];
 
             this._runMainFactory();
         }
@@ -635,7 +636,7 @@ export default class Script extends EventPropagator {
 
                         return tryPromise( Script.extensions[ext]( this._script, this.filename ) ).then( src => {
                             if( this._loading ) {
-                                this._source = src;
+                                this._source        = src;
                                 this._script.loaded = true;
 
                                 this._loading = false;
@@ -695,7 +696,7 @@ export default class Script extends EventPropagator {
                 }
 
             } else {
-                this._loading = true;
+                this._loading     = true;
                 this._loadingText = true;
 
                 if( this._willWatch ) {
@@ -703,7 +704,7 @@ export default class Script extends EventPropagator {
                         this._do_watch( this._watchPersistent );
 
                     } catch( err ) {
-                        this._loading = false;
+                        this._loading     = false;
                         this._loadingText = false;
 
                         this.emit( 'error', err );
@@ -712,10 +713,10 @@ export default class Script extends EventPropagator {
 
                 return readFileAsync( this.filename ).then( src => {
                     if( this._loading && this._loadingText ) {
-                        this._source = src;
+                        this._source        = src;
                         this._script.loaded = true;
 
-                        this._loading = false;
+                        this._loading     = false;
                         this._loadingText = false;
 
                         this.emit( 'loaded_src', this.loaded );
@@ -726,7 +727,7 @@ export default class Script extends EventPropagator {
                     }
 
                 }, err => {
-                    this._loading = false;
+                    this._loading     = false;
                     this._loadingText = false;
 
                     this.emit( 'error', err );
@@ -869,6 +870,8 @@ export default class Script extends EventPropagator {
     }
 
     apply( args ) {
+        assert( Array.isArray( args ) );
+
         if( !this.textMode ) {
             return this.exports().then( main => {
                 if( main !== null && main !== void 0 ) {
@@ -915,17 +918,17 @@ export default class Script extends EventPropagator {
     unload() {
         this.emit( 'unload' );
 
-        this._script.loaded = false;
+        this._script.loaded  = false;
         this._script.exports = {};
 
         //unload also clears defines and requires
         this._defineCache.clear();
         this._loadCache.clear();
 
-        this._pending = false;
+        this._pending        = false;
         this._runningFactory = false;
-        this._loading = false;
-        this._loadingText = false;
+        this._loading        = false;
+        this._loadingText    = false;
     }
 
     reload() {
@@ -939,7 +942,7 @@ export default class Script extends EventPropagator {
 
     watch( persistent = false ) {
         if( !this.watched ) {
-            this._willWatch = true;
+            this._willWatch       = true;
             this._watchPersistent = persistent;
 
         } else if( this._willWatch ) {
