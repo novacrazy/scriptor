@@ -2,24 +2,16 @@
  * Created by Aaron on 7/4/2015.
  */
 
-import Promise from 'bluebird';
-
-import * as _ from 'lodash';
-
-import {isAbsolute, resolve, posix as path} from 'path';
-
-import {AMD_Header, default_dependencies} from './defaults.js';
+import Promise from "bluebird";
+import * as _ from "lodash";
+import {isAbsolute, resolve, posix as path} from "path";
+import {AMD_Header, default_dependencies} from "./defaults.js";
 
 let AMD_Header_Buffer = new Buffer( AMD_Header );
 
-export function isAbsolutePath( filepath ) {
-    if( typeof isAbsolute === 'function' ) {
-        return isAbsolute( filepath );
-
-    } else {
-        return normalize( filepath ) === resolve( filepath );
-    }
-}
+export var isAbsolutePath = typeof isAbsolute === 'function' ? isAbsolute : function isAbsolutePath( filepath ) {
+    return normalize( filepath ) === resolve( filepath );
+};
 
 export function isAbsoluteOrRelative( filepath ) {
     return filepath.charAt( 0 ) === '.' || isAbsolutePath( filepath );
@@ -73,17 +65,17 @@ export function parseDefine( id, deps, factory ) {
     //This argument parsing code is taken from amdefine
     if( Array.isArray( id ) ) {
         factory = deps;
-        deps = id;
-        id = void 0;
+        deps    = id;
+        id      = void 0;
 
     } else if( typeof id !== 'string' ) {
         factory = id;
-        id = deps = void 0;
+        id      = deps = void 0;
     }
 
     if( deps !== void 0 && !Array.isArray( deps ) ) {
         factory = deps;
-        deps = void 0;
+        deps    = void 0;
     }
 
     if( deps === void 0 ) {

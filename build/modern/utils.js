@@ -25,7 +25,7 @@
 'use strict';
 
 exports.__esModule           = true;
-exports.isAbsolutePath       = isAbsolutePath;
+exports.isAbsolutePath       = void 0;
 exports.isAbsoluteOrRelative = isAbsoluteOrRelative;
 exports.bind                 = bind;
 exports.stripBOM             = stripBOM;
@@ -79,13 +79,10 @@ function _interopRequireDefault( obj ) {
 
 var AMD_Header_Buffer = new Buffer( _defaults.AMD_Header );
 
-function isAbsolutePath( filepath ) {
-    if( typeof _path.isAbsolute === 'function' ) {
-        return (0, _path.isAbsolute)( filepath );
-    } else {
+var isAbsolutePath = exports.isAbsolutePath =
+    typeof _path.isAbsolute === 'function' ? _path.isAbsolute : function isAbsolutePath( filepath ) {
         return normalize( filepath ) === (0, _path.resolve)( filepath );
-    }
-}
+    };
 
 function isAbsoluteOrRelative( filepath ) {
     return filepath.charAt( 0 ) === '.' || isAbsolutePath( filepath );
