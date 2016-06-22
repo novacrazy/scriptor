@@ -22,35 +22,35 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule = true;
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _script = require( './script.js' );
+var _script = require( "./script.js" );
 
 var _script2 = _interopRequireDefault( _script );
 
-var _source_script = require( './source_script.js' );
+var _source_script = require( "./source_script.js" );
 
 var _source_script2 = _interopRequireDefault( _source_script );
 
-var _text_script = require( './text_script.js' );
+var _text_script = require( "./text_script.js" );
 
 var _text_script2 = _interopRequireDefault( _text_script );
 
-var _manager = require( './manager.js' );
+var _manager = require( "./manager.js" );
 
 var _manager2 = _interopRequireDefault( _manager );
 
-var _reference = require( './reference.js' );
+var _reference = require( "./reference.js" );
 
 var _reference2 = _interopRequireDefault( _reference );
 
-var _utils = require( './utils.js' );
+var _utils = require( "./utils.js" );
 
 var utils = _interopRequireWildcard( _utils );
 
@@ -86,12 +86,14 @@ var Scriptor = {
     compile:      _source_script.compile,
     utils:        utils
 };
+
+//Provide a circular reference to Scriptor from Script
 /**
  * Created by Aaron on 7/5/2015.
  */
 
 /*
- * This file uses ES7 export extensions
+ * NOTE: This file uses ES7 export extensions
  * */
 
 _script2.default.Scriptor = Scriptor;

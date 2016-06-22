@@ -50,6 +50,10 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
+/*
+ * This is just a variation on the normal script that forces it to always think it's in text mode
+ * */
+
 var TextScript = function( _Script ) {
     (0, _inherits3.default)( TextScript, _Script );
 

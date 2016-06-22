@@ -24,43 +24,17 @@
  ****/
 'use strict';
 
-exports.__esModule = true;
-
-var _bluebird = require( 'bluebird' );
-
-var _bluebird2 = _interopRequireDefault( _bluebird );
-
-var _fs = require( 'fs' );
-
-var _utils = require( './utils.js' );
-
-function _interopRequireDefault( obj ) {
-    return obj && obj.__esModule ? obj : {default: obj};
-}
-
-var readFileAsync = _bluebird2.default.promisify( _fs.readFile );
+exports.__esModule              = true;
 /**
- * Created by Aaron on 7/5/2015.
+ * Created by Aaron on 7/4/2015.
  */
 
-exports.default = {
-    '.js':   function js( module, filename ) {
-        return readFileAsync( filename ).then( _utils.injectAMDAndStripBOM ).then( function( src ) {
-            module._compile( src.toString( 'utf-8' ), filename );
+// This is the default amount of time any file watchers should debounce events for
+var default_max_debounceMaxWait = exports.default_max_debounceMaxWait = 50;
 
-            return src;
-        } );
-    },
-    '.json': function json( module, filename ) {
-        return readFileAsync( filename ).then( _utils.stripBOM ).then( function( src ) {
-            try {
-                module.exports = JSON.parse( src.toString( 'utf-8' ) );
-            } catch( err ) {
-                err.message = filename + ': ' + err.message;
-                throw err;
-            }
+//This chunk of code is prepended to scripts before they are compiled so the define function can be made available to it
+var AMD_Header = exports.AMD_Header =
+    "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}";
 
-            return src;
-        } );
-    }
-};
+//These are the default dependencies that all AMD scripts should have. They are appended to any other given dependencies
+var default_dependencies = exports.default_dependencies = ['require', 'exports', 'module', 'imports'];

@@ -58,6 +58,15 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
+/*
+ * This is a modification of the EventEmitter class that allows it to automatically propagate certain events to
+ * other specified event emitters/listeners. This is used to "bubble up" events from scripts.
+ *
+ * For example, if a depended upon script content changes on disk, then that script will be unloaded
+ * and the 'change' event emitted, but because there are other scripts that depend on the changed script, that 'change'
+ * event will propagate upwards into them and unload them as well. That way all scripts stay up to date.
+ * */
+
 var EventPropagator = exports.EventPropagator = function( _EventEmitter ) {
     (0, _inherits3.default)( EventPropagator, _EventEmitter );
 
@@ -84,8 +93,7 @@ var EventPropagator = exports.EventPropagator = function( _EventEmitter ) {
     EventPropagator.prototype.isPropagatingFrom = function isPropagatingFrom( emitter, event ) {
         var listeners = emitter.listeners( event );
 
-        for( var _iterator = listeners, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ?
-                                                                                                   _iterator :
+        for( var _iterator = listeners, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ? _iterator :
                                                                                                    (0, _getIterator3.default)(
                                                                                                        _iterator ); ; ) {
             var _ref;
@@ -139,6 +147,9 @@ var EventPropagator = exports.EventPropagator = function( _EventEmitter ) {
         }
     };
 
+    //Reverse logic to make it easier to understand.
+
+
     EventPropagator.prototype.propagateTo = function propagateTo( emitter, event, handler ) {
         emitter.propagateFrom( this, event, handler );
     };
@@ -149,6 +160,14 @@ var EventPropagator = exports.EventPropagator = function( _EventEmitter ) {
 
     return EventPropagator;
 }( _events.EventEmitter );
+
+/*
+ * For a single pair of events, this will create a Promise that will resolve or reject when the associated event occurs.
+ *
+ * A good example is the 'end' event for resolving it, and the 'error' event for rejecting the Promise.
+ *
+ * This also cleans up after itself by removing the listeners once they have been triggered.
+ * */
 /**
  * Created by Aaron on 7/4/2015.
  */
@@ -175,14 +194,15 @@ function makeEventPromise( emitter, resolve_event, reject_event ) {
 }
 
 /*
- * This is a more generic version of the above, but also costs more to run.
+ * This is a more generic version of the above,
+ * but also costs more to run because it has to loop through all the provided events.
  * */
 function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
     return new _bluebird2.default( function( resolve, reject ) {
         function resolve_handler() {
-            for( var _iterator2 = reject_events, _isArray2 = Array.isArray(
-                _iterator2 ), _i2                          = 0, _iterator2 = _isArray2 ? _iterator2 :
-                                                    (0, _getIterator3.default)( _iterator2 ); ; ) {
+            for( var _iterator2 = reject_events, _isArray2 = Array.isArray( _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 :
+                                                                                                                (0, _getIterator3.default)(
+                                                                                                                    _iterator2 ); ; ) {
                 var _ref2;
 
                 if( _isArray2 ) {
@@ -203,9 +223,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 emitter.removeListener( event, reject_handler );
             }
 
-            for( var _iterator3 = resolve_events, _isArray3 = Array.isArray(
-                _iterator3 ), _i3                           = 0, _iterator3           = _isArray3 ? _iterator3 :
-                                                    (0, _getIterator3.default)( _iterator3 ); ; ) {
+            for( var _iterator3 = resolve_events, _isArray3 = Array.isArray( _iterator3 ), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 :
+                                                                                                                 (0, _getIterator3.default)(
+                                                                                                                     _iterator3 ); ; ) {
                 var _ref3;
 
                 if( _isArray3 ) {
@@ -230,9 +250,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
         }
 
         function reject_handler() {
-            for( var _iterator4 = reject_events, _isArray4 = Array.isArray(
-                _iterator4 ), _i4                          = 0, _iterator4 = _isArray4 ? _iterator4 :
-                                                    (0, _getIterator3.default)( _iterator4 ); ; ) {
+            for( var _iterator4 = reject_events, _isArray4 = Array.isArray( _iterator4 ), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 :
+                                                                                                                (0, _getIterator3.default)(
+                                                                                                                    _iterator4 ); ; ) {
                 var _ref4;
 
                 if( _isArray4 ) {
@@ -253,9 +273,9 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
                 emitter.removeListener( event, reject_handler );
             }
 
-            for( var _iterator5 = resolve_events, _isArray5 = Array.isArray(
-                _iterator5 ), _i5                           = 0, _iterator5           = _isArray5 ? _iterator5 :
-                                                    (0, _getIterator3.default)( _iterator5 ); ; ) {
+            for( var _iterator5 = resolve_events, _isArray5 = Array.isArray( _iterator5 ), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 :
+                                                                                                                 (0, _getIterator3.default)(
+                                                                                                                     _iterator5 ); ; ) {
                 var _ref5;
 
                 if( _isArray5 ) {
@@ -279,8 +299,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
             reject.apply( void 0, arguments );
         }
 
-        for( var _iterator6 = resolve_events, _isArray6 = Array.isArray( _iterator6 ), _i6 = 0, _iterator6 = _isArray6 ?
-                                                                                                             _iterator6 :
+        for( var _iterator6 = resolve_events, _isArray6 = Array.isArray( _iterator6 ), _i6 = 0, _iterator6 = _isArray6 ? _iterator6 :
                                                                                                              (0, _getIterator3.default)(
                                                                                                                  _iterator6 ); ; ) {
             var _ref6;
@@ -303,8 +322,7 @@ function makeMultiEventPromise( emitter, resolve_events, reject_events ) {
             emitter.addListener( event, resolve_handler );
         }
 
-        for( var _iterator7 = reject_events, _isArray7 = Array.isArray( _iterator7 ), _i7 = 0, _iterator7 = _isArray7 ?
-                                                                                                            _iterator7 :
+        for( var _iterator7 = reject_events, _isArray7 = Array.isArray( _iterator7 ), _i7 = 0, _iterator7 = _isArray7 ? _iterator7 :
                                                                                                             (0, _getIterator3.default)(
                                                                                                                 _iterator7 ); ; ) {
             var _ref7;

@@ -83,6 +83,12 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
+/*
+ * The SourceScript variation is a Script that allows loading from in-memory strings. These are always assumed to be normal JavaScript.
+ *
+ * References can also be passed as a source, in case you want to do anything neat with that.
+ * */
+
 /**
  * Created by Aaron on 7/5/2015.
  */
@@ -200,8 +206,7 @@ var SourceScript = function( _Script ) {
     };
 
     SourceScript.prototype._normalizeSource = function _normalizeSource( src ) {
-        assert( typeof src === 'string' || Buffer.isBuffer( src ),
-            'Reference source must return string or Buffer as value' );
+        assert( typeof src === 'string' || Buffer.isBuffer( src ), 'Reference source must return string or Buffer as value' );
 
         src = (0, _utils.stripBOM)( src );
 

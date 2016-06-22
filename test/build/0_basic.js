@@ -22,52 +22,42 @@ function _interopRequireDefault( obj ) {
 
 describe( "exports", function() {
     it( 'should have exported a Script class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Script ), 'function',
-            'No Script class exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Script ), 'function', 'No Script class exported' );
     } );
 
     it( 'should have exported a SourceScript class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.SourceScript ), 'function',
-            'No SourceScript class exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.SourceScript ), 'function', 'No SourceScript class exported' );
     } );
 
     it( 'should have exported a TextScript class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.TextScript ), 'function',
-            'No TextScript class exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.TextScript ), 'function', 'No TextScript class exported' );
     } );
 
     it( 'should have exported a compile function', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.compile ), 'function',
-            'No compile function exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.compile ), 'function', 'No compile function exported' );
     } );
 
     it( 'should have exported a load function', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.load ), 'function',
-            'No load function exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.load ), 'function', 'No load function exported' );
     } );
 
     it( 'should have exported a Manager class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Manager ), 'function',
-            'No Manager class exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Manager ), 'function', 'No Manager class exported' );
     } );
 
     it( 'should have exported a Reference class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Reference ), 'function',
-            'No Reference class exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Reference ), 'function', 'No Reference class exported' );
     } );
 
     it( 'should have exported a bluebird Promise class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Promise ), 'function',
-            'No Promise class exported' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Promise ), 'function', 'No Promise class exported' );
         _assert2.default.strictEqual( _2.default.Promise, _bluebird2.default, 'Exported Promise is not bluebird' );
     } );
 
     it( 'should have exported a few utility functions', function() {
         _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.utils ), 'object', 'No utilities exported' );
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.utils.stripBOM ), 'function',
-            'Missing utility "stripBOM"' );
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.utils.injectAMD ), 'function',
-            'Missing utility "stripBOM"' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.utils.stripBOM ), 'function', 'Missing utility "stripBOM"' );
+        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.utils.injectAMD ), 'function', 'Missing utility "stripBOM"' );
     } );
 } );
 /**

@@ -22,7 +22,7 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule           = true;
 exports.isAbsolutePath       = void 0;
@@ -40,17 +40,17 @@ exports.isGeneratorFunction  = isGeneratorFunction;
 exports.parseDeps            = parseDeps;
 exports.normalizeConfig      = normalizeConfig;
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _lodash = require( 'lodash' );
+var _lodash = require( "lodash" );
 
 var _ = _interopRequireWildcard( _lodash );
 
-var _path = require( 'path' );
+var _path = require( "path" );
 
-var _defaults = require( './defaults.js' );
+var _defaults = require( "./defaults.js" );
 
 function _interopRequireWildcard( obj ) {
     if( obj && obj.__esModule ) {
@@ -106,10 +106,12 @@ function bind( func ) {
     return bound;
 }
 
+/*
+ * Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
+ * because the buffer-to-string conversion in `fs.readFileSync()`
+ * translates it to FEFF, the UTF-16 BOM.
+ * */
 function stripBOM( content ) {
-    // Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
-    // because the buffer-to-string conversion in `fs.readFileSync()`
-    // translates it to FEFF, the UTF-16 BOM.
     if( Buffer.isBuffer( content ) && content.length >= 2 && content[0] === 0xFE && content[1] === 0xFF ) {
         content = content.slice( 2 );
     } else if( typeof content === 'string' && content.charCodeAt( 0 ) === 0xFEFF ) {
@@ -158,10 +160,16 @@ function parseDefine( id, deps, factory ) {
     return [id, deps, factory];
 }
 
+/*
+ * Simple test to see if an object is a Promise instance
+ * */
 function isThenable( obj ) {
     return obj !== void 0 && obj !== null && (obj instanceof _bluebird2.default || typeof obj.then === 'function');
 }
 
+/*
+ * "coerces" a value into a Promise.
+ * */
 function tryPromise( value ) {
     if( isThenable( value ) ) {
         return value;
@@ -170,10 +178,12 @@ function tryPromise( value ) {
     }
 }
 
+/*
+ * Executes a function synchronously and returns a rejected Promise if it throws
+ * */
 function tryReject( func, context ) {
     try {
-        for( var _len2 = arguments.length, args = Array( _len2 > 2 ? _len2 - 2 : 0 ), _key2 = 2; _key2 < _len2;
-             _key2++ ) {
+        for( var _len2 = arguments.length, args = Array( _len2 > 2 ? _len2 - 2 : 0 ), _key2 = 2; _key2 < _len2; _key2++ ) {
             args[_key2 - 2] = arguments[_key2];
         }
 
@@ -183,11 +193,14 @@ function tryReject( func, context ) {
     }
 }
 
-//Taken from tj/co
+/*
+ * The next few do exactly what they say on the tin.
+ * */
+
 function isGenerator( obj ) {
     return 'function' === typeof obj.next && 'function' === typeof obj.throw;
 }
-//Taken from tj/co
+
 function isGeneratorFunction( obj ) {
     if( !obj.constructor ) {
         return false;
@@ -224,6 +237,11 @@ function parseDeps( deps, paths ) {
     }
 }
 
+/*
+ * This is pretty complicated.
+ *
+ * TODO: Explain this.
+ * */
 function normalizeConfig( config ) {
     var isObject = _.isObject( config ) && !Array.isArray( config );
 

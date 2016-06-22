@@ -67,8 +67,8 @@ function _interopRequireDefault( obj ) {
 
 function Enum( values ) {
     (0, _assert2.default)(
-        (typeof values === 'undefined' ? 'undefined' : (0, _typeof3.default)( values )) === 'object' &&
-        !Array.isArray( values ), 'Enum values must be an object' );
+        (typeof values === 'undefined' ? 'undefined' : (0, _typeof3.default)( values )) === 'object' && !Array.isArray( values ),
+        'Enum values must be an object' );
 
     var result = {};
 
@@ -124,8 +124,7 @@ var Logger = exports.Logger = function( _EventEmitter ) {
     };
 
     Logger.prototype.warn = function warn( format ) {
-        for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2;
-             _key2++ ) {
+        for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2; _key2++ ) {
             args[_key2 - 1] = arguments[_key2];
         }
 
@@ -133,8 +132,7 @@ var Logger = exports.Logger = function( _EventEmitter ) {
     };
 
     Logger.prototype.log = function log( format ) {
-        for( var _len3 = arguments.length, args = Array( _len3 > 1 ? _len3 - 1 : 0 ), _key3 = 1; _key3 < _len3;
-             _key3++ ) {
+        for( var _len3 = arguments.length, args = Array( _len3 > 1 ? _len3 - 1 : 0 ), _key3 = 1; _key3 < _len3; _key3++ ) {
             args[_key3 - 1] = arguments[_key3];
         }
 
@@ -142,8 +140,7 @@ var Logger = exports.Logger = function( _EventEmitter ) {
     };
 
     Logger.prototype.info = function info( format ) {
-        for( var _len4 = arguments.length, args = Array( _len4 > 1 ? _len4 - 1 : 0 ), _key4 = 1; _key4 < _len4;
-             _key4++ ) {
+        for( var _len4 = arguments.length, args = Array( _len4 > 1 ? _len4 - 1 : 0 ), _key4 = 1; _key4 < _len4; _key4++ ) {
             args[_key4 - 1] = arguments[_key4];
         }
 
@@ -151,8 +148,7 @@ var Logger = exports.Logger = function( _EventEmitter ) {
     };
 
     Logger.prototype.verbose = function verbose( format ) {
-        for( var _len5 = arguments.length, args = Array( _len5 > 1 ? _len5 - 1 : 0 ), _key5 = 1; _key5 < _len5;
-             _key5++ ) {
+        for( var _len5 = arguments.length, args = Array( _len5 > 1 ? _len5 - 1 : 0 ), _key5 = 1; _key5 < _len5; _key5++ ) {
             args[_key5 - 1] = arguments[_key5];
         }
 

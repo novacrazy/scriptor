@@ -83,8 +83,9 @@ exports.default = function( argv ) {
     if( !_commander2.default.no_glob ) {
         scripts = [];
 
-        for( var _iterator = _commander2.default.args, _isArray = Array.isArray(
-            _iterator ), _i                                     = 0, _iterator                      = _isArray ? _iterator : (0, _getIterator3.default)( _iterator ); ; ) {
+        for( var _iterator = _commander2.default.args, _isArray = Array.isArray( _iterator ), _i = 0, _iterator = _isArray ? _iterator :
+                                                                                                                  (0, _getIterator3.default)(
+                                                                                                                      _iterator ); ; ) {
             var _ref;
 
             if( _isArray ) {
@@ -218,9 +219,10 @@ exports.default = function( argv ) {
                     var onClose = function onClose( signal ) {
                         if( !closed ) {
 
-                            for( var _iterator2 = instances, _isArray2 = Array.isArray(
-                                _iterator2 ), _i2                      = 0, _iterator2 = _isArray2 ? _iterator2 :
-                                                                    (0, _getIterator3.default)( _iterator2 ); ; ) {
+                            for( var _iterator2 = instances, _isArray2 = Array.isArray( _iterator2 ), _i2 = 0, _iterator2 = _isArray2 ?
+                                                                                                                            _iterator2 :
+                                                                                                                            (0, _getIterator3.default)(
+                                                                                                                                _iterator2 ); ; ) {
                                 var _ref2;
 
                                 if( _isArray2 ) {
@@ -423,10 +425,9 @@ _commander2.default.version( _package2.default.version ).usage( '[options] files
     .option( '-p, --propagate', 'Propagate changes upwards when watching scripts' )
     .option( '-l, --long_stack_traces', 'Display long stack trace for errors' )
     .option( '-r, --repeat <n>', 'Run script n times (in parallel if possible)' )
-    .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' )
-    .option( '--debounce <n>',
-        'Wait n milliseconds for debounce on file watching events (default: ' + _defaults.default_debounceMaxWait +
-        'ms)' ).option( '--use_strict', 'Enforce strict mode' )
+    .option( '-u, --unique', 'Only run unique scripts (will ignore duplicates in file arguments)' ).option( '--debounce <n>',
+    'Wait n milliseconds for debounce on file watching events (default: ' + _defaults.default_debounceMaxWait + 'ms)' )
+    .option( '--use_strict', 'Enforce strict mode' )
     .option( '--max_listeners <n>', 'Set the maximum number of listeners on any particular script' )
     .option( '-v, --verbose [n]', 'Print out extra status information (0 - normal, 1 - info, 2 - verbose)' )
     .option( '--cork', 'Cork stdout before calling scripts' ).option( '-s, --silent', 'Do not echo anything' )

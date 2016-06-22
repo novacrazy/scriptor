@@ -22,71 +22,71 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule = true;
 
-var _bluebird = require( 'bluebird' );
+var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _typeof2 = require( 'babel-runtime/helpers/typeof' );
+var _typeof2 = require( "babel-runtime/helpers/typeof" );
 
 var _typeof3 = _interopRequireDefault( _typeof2 );
 
-var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+var _classCallCheck2 = require( "babel-runtime/helpers/classCallCheck" );
 
 var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
 
-var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+var _createClass2 = require( "babel-runtime/helpers/createClass" );
 
 var _createClass3 = _interopRequireDefault( _createClass2 );
 
-var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+var _possibleConstructorReturn2 = require( "babel-runtime/helpers/possibleConstructorReturn" );
 
 var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
 
-var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+var _inherits2 = require( "babel-runtime/helpers/inherits" );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
 
-var _map = require( 'babel-runtime/core-js/map' );
+var _map = require( "babel-runtime/core-js/map" );
 
 var _map2 = _interopRequireDefault( _map );
 
 exports.load = load;
 
-var _module = require( 'module' );
+var _module = require( "module" );
 
 var _module2 = _interopRequireDefault( _module );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _lodash = require( 'lodash' );
+var _lodash = require( "lodash" );
 
-var _fs = require( 'fs' );
+var _fs = require( "fs" );
 
-var _url = require( 'url' );
+var _url = require( "url" );
 
-var _path = require( 'path' );
+var _path = require( "path" );
 
-var _error = require( './error.js' );
+var _error = require( "./error.js" );
 
-var _extensions = require( './extensions.js' );
+var _extensions = require( "./extensions.js" );
 
 var _extensions2 = _interopRequireDefault( _extensions );
 
-var _events = require( 'events' );
+var _events = require( "events" );
 
-var _event_handling = require( './event_handling.js' );
+var _event_handling = require( "./event_handling.js" );
 
-var _defaults = require( './defaults.js' );
+var _defaults = require( "./defaults.js" );
 
-var _utils = require( './utils.js' );
+var _utils = require( "./utils.js" );
 
-var _reference = require( './reference.js' );
+var _reference = require( "./reference.js" );
 
 var _reference2 = _interopRequireDefault( _reference );
 
@@ -121,7 +121,12 @@ var Script = function( _EventPropagator ) {
 
     Script.hasExtension = function hasExtension( ext ) {
         return Script.extensions.hasOwnProperty( ext );
-    }; //Node default maxListeners
+    };
+
+    /*
+     * Because of the dynamic nature of JavaScript and AMD, these functions need to be set up at runtime.
+     * */
+    //Node default maxListeners
 
     Script.prototype._init = function _init() {
         var _this2 = this;
@@ -134,11 +139,11 @@ var Script = function( _EventPropagator ) {
             return _this2._define.apply( _this2, arguments );
         };
 
+        //This is supposed to return a URL to where the file is, but since we're server side I dont' really know what it's supposed to do.
         require.toUrl = function() {
             var filepath = arguments.length <= 0 || arguments[0] === void 0 ? _this2.filename : arguments[0];
 
-            _assert2.default.strictEqual(
-                typeof filepath === 'undefined' ? 'undefined' : (0, _typeof3.default)( filepath ), 'string',
+            _assert2.default.strictEqual( typeof filepath === "undefined" ? "undefined" : (0, _typeof3.default)( filepath ), 'string',
                 'require.toUrl takes a string as filepath' );
 
             if( filepath.charAt( 0 ) === '.' ) {
@@ -228,7 +233,6 @@ var Script = function( _EventPropagator ) {
 
         _this._script = new _module2.default( null, parent );
 
-        //Explicit comparisons to appease JSHint
         if( filename !== void 0 && filename !== null ) {
             _this.load( filename );
         }
@@ -271,9 +275,16 @@ var Script = function( _EventPropagator ) {
         return this.manager !== null && this.manager !== void 0;
     };
 
-    //Based on the RequireJS 'standard' for relative locations
-    //For SourceScripts, just set the filename to something relative
+    /*
+     * Based on the RequireJS 'standard' for relative locations
+     * For SourceScripts, just set the filename to something relative
+     * */
 
+
+    /*
+     * This is a little function that wraps the execution of another (possibly asynchronous) function
+     * in a try-catch statement and a Promise, containing any weirdness that could occur.
+     * */
 
     Script.prototype._callWrapper = function _callWrapper( func ) {
         var _this3 = this;
@@ -297,6 +308,12 @@ var Script = function( _EventPropagator ) {
             }
         } );
     };
+
+    /*
+     * Anything defined with "define" has a factory function, which this function executes. It supports caching factory results and even
+     * asynchronous factories with coroutines.
+     * */
+
 
     Script.prototype._runFactory = function _runFactory( id, deps, factory ) {
         var _this4 = this;
@@ -329,6 +346,11 @@ var Script = function( _EventPropagator ) {
         }
     };
 
+    /*
+     * The "main" factory is the one defined without an ID, and there can only be one per module.
+     * */
+
+
     Script.prototype._runMainFactory = function _runMainFactory() {
         var _this5 = this;
 
@@ -349,8 +371,8 @@ var Script = function( _EventPropagator ) {
 
                     _this5.emit( 'exports', _this5._script.exports );
                 } else {
-                    _this5.emit( 'error', new Error( 'The script ' + _this5.filename +
-                                                     ' was unloaded while performing an asynchronous operation.' ) );
+                    _this5.emit( 'error',
+                        new Error( "The script " + _this5.filename + " was unloaded while performing an asynchronous operation." ) );
                 }
             }, function( err ) {
                 _this5._runningFactory = false;
@@ -359,6 +381,13 @@ var Script = function( _EventPropagator ) {
             } );
         }
     };
+
+    /*
+     * This behemoth of a function does all the dependency loading for scripts, as asynchronously as possible.
+     * 
+     * Any dependency given with 'define' is passed through this function. 
+     */
+
 
     Script.prototype._require = function() {
         var ref = (0, _bluebird.coroutine)( function*( id ) {
@@ -371,8 +400,8 @@ var Script = function( _EventPropagator ) {
                     return _this6._require( id );
                 } );
             } else {
-                _assert2.default.strictEqual( typeof id === 'undefined' ? 'undefined' : (0, _typeof3.default)( id ),
-                    'string', 'require id must be a string or array of strings' );
+                _assert2.default.strictEqual( typeof id === "undefined" ? "undefined" : (0, _typeof3.default)( id ), 'string',
+                    'require id must be a string or array of strings' );
 
                 //Plugins ARE supported, but they have to work like a normal module
                 if( id.indexOf( '!' ) !== -1 ) {
@@ -383,6 +412,11 @@ var Script = function( _EventPropagator ) {
                             plugin_id = parts[0];
 
                         if( plugin_id === 'include' ) {
+                            /*
+                             * This is a built-in plugin that uses the ManagedScript 'include' function to load up another script.
+                             * 
+                             * NOTE: This can only be used with ManagedScripts
+                             * */
                             plugin = {
                                 normalize: function normalize( id, defaultNormalize ) {
                                     return defaultNormalize( id );
@@ -400,6 +434,11 @@ var Script = function( _EventPropagator ) {
                                 }
                             };
                         } else if( plugin_id === 'promisify' ) {
+                            /*
+                             * This is a built-in plugin that uses Bluebird's Promisify function to automatically promisify loaded modules.
+                             * 
+                             * e.g.: _require('promisify!fs') will load the same as var fs = Bluebird.PromisifyAll(require('fs'));
+                             * */
                             plugin = {
                                 load: function load( id, require, _onLoad, config ) {
                                     if( promisifyCache.has( id ) ) {
@@ -408,8 +447,8 @@ var Script = function( _EventPropagator ) {
                                         _this6._require( id ).then( function( obj ) {
                                             if( typeof obj === 'function' ) {
                                                 return _bluebird2.default.promisify( obj );
-                                            } else if( (typeof obj === 'undefined' ? 'undefined' :
-                                                        (0, _typeof3.default)( obj )) === 'object' ) {
+                                            } else if( (typeof obj === "undefined" ? "undefined" : (0, _typeof3.default)( obj )) ===
+                                                       'object' ) {
                                                 var newObj = (0, _lodash.clone)( obj );
 
                                                 return _bluebird2.default.promisifyAll( newObj );
@@ -425,6 +464,10 @@ var Script = function( _EventPropagator ) {
                                 }
                             };
                         } else if( plugin_id === 'text' ) {
+                            /*
+                             * This is a built-in plugin that loads the script in textMode. It's not a TextScript, though, and can later be changed
+                             * to normal mode
+                             * */
                             plugin = {
                                 normalize: function normalize( id, defaultNormalize ) {
                                     return defaultNormalize( id );
@@ -442,11 +485,11 @@ var Script = function( _EventPropagator ) {
                                 }
                             };
                         } else {
+                            //For all other plugins attempt to load it from file
                             plugin = yield _this6._require( plugin_id );
                         }
 
-                        (0, _assert2.default)( plugin !== void 0 && plugin !== null,
-                            'Invalid AMD plugin: ' + plugin_id );
+                        (0, _assert2.default)( plugin !== void 0 && plugin !== null, "Invalid AMD plugin: " + plugin_id );
                         _assert2.default.strictEqual( (0, _typeof3.default)( plugin.load ), 'function',
                             '.load function on AMD plugin not found' );
 
@@ -487,20 +530,27 @@ var Script = function( _EventPropagator ) {
                         };
                     }();
 
-                    if( (typeof _ret === 'undefined' ? 'undefined' : (0, _typeof3.default)( _ret )) ===
-                        "object" ) {
+                    if( (typeof _ret === "undefined" ? "undefined" : (0, _typeof3.default)( _ret )) === "object" ) {
                         return _ret.v;
                     }
                 } else if( (0, _utils.isAbsoluteOrRelative)( id ) ) {
+                    //Load as another script
+
                     id = _module2.default._resolveFilename( normalize( id ), this.parent );
 
                     var script = void 0;
 
+                    /*
+                     * If the current script is managed, attempt to load in any other dependent scripts using the include function.
+                     * */
                     if( this.isManaged() ) {
                         script = this.include( id );
 
                         script.textMode = false;
                     } else {
+                        /*
+                         * Otherwise, load it up with it's own Script and so forth
+                         * */
                         script = load( id, this.watched, this._script );
 
                         script.propagateTo( this, 'change', function() {
@@ -513,6 +563,9 @@ var Script = function( _EventPropagator ) {
 
                     return script.exports();
                 } else {
+                    /*
+                     * Handle any of the built-in modules
+                     * */
                     if( id === 'require' ) {
                         return this.require;
                     } else if( id === 'exports' ) {
@@ -528,6 +581,9 @@ var Script = function( _EventPropagator ) {
                     } else if( this._loadCache.has( id ) ) {
                         return this._loadCache.get( id );
                     } else if( this._defineCache.has( id ) ) {
+                        /*
+                         * Load any named module created using 'define'
+                         * */
                         var args = this._defineCache.get( id );
 
                         return this._runFactory.apply( this, args ).then( function( exported ) {
@@ -536,6 +592,9 @@ var Script = function( _EventPropagator ) {
                             return exported;
                         } );
                     } else {
+                        /*
+                         * Load normal modules, accounting for _config.paths for in-place replacements
+                         * */
                         var config_paths = this._config.paths;
 
                         for( var p in config_paths ) {
@@ -574,6 +633,13 @@ var Script = function( _EventPropagator ) {
         return _require;
     }();
 
+    /*
+     * This is a short implementation of AMD's define function, which is called from within the script.
+     *
+     * This should NEVER be called outside of the loaded script.
+     * */
+
+
     Script.prototype._define = function _define() {
         var define_args = _utils.parseDefine.apply( void 0, arguments );
 
@@ -592,12 +658,25 @@ var Script = function( _EventPropagator ) {
         }
     };
 
+    /*
+     * This injects values into the script-level 'module' variable to be used within the loaded script.
+     *
+     * For example, the 'define' function used to allow AMD scripts.
+     * */
+
+
     Script.prototype._do_setup = function _do_setup() {
         var _this7 = this;
 
         this._script.imports = this.imports;
 
-        this._script.define = (0, _utils.bind)( this.define, this );
+        /*
+         * //This custom bind function copies other values along with the bound function
+         * this._script.define = bind( this.define, this );
+         * */
+
+        //this.define is already just a closure and doesn't need to be bound. It wouldn't affect it anyway.
+        this._script.define = this.define;
 
         this._script.include = function() {
             return _this7.include.apply( _this7, arguments );
@@ -610,11 +689,20 @@ var Script = function( _EventPropagator ) {
         };
     };
 
+    /*
+     * This internal function does the actual file loading and compilation/evaluation.
+     * */
+
+
     Script.prototype._do_load = function _do_load() {
         var _this8 = this;
 
         _assert2.default.notEqual( this.filename, null, 'Cannot load a script without a filename' );
 
+        /*
+         * If the script was loading in text mode already, but we changed it and are now loading in normal mode,
+         * it should abandon the text loading. The source code will still be available eventually.
+         * */
         if( !this.loading || this._loadingText && !this.textMode ) {
             this.unload();
 
@@ -623,37 +711,48 @@ var Script = function( _EventPropagator ) {
 
                 this._loadingText = false;
 
+                /*
+                 * default to .js if the file has no extension. It'll probably fail anyway,
+                 * but since this IS node.js, JavaScript is assumed
+                 * */
                 var ext = (0, _path.extname)( this.filename ) || '.js';
 
                 //Use custom extension if available
                 if( Script.extensions_enabled && Script.hasExtension( ext ) ) {
+                    /*
+                     * Unfortunately for now, we have to rely on the built-in Module loading code,
+                     * which is quite complex, and also synchronous.
+                     * */
                     this._script.paths = _module2.default._nodeModulePaths( (0, _path.dirname)( this.filename ) );
 
                     this._loading = true;
 
                     try {
+                        /*
+                         * Watching here is a good choice, because if the file changes AS we are loading it, it's invalid anyway,
+                         * and it won't progress beyond the if( this._loading ) below.
+                         * */
                         if( this._willWatch ) {
                             this._do_watch( this._watchPersistent );
                         }
 
-                        return (0, _utils.tryPromise)( Script.extensions[ext]( this._script, this.filename ) )
-                            .then( function( src ) {
-                                if( _this8._loading ) {
-                                    _this8._source        = src;
-                                    _this8._script.loaded = true;
+                        return (0, _utils.tryPromise)( Script.extensions[ext]( this._script, this.filename ) ).then( function( src ) {
+                            if( _this8._loading ) {
+                                _this8._source        = src;
+                                _this8._script.loaded = true;
 
-                                    _this8._loading = false;
-
-                                    _this8.emit( 'loaded', _this8._script.exports );
-                                } else {
-                                    _this8.emit( 'error', new Error( 'The script ' + _this8.filename +
-                                                                     ' was unloaded while performing an asynchronous operation.' ) );
-                                }
-                            }, function( err ) {
                                 _this8._loading = false;
 
-                                _this8.emit( 'error', err );
-                            } );
+                                _this8.emit( 'loaded', _this8._script.exports );
+                            } else {
+                                _this8.emit( 'error', new Error( "The script " + _this8.filename +
+                                                                 " was unloaded while performing an asynchronous operation." ) );
+                            }
+                        }, function( err ) {
+                            _this8._loading = false;
+
+                            _this8.emit( 'error', err );
+                        } );
                     } catch( err ) {
                         this._loading = false;
 
@@ -661,12 +760,12 @@ var Script = function( _EventPropagator ) {
                     }
                 } else {
                     /*
-                     * This is the synchronous path. If custom extension handlers are used, this should never run
+                     * This is the synchronous path. If custom extension handlers are used, this should never run. While there is nothing
+                     * particularly wrong with this path, it's still synchronous.
                      * */
 
                     if( !_module2.default._extensions.hasOwnProperty( ext ) ) {
-                        this.emit( 'warning', 'The extension handler for ' + this.filename +
-                                              ' does not exist, defaulting to .js handler' );
+                        this.emit( 'warning', "The extension handler for " + this.filename + " does not exist, defaulting to .js handler" );
                     }
 
                     this._loading = true;
@@ -681,8 +780,8 @@ var Script = function( _EventPropagator ) {
                         if( this._loading ) {
                             this.emit( 'loaded', this.loaded );
                         } else {
-                            this.emit( 'error', new Error( 'The script ' + this.filename +
-                                                           ' was unloaded while performing an asynchronous operation.' ) );
+                            this.emit( 'error',
+                                new Error( "The script " + this.filename + " was unloaded while performing an asynchronous operation." ) );
                         }
                     } catch( err ) {
                         this.emit( 'error', err );
@@ -715,8 +814,8 @@ var Script = function( _EventPropagator ) {
 
                         _this8.emit( 'loaded_src', _this8.loaded );
                     } else if( !_this8._loading ) {
-                        _this8.emit( 'error', new Error( 'The script ' + _this8.filename +
-                                                         ' was unloaded while performing an asynchronous operation.' ) );
+                        _this8.emit( 'error',
+                            new Error( "The script " + _this8.filename + " was unloaded while performing an asynchronous operation." ) );
                     }
                 }, function( err ) {
                     _this8._loading     = false;
@@ -727,6 +826,11 @@ var Script = function( _EventPropagator ) {
             }
         }
     };
+
+    /*
+     * This internal function sets up the file watcher, with individual debounces for change and rename events.
+     * */
+
 
     Script.prototype._do_watch = function _do_watch( persistent ) {
         var _this9 = this;
@@ -813,7 +917,7 @@ var Script = function( _EventPropagator ) {
             }
         } else {
             /*
-             * This is a special one were it doesn't matter which event triggers first.
+             * This is a special one were it doesn't matter which event triggers first. The source code will be the same.
              * */
             var waiting = (0, _event_handling.makeMultiEventPromise)( this, ['loaded', 'loaded_src'], ['error'] );
 
@@ -824,6 +928,12 @@ var Script = function( _EventPropagator ) {
             } );
         }
     };
+
+    /*
+     * This forces loading, compilation and evaluation of a script, and returns a Promise that should resolve to whatever
+     * module.exports was assigned when the script was run. For Text mode scripts, it returns the source code.
+     * */
+
 
     Script.prototype.exports = function exports() {
         var _this11 = this;
@@ -866,6 +976,8 @@ var Script = function( _EventPropagator ) {
     Script.prototype.apply = function apply( args ) {
         var _this12 = this;
 
+        (0, _assert2.default)( Array.isArray( args ) );
+
         if( !this.textMode ) {
             return this.exports().then( function( main ) {
                 if( main !== null && main !== void 0 ) {
@@ -890,6 +1002,11 @@ var Script = function( _EventPropagator ) {
         }
     };
 
+    /*
+     * Loading is actually done lazily, so this doesn't do anything more than set up values needed when it does eventually load.
+     * */
+
+
     Script.prototype.load = function load( filename ) {
         var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
@@ -910,6 +1027,11 @@ var Script = function( _EventPropagator ) {
         return this;
     };
 
+    /*
+     * Basically this just cleans up everything. Clearing values and so forth.
+     * */
+
+
     Script.prototype.unload = function unload() {
         this.emit( 'unload' );
 
@@ -926,16 +1048,25 @@ var Script = function( _EventPropagator ) {
         this._loadingText    = false;
     };
 
+    /*
+     * Force the script to reload and recompile.
+     * */
+
+
     Script.prototype.reload = function reload() {
         var _this13 = this;
 
-        //Force it to reload and recompile the script.
         this._callWrapper( this._do_load ).then( function() {
             //If a Reference depends on this script, then it should be updated when it reloads
             //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             _this13.emit( 'change', 'change', _this13.filename );
         } );
     };
+
+    /*
+     * Watching is done lazily so we don't generate any more events that needed until the script is loaded and compiled.
+     * */
+
 
     Script.prototype.watch = function watch() {
         var persistent = arguments.length <= 0 || arguments[0] === void 0 ? false : arguments[0];
@@ -947,6 +1078,11 @@ var Script = function( _EventPropagator ) {
             this._watchPersistent = persistent;
         }
     };
+
+    /*
+     * Unwatching is done synchronously, however, since it's simple and should be done ASAP anyway to prevent any new events.
+     * */
+
 
     Script.prototype.unwatch = function unwatch() {
         if( this.watched ) {
@@ -975,6 +1111,11 @@ var Script = function( _EventPropagator ) {
         return new _reference2.default( this, args );
     };
 
+    /*
+     * This is a simple "cheat" to allow a script to re-evaluate itself and re-watch itself if needed
+     * */
+
+
     Script.prototype.reopen = function reopen() {
         this.unload();
 
@@ -997,7 +1138,7 @@ var Script = function( _EventPropagator ) {
         if( permanent ) {
             var parent = this._script.parent;
 
-            //Remove _script from parent
+            //Remove _script from parent, if the parent exists
             if( parent !== void 0 && parent !== null ) {
                 for( var it in parent.children ) {
                     //Find which child is this._script, delete it and remove the (now undefined) reference
@@ -1016,22 +1157,27 @@ var Script = function( _EventPropagator ) {
         }
     };
 
+    /*
+     * See manager.js for include's for ManagedScripts.
+     * */
+
+
     Script.prototype.include = function include( filename ) {
-        throw new Error( 'Cannot include script "' + filename + '" from an unmanaged script' );
+        throw new Error( "Cannot include script \"" + filename + "\" from an unmanaged script" );
     };
 
     (0, _createClass3.default)( Script, [{
-        key: 'watched',
+        key: "watched",
         get: function get() {
             return this._watcher instanceof _events.EventEmitter;
         }
     }, {
-        key: 'willWatch',
+        key: "willWatch",
         get: function get() {
             return !this.watched && this._willWatch;
         }
     }, {
-        key: 'id',
+        key: "id",
         get: function get() {
             return this._script.id;
         },
@@ -1039,32 +1185,32 @@ var Script = function( _EventPropagator ) {
             this._script.id = value;
         }
     }, {
-        key: 'children',
+        key: "children",
         get: function get() {
             return this._script.children;
         }
     }, {
-        key: 'parent',
+        key: "parent",
         get: function get() {
             return this._script.parent;
         }
     }, {
-        key: 'loaded',
+        key: "loaded",
         get: function get() {
             return this._script.loaded;
         }
     }, {
-        key: 'pending',
+        key: "pending",
         get: function get() {
             return this._pending;
         }
     }, {
-        key: 'loading',
+        key: "loading",
         get: function get() {
             return this._loading;
         }
     }, {
-        key: 'dependencies',
+        key: "dependencies",
         get: function get() {
             return this._dependencies;
         }
@@ -1072,22 +1218,22 @@ var Script = function( _EventPropagator ) {
         //Only allow getting the filename, setting should be done through .load
 
     }, {
-        key: 'filename',
+        key: "filename",
         get: function get() {
             return this._script.filename;
         }
     }, {
-        key: 'manager',
+        key: "manager",
         get: function get() {
             return null;
         }
     }, {
-        key: 'baseUrl',
+        key: "baseUrl",
         get: function get() {
             return _path.posix.dirname( this.filename );
         }
     }, {
-        key: 'debounceMaxWait',
+        key: "debounceMaxWait",
         set: function set( time ) {
             time = Math.floor( time );
 
@@ -1099,7 +1245,7 @@ var Script = function( _EventPropagator ) {
             return this._debounceMaxWait;
         }
     }, {
-        key: 'textMode',
+        key: "textMode",
         get: function get() {
             return this._textMode;
         },
@@ -1107,7 +1253,7 @@ var Script = function( _EventPropagator ) {
             this._textMode = !!value;
         }
     }, {
-        key: 'unloadOnRename',
+        key: "unloadOnRename",
         set: function set( value ) {
             this._unloadOnRename = !!value;
         },

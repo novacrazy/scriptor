@@ -24,14 +24,29 @@
  ****/
 'use strict';
 
-exports.__esModule              = true;
+exports.__esModule     = true;
+exports.normalizeError = normalizeError;
 /**
  * Created by Aaron on 7/4/2015.
  */
 
-var default_max_debounceMaxWait = exports.default_max_debounceMaxWait = 50;
+/*
+ * This turns generic errors into something like would be produced by require.js and almond.js
+ *
+ * Probably not fully necessary, but eh.
+ * */
+function normalizeError( id, type ) {
+    var err = arguments.length <= 2 || arguments[2] === void 0 ? {} : arguments[2];
 
-var AMD_Header = exports.AMD_Header =
-    "if(typeof define !== 'function' && typeof module.define === 'function') {var define = module.define;}";
+    if( Array.isArray( err.requireModules ) && !Array.isArray( id ) && err.requireModules.indexOf( id ) === -1 ) {
+        err.requireModules.push( id );
+    } else {
+        err.requireModules = Array.isArray( id ) ? id : [id];
+    }
 
-var default_dependencies = exports.default_dependencies = ['require', 'exports', 'module', 'imports'];
+    err.requireType = err.requireType || type;
+
+    err.message = (err.message || '') + ' - ' + id;
+
+    return err;
+}

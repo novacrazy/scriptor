@@ -92,6 +92,19 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
+/*
+ * So References are an idea I came up with to solve some issues with including a TextScript's contents somewhere else,
+ * and needing to have it updated whenever it was needed.
+ * 
+ * Basically this is a small object that listens to 'change' events from a Script and marks that it needs to reacquire 
+ * the value the script initially provided. It does this lazily, and caches the result afterwards.
+ * 
+ * Additionally, because why not, I've provided a couple different adapters for References, like being able to Transform,
+ * Join and create a static value Reference instance. These can be combined in different ways to do whatever.
+ * 
+ * At some point I'd like to extract this into it's own library, but I'm not sure what I'd name it.
+ * */
+
 /**
  * Created by Aaron on 7/5/2015.
  */
@@ -115,10 +128,9 @@ var ReferenceBase = function( _EventEmitter ) {
         }
 
         return _ret = (_temp = (_this = (0, _possibleConstructorReturn3.default)( this,
-            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._onChange =
-            null, _this._value = void 0, _this._ran = false, _this._running = false, _this._closed =
-            false, _this._left = void 0, _this._right = void 0, _temp), (0, _possibleConstructorReturn3.default)( _this,
-            _ret );
+            _EventEmitter.call.apply( _EventEmitter, [this].concat( args ) ) ), _this), _this._onChange = null, _this._value =
+            void 0, _this._ran = false, _this._running = false, _this._closed = false, _this._left = void 0, _this._right =
+            void 0, _temp), (0, _possibleConstructorReturn3.default)( _this, _ret );
     }
 
     ReferenceBase.prototype._run = function _run() {
@@ -239,8 +251,7 @@ var Reference = function( _ReferenceBase ) {
 
                     _this3.emit( 'value', _this3._value );
                 } else {
-                    _this3.emit( 'error',
-                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this3.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this3._running = false;
@@ -318,8 +329,7 @@ var TransformReference = function( _ReferenceBase2 ) {
 
 
         (0, _assert2.default)( ref instanceof ReferenceBase, 'transform will only work on References' );
-        _assert2.default.strictEqual(
-            typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
+        _assert2.default.strictEqual( typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
             'transform function must be a function' );
 
         _this4._left = _this4._ref = ref;
@@ -361,8 +371,7 @@ var TransformReference = function( _ReferenceBase2 ) {
 
                     _this5.emit( 'value', _this5._value );
                 } else {
-                    _this5.emit( 'error',
-                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this5.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this5._running = false;
@@ -400,11 +409,9 @@ var JoinedTransformReference = function( _ReferenceBase3 ) {
 
         var _this6 = (0, _possibleConstructorReturn3.default)( this, _ReferenceBase3.call( this ) );
 
-        (0, _assert2.default)( left instanceof ReferenceBase && right instanceof ReferenceBase,
-            'join will only work on References' );
+        (0, _assert2.default)( left instanceof ReferenceBase && right instanceof ReferenceBase, 'join will only work on References' );
         _assert2.default.notEqual( left, right, 'Cannot join to self' );
-        _assert2.default.strictEqual(
-            typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
+        _assert2.default.strictEqual( typeof transform === 'undefined' ? 'undefined' : (0, _typeof3.default)( transform ), 'function',
             'transform function must be a function' );
 
         _this6._left  = left;
@@ -448,8 +455,7 @@ var JoinedTransformReference = function( _ReferenceBase3 ) {
 
                     _this7.emit( 'value', _this7._value );
                 } else {
-                    _this7.emit( 'error',
-                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this7.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this7._running = false;
@@ -511,8 +517,7 @@ var ResolvedReference = function( _ReferenceBase4 ) {
 
                     _this9.emit( 'value', _this9._value );
                 } else {
-                    _this9.emit( 'error',
-                        new Error( 'Reference was reset while performing an asynchronous operation.' ) );
+                    _this9.emit( 'error', new Error( 'Reference was reset while performing an asynchronous operation.' ) );
                 }
             } ).catch( function( err ) {
                 _this9._running = false;

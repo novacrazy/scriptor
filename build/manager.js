@@ -22,43 +22,43 @@
  * SOFTWARE.
  *
  ****/
-'use strict';
+"use strict";
 
 exports.__esModule = true;
 
-var _map = require( 'babel-runtime/core-js/map' );
+var _map = require( "babel-runtime/core-js/map" );
 
 var _map2 = _interopRequireDefault( _map );
 
-var _classCallCheck2 = require( 'babel-runtime/helpers/classCallCheck' );
+var _classCallCheck2 = require( "babel-runtime/helpers/classCallCheck" );
 
 var _classCallCheck3 = _interopRequireDefault( _classCallCheck2 );
 
-var _createClass2 = require( 'babel-runtime/helpers/createClass' );
+var _createClass2 = require( "babel-runtime/helpers/createClass" );
 
 var _createClass3 = _interopRequireDefault( _createClass2 );
 
-var _possibleConstructorReturn2 = require( 'babel-runtime/helpers/possibleConstructorReturn' );
+var _possibleConstructorReturn2 = require( "babel-runtime/helpers/possibleConstructorReturn" );
 
 var _possibleConstructorReturn3 = _interopRequireDefault( _possibleConstructorReturn2 );
 
-var _inherits2 = require( 'babel-runtime/helpers/inherits' );
+var _inherits2 = require( "babel-runtime/helpers/inherits" );
 
 var _inherits3 = _interopRequireDefault( _inherits2 );
 
-var _module = require( 'module' );
+var _module = require( "module" );
 
 var _module2 = _interopRequireDefault( _module );
 
-var _assert = require( 'assert' );
+var _assert = require( "assert" );
 
 var _assert2 = _interopRequireDefault( _assert );
 
-var _path = require( 'path' );
+var _path = require( "path" );
 
-var _utils = require( './utils.js' );
+var _utils = require( "./utils.js" );
 
-var _script = require( './script.js' );
+var _script = require( "./script.js" );
 
 var _script2 = _interopRequireDefault( _script );
 
@@ -66,11 +66,17 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
-var ScriptAdapter = function( _Script ) {
-    (0, _inherits3.default)( ScriptAdapter, _Script );
+/*
+ * This is a modification of Script which allows it to be spawned and managed by a Manager instance.
+ *
+ * It provides extra handling for including other scripts, which are also loaded into the owning manager.
+ * */
 
-    function ScriptAdapter( manager, filename, parent ) {
-        (0, _classCallCheck3.default)( this, ScriptAdapter );
+var ManagedScript = function( _Script ) {
+    (0, _inherits3.default)( ManagedScript, _Script );
+
+    function ManagedScript( manager, filename, parent ) {
+        (0, _classCallCheck3.default)( this, ManagedScript );
 
         var _this = (0, _possibleConstructorReturn3.default)( this, _Script.call( this, filename, parent ) );
 
@@ -82,13 +88,16 @@ var ScriptAdapter = function( _Script ) {
         //When a script is renamed, it should be reassigned in the manager
         //Otherwise, when it's accessed at the new location, the manager just creates a new script
         _this.on( 'rename', function( event, oldname, newname ) {
-            _this._manager._scripts.set( newname, _this._manager._scripts.get( oldname ) );
-            _this._manager._scripts.delete( oldname );
+            var scripts = _this._manager.scripts;
+
+
+            scripts.set( newname, scripts.get( oldname ) );
+            scripts.delete( oldname );
         } );
         return _this;
     }
 
-    ScriptAdapter.prototype.include = function include( filename ) {
+    ManagedScript.prototype.include = function include( filename ) {
         var _this2 = this;
 
         var load = arguments.length <= 1 || arguments[1] === void 0 ? false : arguments[1];
@@ -116,7 +125,7 @@ var ScriptAdapter = function( _Script ) {
         return script;
     };
 
-    ScriptAdapter.prototype.close = function close( permanent ) {
+    ManagedScript.prototype.close = function close( permanent ) {
         if( permanent ) {
             this._manager.scripts.delete( this.filename );
 
@@ -126,19 +135,25 @@ var ScriptAdapter = function( _Script ) {
         return _Script.prototype.close.call( this, permanent );
     };
 
-    (0, _createClass3.default)( ScriptAdapter, [{
-        key: 'manager',
+    (0, _createClass3.default)( ManagedScript, [{
+        key: "manager",
         get: function get() {
             return this._manager;
         }
     }] );
-    return ScriptAdapter;
+    return ManagedScript;
 }( _script2.default );
+
+/*
+ * This Manager class really just takes care of a Map instance of ManagedScripts and allows configuring them all at once
+ * and automatically.
+ * */
+
 /**
  * Created by Aaron on 7/5/2015.
  */
 
-var Manager       = function() {
+var Manager = function() {
     function Manager( grandParent ) {
         (0, _classCallCheck3.default)( this, Manager );
         this._debounceMaxWait = null;
@@ -236,10 +251,12 @@ var Manager       = function() {
         return script;
     };
 
-    //this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
-    //but this functions as a way to add and/or get a script in one fell swoop.
-    //Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
-    //from watching a file.
+    /*
+     * this and Script.watch are basically no-ops if nothing is to be added or it's already being watched
+     * but this functions as a way to add and/or get a script in one fell swoop.
+     * Since evaluation of a script is lazy, watch is defaulted to true, since there is almost no performance hit
+     * from watching a file.
+     * */
 
 
     Manager.prototype.add = function add( filename ) {
@@ -250,7 +267,7 @@ var Manager       = function() {
         var script = this._scripts.get( filename );
 
         if( script === void 0 ) {
-            script = new ScriptAdapter( this, null, this._parent );
+            script = new ManagedScript( this, null, this._parent );
 
             script.load( filename, watch );
 
@@ -268,9 +285,11 @@ var Manager       = function() {
         return script;
     };
 
-    //Removes a script from the manager. But closing it permenantly is optional,
-    //as it may sometimes make sense to move it out of a manager and use it independently.
-    //However, that is quite rare so close defaults to true
+    /*
+     * Removes a script from the manager. But closing it permenantly is optional,
+     * as it may sometimes make sense to move it out of a manager and use it independently.
+     * However, that is quite rare so close defaults to true
+     * */
 
 
     Manager.prototype.remove = function remove( filename ) {
@@ -300,6 +319,8 @@ var Manager       = function() {
     };
 
     Manager.prototype.apply = function apply( filename, args ) {
+        (0, _assert2.default)( Array.isArray( args ) );
+
         var script = this.add( filename, false );
 
         try {
@@ -312,8 +333,7 @@ var Manager       = function() {
     };
 
     Manager.prototype.reference = function reference( filename ) {
-        for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2;
-             _key2++ ) {
+        for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2; _key2++ ) {
             args[_key2 - 1] = arguments[_key2];
         }
 
@@ -323,6 +343,7 @@ var Manager       = function() {
     Manager.prototype.reference_apply = function reference_apply( filename, args ) {
         var ref = this.add( filename, false ).reference( args );
 
+        //Because reference listens to events from the script, this is a good place to update the maxListener value
         if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
             ref.setMaxListeners( this._maxListeners );
         }
@@ -352,17 +373,17 @@ var Manager       = function() {
     };
 
     (0, _createClass3.default)( Manager, [{
-        key: 'parent',
+        key: "parent",
         get: function get() {
             return this._parent;
         }
     }, {
-        key: 'scripts',
+        key: "scripts",
         get: function get() {
             return this._scripts;
         }
     }, {
-        key: 'debounceMaxWait',
+        key: "debounceMaxWait",
         get: function get() {
             return this._debounceMaxWait;
         },
@@ -378,7 +399,7 @@ var Manager       = function() {
             }
         }
     }, {
-        key: 'unloadOnRename',
+        key: "unloadOnRename",
         set: function set( value ) {
             this._unloadOnRename = !!value;
         },
