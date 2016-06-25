@@ -110,7 +110,7 @@ For more information on this feature, see [Here](https://github.com/novacrazy/sc
 # License
 The MIT License (MIT)
 
-Copyright (c) 2015 Aaron Trent
+Copyright (c) 2015-2016 Aaron Trent
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
