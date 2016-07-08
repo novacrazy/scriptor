@@ -45,10 +45,6 @@ describe( "exports", function() {
         _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Manager ), 'function', 'No Manager class exported' );
     } );
 
-    it( 'should have exported a Reference class', function() {
-        _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Reference ), 'function', 'No Reference class exported' );
-    } );
-
     it( 'should have exported a bluebird Promise class', function() {
         _assert2.default.strictEqual( (0, _typeof3.default)( _2.default.Promise ), 'function', 'No Promise class exported' );
         _assert2.default.strictEqual( _2.default.Promise, _bluebird2.default, 'Exported Promise is not bluebird' );

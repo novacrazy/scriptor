@@ -16,7 +16,7 @@ describe( `Script loading`, function() {
                 assert.deepEqual( script_exports, {} );
                 assert( script.loaded );
 
-            } ).then( done );
+            } ).then( done, done );
         } );
     } );
 
@@ -30,7 +30,7 @@ describe( `Script loading`, function() {
                 } );
                 assert( script.loaded );
 
-            } ).then( done );
+            } ).then( done, done );
         } );
     } );
 
@@ -44,7 +44,7 @@ describe( `Script loading`, function() {
                 } );
                 assert( script.loaded );
 
-            } ).then( done );
+            } ).then( done, done );
         } );
 
         it( 'should be watching the file after load', function() {
@@ -65,7 +65,7 @@ describe( `Script loading`, function() {
                 } );
                 assert( script.loaded );
 
-            } ).then( done );
+            } ).then( done, done );
         } );
 
         it( 'should be watching the file after load', function() {
