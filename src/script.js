@@ -12,10 +12,10 @@ import {extname, dirname, basename, resolve, relative, posix as path} from "path
 import {normalizeError} from "./error.js";
 import defaultExtensions from "./extensions.js";
 import {EventEmitter} from "events";
-import {EventPropagator, makeEventPromise, makeMultiEventPromise} from "./event_handling.js";
+import {EventPropagator} from "event-propagator";
+import {promisifyEvents} from "promisify-events";
 import {default_max_debounceMaxWait} from "./defaults.js";
 import {tryPromise, isThenable, isGeneratorFunction, isAbsoluteOrRelative, normalizeConfig, parseDefine} from "./utils.js";
-import Reference from "./reference.js";
 
 let promisifyCache = new Map();
 
@@ -542,8 +542,6 @@ export default class Script extends EventPropagator {
                         this.unload();
                         this.emit( 'change', this.filename );
                     } );
-
-                    script.propagateEvents( this.isPropagatingEvents() );
                 }
 
                 return script.exports();
@@ -910,7 +908,7 @@ export default class Script extends EventPropagator {
             /*
              * This is a special one were it doesn't matter which event triggers first. The source code will be the same.
              * */
-            let waiting = makeMultiEventPromise( this, ['loaded', 'loaded_src'], ['error'] );
+            let waiting = promisifyEvents( this, ['loaded', 'loaded_src'], 'error' );
 
             this._callWrapper( this._do_load );
 
@@ -928,7 +926,7 @@ export default class Script extends EventPropagator {
         if( this.loaded ) {
             if( this.pending ) {
                 //Add the event listeners first
-                let waiting = makeEventPromise( this, 'exports', 'error' );
+                let waiting = promisifyEvents( this, 'exports', 'error' );
 
                 this._runMainFactory();
 
@@ -943,7 +941,7 @@ export default class Script extends EventPropagator {
 
         } else {
             //Add the event listeners first
-            let waiting = makeEventPromise( this, 'loaded', 'error' );
+            let waiting = promisifyEvents( this, 'loaded', 'error' );
 
             this._callWrapper( this._do_load );
 
@@ -1030,8 +1028,6 @@ export default class Script extends EventPropagator {
      * */
     reload() {
         this._callWrapper( this._do_load ).then( () => {
-            //If a Reference depends on this script, then it should be updated when it reloads
-            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             this.emit( 'change', 'change', this.filename );
         } );
     }
@@ -1064,16 +1060,6 @@ export default class Script extends EventPropagator {
         } else if( this._willWatch ) {
             this._willWatch = false;
         }
-    }
-
-    reference( ...args ) {
-        return this.reference_apply( args );
-    }
-
-    reference_apply( args ) {
-        assert( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
-
-        return new Reference( this, args );
     }
 
     /*

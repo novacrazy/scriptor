@@ -278,21 +278,6 @@ export default class Manager {
         }
     }
 
-    reference( filename, ...args ) {
-        return this.reference_apply( filename, args );
-    }
-
-    reference_apply( filename, args ) {
-        let ref = this.add( filename, false ).reference( args );
-
-        //Because reference listens to events from the script, this is a good place to update the maxListener value
-        if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
-            ref.setMaxListeners( this._maxListeners );
-        }
-
-        return ref;
-    }
-
     get( filename ) {
         filename = resolve( this.cwd(), filename );
 

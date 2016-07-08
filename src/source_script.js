@@ -3,16 +3,12 @@
  */
 
 import Promise from "bluebird";
-import * as _ from "lodash";
 import {basename, dirname} from "path";
-import {stripBOM, injectAMD} from "./utils.js";
+import {stripBOM, injectAMD, tryPromise} from "./utils.js";
 import Script from "./script.js";
-import {ReferenceBase} from "./reference.js";
 
 /*
  * The SourceScript variation is a Script that allows loading from in-memory strings. These are always assumed to be normal JavaScript.
- *
- * References can also be passed as a source, in case you want to do anything neat with that.
  * */
 
 export function compile( src, watch = true, parent = null ) {
@@ -128,22 +124,9 @@ export default class SourceScript extends Script {
         }
     }
 
-    _do_watch() {
-        if( !this.watched && this._source instanceof ReferenceBase ) {
-
-            this._onChange = _.debounce( ( event, filename ) => {
-                this.unload();
-                this.emit( 'change', event, filename );
-
-            }, this.debounceMaxWait );
-
-            this._source.on( 'change', this._onChange );
-        }
-    }
-
     _normalizeSource( src ) {
         assert( typeof src === 'string' || Buffer.isBuffer( src ),
-            'Reference source must return string or Buffer as value' );
+            'Factory source must return string or Buffer as value' );
 
         src = stripBOM( src );
 
@@ -159,8 +142,8 @@ export default class SourceScript extends Script {
     }
 
     source( encoding ) {
-        if( this._source instanceof ReferenceBase ) {
-            return this._source.value().then( this._normalizeSource.bind( this ) );
+        if( typeof this._source === 'function' ) {
+            return tryPromise( this._source() ).then( src => this._normalizeSource( src ) );
 
         } else {
             try {
@@ -177,7 +160,7 @@ export default class SourceScript extends Script {
     load( src, watch = true ) {
         assert( typeof src === 'string' ||
                 Buffer.isBuffer( src ) ||
-                src instanceof ReferenceBase, 'Source must be a string or Reference' );
+                typeof src === 'function', 'Source must be a string, Buffer or factory function' );
 
         this.close( false );
 
@@ -190,14 +173,5 @@ export default class SourceScript extends Script {
         this.emit( 'change', 'change', this.filename );
 
         return this;
-    }
-
-    unwatch() {
-        if( this.watched && this._source instanceof ReferenceBase ) {
-            this._source.removeListener( 'change', this._onChange );
-            delete this['_onChange'];
-        }
-
-        super.unwatch();
     }
 }

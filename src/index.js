@@ -11,7 +11,6 @@ import Script, {load} from "./script.js";
 import SourceScript, {compile} from "./source_script.js";
 import TextScript from "./text_script.js";
 import Manager from "./manager.js";
-import Reference from "./reference.js";
 import * as utils from "./utils.js";
 
 const Scriptor = {
@@ -20,7 +19,6 @@ const Scriptor = {
     SourceScript,
     TextScript,
     Manager,
-    Reference,
     load,
     compile,
     utils
