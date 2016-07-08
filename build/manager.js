@@ -332,25 +332,6 @@ var Manager = function() {
         }
     };
 
-    Manager.prototype.reference = function reference( filename ) {
-        for( var _len2 = arguments.length, args = Array( _len2 > 1 ? _len2 - 1 : 0 ), _key2 = 1; _key2 < _len2; _key2++ ) {
-            args[_key2 - 1] = arguments[_key2];
-        }
-
-        return this.reference_apply( filename, args );
-    };
-
-    Manager.prototype.reference_apply = function reference_apply( filename, args ) {
-        var ref = this.add( filename, false ).reference( args );
-
-        //Because reference listens to events from the script, this is a good place to update the maxListener value
-        if( this._maxListeners !== null && this._maxListeners !== void 0 ) {
-            ref.setMaxListeners( this._maxListeners );
-        }
-
-        return ref;
-    };
-
     Manager.prototype.get = function get( filename ) {
         filename = (0, _path.resolve)( this.cwd(), filename );
 

@@ -80,15 +80,13 @@ var _extensions2 = _interopRequireDefault( _extensions );
 
 var _events = require( "events" );
 
-var _event_handling = require( "./event_handling.js" );
+var _eventPropagator = require( "event-propagator" );
+
+var _promisifyEvents = require( "promisify-events" );
 
 var _defaults = require( "./defaults.js" );
 
 var _utils = require( "./utils.js" );
-
-var _reference = require( "./reference.js" );
-
-var _reference2 = _interopRequireDefault( _reference );
 
 function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
@@ -557,8 +555,6 @@ var Script = function( _EventPropagator ) {
                             _this6.unload();
                             _this6.emit( 'change', _this6.filename );
                         } );
-
-                        script.propagateEvents( this.isPropagatingEvents() );
                     }
 
                     return script.exports();
@@ -919,7 +915,7 @@ var Script = function( _EventPropagator ) {
             /*
              * This is a special one were it doesn't matter which event triggers first. The source code will be the same.
              * */
-            var waiting = (0, _event_handling.makeMultiEventPromise)( this, ['loaded', 'loaded_src'], ['error'] );
+            var waiting = (0, _promisifyEvents.promisifyEvents)( this, ['loaded', 'loaded_src'], 'error' );
 
             this._callWrapper( this._do_load );
 
@@ -941,7 +937,7 @@ var Script = function( _EventPropagator ) {
         if( this.loaded ) {
             if( this.pending ) {
                 //Add the event listeners first
-                var waiting = (0, _event_handling.makeEventPromise)( this, 'exports', 'error' );
+                var waiting = (0, _promisifyEvents.promisifyEvents)( this, 'exports', 'error' );
 
                 this._runMainFactory();
 
@@ -955,7 +951,7 @@ var Script = function( _EventPropagator ) {
             } );
         } else {
             //Add the event listeners first
-            var _waiting = (0, _event_handling.makeEventPromise)( this, 'loaded', 'error' );
+            var _waiting = (0, _promisifyEvents.promisifyEvents)( this, 'loaded', 'error' );
 
             this._callWrapper( this._do_load );
 
@@ -1057,8 +1053,6 @@ var Script = function( _EventPropagator ) {
         var _this13 = this;
 
         this._callWrapper( this._do_load ).then( function() {
-            //If a Reference depends on this script, then it should be updated when it reloads
-            //That way if data is compile-time determined (like times, PRNGs, etc), it will be propagated.
             _this13.emit( 'change', 'change', _this13.filename );
         } );
     };
@@ -1095,20 +1089,6 @@ var Script = function( _EventPropagator ) {
         } else if( this._willWatch ) {
             this._willWatch = false;
         }
-    };
-
-    Script.prototype.reference = function reference() {
-        for( var _len2 = arguments.length, args = Array( _len2 ), _key2 = 0; _key2 < _len2; _key2++ ) {
-            args[_key2] = arguments[_key2];
-        }
-
-        return this.reference_apply( args );
-    };
-
-    Script.prototype.reference_apply = function reference_apply( args ) {
-        (0, _assert2.default)( Array.isArray( args ), 'reference_apply only accepts an array of arguments' );
-
-        return new _reference2.default( this, args );
     };
 
     /*
@@ -1262,7 +1242,7 @@ var Script = function( _EventPropagator ) {
         }
     }] );
     return Script;
-}( _event_handling.EventPropagator );
+}( _eventPropagator.EventPropagator );
 
 Script.Scriptor           = null;
 Script.extensions_enabled = true;

@@ -48,10 +48,6 @@ var _bluebird = require( "bluebird" );
 
 var _bluebird2 = _interopRequireDefault( _bluebird );
 
-var _lodash = require( "lodash" );
-
-var _ = _interopRequireWildcard( _lodash );
-
 var _path = require( "path" );
 
 var _utils = require( "./utils.js" );
@@ -60,33 +56,12 @@ var _script = require( "./script.js" );
 
 var _script2 = _interopRequireDefault( _script );
 
-var _reference = require( "./reference.js" );
-
-function _interopRequireWildcard( obj ) {
-    if( obj && obj.__esModule ) {
-        return obj;
-    } else {
-        var newObj = {};
-        if( obj != null ) {
-            for( var key in obj ) {
-                if( Object.prototype.hasOwnProperty.call( obj, key ) ) {
-                    newObj[key] = obj[key];
-                }
-            }
-        }
-        newObj.default = obj;
-        return newObj;
-    }
-}
-
 function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
 /*
  * The SourceScript variation is a Script that allows loading from in-memory strings. These are always assumed to be normal JavaScript.
- *
- * References can also be passed as a source, in case you want to do anything neat with that.
  * */
 
 /**
@@ -191,22 +166,8 @@ var SourceScript = function( _Script ) {
         }
     };
 
-    SourceScript.prototype._do_watch = function _do_watch() {
-        var _this3 = this;
-
-        if( !this.watched && this._source instanceof _reference.ReferenceBase ) {
-
-            this._onChange = _.debounce( function( event, filename ) {
-                _this3.unload();
-                _this3.emit( 'change', event, filename );
-            }, this.debounceMaxWait );
-
-            this._source.on( 'change', this._onChange );
-        }
-    };
-
     SourceScript.prototype._normalizeSource = function _normalizeSource( src ) {
-        assert( typeof src === 'string' || Buffer.isBuffer( src ), 'Reference source must return string or Buffer as value' );
+        assert( typeof src === 'string' || Buffer.isBuffer( src ), 'Factory source must return string or Buffer as value' );
 
         src = (0, _utils.stripBOM)( src );
 
@@ -222,8 +183,12 @@ var SourceScript = function( _Script ) {
     };
 
     SourceScript.prototype.source = function source( encoding ) {
-        if( this._source instanceof _reference.ReferenceBase ) {
-            return this._source.value().then( this._normalizeSource.bind( this ) );
+        var _this3 = this;
+
+        if( typeof this._source === 'function' ) {
+            return (0, _utils.tryPromise)( this._source() ).then( function( src ) {
+                return _this3._normalizeSource( src );
+            } );
         } else {
             try {
                 var src = this._normalizeSource( this._source );
@@ -238,8 +203,8 @@ var SourceScript = function( _Script ) {
     SourceScript.prototype.load = function load( src ) {
         var watch = arguments.length <= 1 || arguments[1] === void 0 ? true : arguments[1];
 
-        assert( typeof src === 'string' || Buffer.isBuffer( src ) || src instanceof _reference.ReferenceBase,
-            'Source must be a string or Reference' );
+        assert( typeof src === 'string' || Buffer.isBuffer( src ) || typeof src === 'function',
+            'Source must be a string, Buffer or factory function' );
 
         this.close( false );
 
@@ -252,15 +217,6 @@ var SourceScript = function( _Script ) {
         this.emit( 'change', 'change', this.filename );
 
         return this;
-    };
-
-    SourceScript.prototype.unwatch = function unwatch() {
-        if( this.watched && this._source instanceof _reference.ReferenceBase ) {
-            this._source.removeListener( 'change', this._onChange );
-            delete this['_onChange'];
-        }
-
-        _Script.prototype.unwatch.call( this );
     };
 
     (0, _createClass3.default)( SourceScript, [{

@@ -46,10 +46,6 @@ var _manager = require( "./manager.js" );
 
 var _manager2 = _interopRequireDefault( _manager );
 
-var _reference = require( "./reference.js" );
-
-var _reference2 = _interopRequireDefault( _reference );
-
 var _utils = require( "./utils.js" );
 
 var utils = _interopRequireWildcard( _utils );
@@ -75,19 +71,6 @@ function _interopRequireDefault( obj ) {
     return obj && obj.__esModule ? obj : {default: obj};
 }
 
-var Scriptor = {
-    Promise:      _bluebird2.default,
-    Script:       _script2.default,
-    SourceScript: _source_script2.default,
-    TextScript:   _text_script2.default,
-    Manager:      _manager2.default,
-    Reference:    _reference2.default,
-    load:         _script.load,
-    compile:      _source_script.compile,
-    utils:        utils
-};
-
-//Provide a circular reference to Scriptor from Script
 /**
  * Created by Aaron on 7/5/2015.
  */
@@ -96,6 +79,18 @@ var Scriptor = {
  * NOTE: This file uses ES7 export extensions
  * */
 
+var Scriptor = {
+    Promise:      _bluebird2.default,
+    Script:       _script2.default,
+    SourceScript: _source_script2.default,
+    TextScript:   _text_script2.default,
+    Manager:      _manager2.default,
+    load:         _script.load,
+    compile:      _source_script.compile,
+    utils:        utils
+};
+
+//Provide a circular reference to Scriptor from Script
 _script2.default.Scriptor = Scriptor;
 
 exports.default = Scriptor;
